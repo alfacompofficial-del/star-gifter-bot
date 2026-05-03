@@ -10,198 +10,64 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.1"
   }
   public: {
     Tables: {
-      app_settings: {
+      products: {
         Row: {
-          gift_received_image_url: string | null
-          gift_received_message: string | null
+          brand: string
+          category: string
+          created_at: string
           id: number
-          notification_group_id: string | null
-          updated_at: string
+          image: string
+          in_stock: boolean
+          name: string
+          price: number
         }
         Insert: {
-          gift_received_image_url?: string | null
-          gift_received_message?: string | null
-          id: number
-          notification_group_id?: string | null
-          updated_at?: string
-        }
-        Update: {
-          gift_received_image_url?: string | null
-          gift_received_message?: string | null
+          brand?: string
+          category: string
+          created_at?: string
           id?: number
-          notification_group_id?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      gifts: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: string
-          image_url: string
-          is_active: boolean
+          image: string
+          in_stock?: boolean
           name: string
-          price_stars: number
-          sort_order: number
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          image_url: string
-          is_active?: boolean
-          name: string
-          price_stars: number
-          sort_order?: number
-          updated_at?: string
+          price: number
         }
         Update: {
+          brand?: string
+          category?: string
           created_at?: string
-          description?: string | null
-          id?: string
-          image_url?: string
-          is_active?: boolean
+          id?: number
+          image?: string
+          in_stock?: boolean
           name?: string
-          price_stars?: number
-          sort_order?: number
-          updated_at?: string
+          price?: number
         }
         Relationships: []
       }
-      profiles: {
+      visitors: {
         Row: {
-          created_at: string
-          first_name: string | null
           id: string
-          last_name: string | null
-          photo_url: string | null
-          stars_purchased: number
-          telegram_id: number | null
-          updated_at: string
-          user_id: string
-          username: string | null
+          is_online: boolean
+          last_seen: string
+          session_id: string
+          visited_at: string
         }
         Insert: {
-          created_at?: string
-          first_name?: string | null
           id?: string
-          last_name?: string | null
-          photo_url?: string | null
-          stars_purchased?: number
-          telegram_id?: number | null
-          updated_at?: string
-          user_id: string
-          username?: string | null
+          is_online?: boolean
+          last_seen?: string
+          session_id: string
+          visited_at?: string
         }
         Update: {
-          created_at?: string
-          first_name?: string | null
           id?: string
-          last_name?: string | null
-          photo_url?: string | null
-          stars_purchased?: number
-          telegram_id?: number | null
-          updated_at?: string
-          user_id?: string
-          username?: string | null
-        }
-        Relationships: []
-      }
-      purchases: {
-        Row: {
-          amount_stars: number
-          created_at: string
-          id: string
-          invoice_payload: string | null
-          provider_payment_charge_id: string | null
-          telegram_payment_charge_id: string | null
-          user_id: string
-        }
-        Insert: {
-          amount_stars: number
-          created_at?: string
-          id?: string
-          invoice_payload?: string | null
-          provider_payment_charge_id?: string | null
-          telegram_payment_charge_id?: string | null
-          user_id: string
-        }
-        Update: {
-          amount_stars?: number
-          created_at?: string
-          id?: string
-          invoice_payload?: string | null
-          provider_payment_charge_id?: string | null
-          telegram_payment_charge_id?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      transactions: {
-        Row: {
-          created_at: string
-          gift_id: string
-          id: string
-          is_opened: boolean
-          opened_at: string | null
-          price_stars: number
-          recipient_id: string
-          sender_id: string
-        }
-        Insert: {
-          created_at?: string
-          gift_id: string
-          id?: string
-          is_opened?: boolean
-          opened_at?: string | null
-          price_stars: number
-          recipient_id: string
-          sender_id: string
-        }
-        Update: {
-          created_at?: string
-          gift_id?: string
-          id?: string
-          is_opened?: boolean
-          opened_at?: string | null
-          price_stars?: number
-          recipient_id?: string
-          sender_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "transactions_gift_id_fkey"
-            columns: ["gift_id"]
-            isOneToOne: false
-            referencedRelation: "gifts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_roles: {
-        Row: {
-          created_at: string
-          id: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id?: string
+          is_online?: boolean
+          last_seen?: string
+          session_id?: string
+          visited_at?: string
         }
         Relationships: []
       }
@@ -210,16 +76,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
-      app_role: "admin" | "user"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -346,8 +206,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      app_role: ["admin", "user"],
-    },
+    Enums: {},
   },
 } as const

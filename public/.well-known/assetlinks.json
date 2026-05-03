@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "uz.alfacomp.app",
+    "sha256_cert_fingerprints": ["1F:07:01:8C:15:DA:63:01:0E:2D:B2:F9:87:7F:86:8D:50:37:53:BC:0D:3F:47:3A:98:2B:65:80:25:DB:EA:17"]
+  }
+}]

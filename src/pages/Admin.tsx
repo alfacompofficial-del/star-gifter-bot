@@ -1,215 +1,366 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useTelegramAuth } from "@/hooks/useTelegramAuth";
-import { useIsAdmin } from "@/hooks/useStarsBalance";
-import { BottomNav } from "@/components/BottomNav";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
-import { toast, Toaster } from "sonner";
-import { Trash2, Upload, Star } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft, Eye, Lock, Package, Plus, Trash2, Users } from "lucide-react";
+import { toast } from "sonner";
 
-type Gift = {
-  id: string;
-  name: string;
-  description: string | null;
-  price_stars: number;
-  image_url: string;
-  is_active: boolean;
-  sort_order: number;
-};
+// ПОДКЛЮЧАЕМ FIREBASE (убедитесь, что файл firebaseConfig.js создан в src/)
+import { database } from "../firebaseConfig";
+import { ref, onValue, push, set, remove, update } from "firebase/database";
 
-export default function Admin() {
-  const { user, loading } = useTelegramAuth();
-  const isAdmin = useIsAdmin(user?.id);
-  const [gifts, setGifts] = useState<Gift[]>([]);
+// Константы (можете изменить под себя)
+const ADMIN_PASSWORD = "Xojakbar777";
+const EXCHANGE_RATE = 12800; // Пример курса доллара
 
-  // settings
-  const [groupId, setGroupId] = useState("");
-  const [recvMsg, setRecvMsg] = useState("");
-  const [recvImg, setRecvImg] = useState("");
+const Admin = () => {
+  const [authenticated, setAuthenticated] = useState(false);
+  const [password, setPassword] = useState("");
+  const [tab, setTab] = useState<"stats" | "products" | "add">("stats");
+  
+  // Состояния для данных из Firebase
+  const [stats, setStats] = useState({ online_now: 0, total_devices: 0 });
+  const [products, setProducts] = useState<any[]>([]);
+  
+  const navigate = useNavigate();
 
-  // new gift
-  const [newName, setNewName] = useState("");
-  const [newDesc, setNewDesc] = useState("");
-  const [newPrice, setNewPrice] = useState<number>(50);
+  const [selectedCategory, setSelectedCategory] = useState<string>("Смартфоны");
+  const [addPosition, setAddPosition] = useState<"begin" | "end">("end");
 
-  async function loadAll() {
-    const [{ data: g }, { data: s }] = await Promise.all([
-      supabase.from("gifts").select("*").order("sort_order"),
-      supabase.from("app_settings").select("*").eq("id", 1).single(),
-    ]);
-    setGifts(g ?? []);
-    setGroupId(s?.notification_group_id ?? "");
-    setRecvMsg(s?.gift_received_message ?? "");
-    setRecvImg(s?.gift_received_image_url ?? "");
-  }
+  const [newProduct, setNewProduct] = useState({
+    name: "",
+    image: "",
+    priceSum: "",
+    priceUsd: "",
+  });
 
-  useEffect(() => { if (isAdmin) loadAll(); }, [isAdmin]);
+  const [showAddCategoryInput, setShowAddCategoryInput] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
 
-  async function uploadFile(file: File, prefix: string): Promise<string | null> {
-    const ext = file.name.split(".").pop() ?? "png";
-    const path = `${prefix}/${crypto.randomUUID()}.${ext}`;
-    const { error } = await supabase.storage.from("gift-assets").upload(path, file, {
-      cacheControl: "3600",
-      upsert: false,
-      contentType: file.type,
+  // Категории из имеющихся товаров
+  const categories = useMemo(() => {
+    const base = [...new Set(products.map((p) => p.category))];
+    if (base.length === 0) return ["Смартфоны", "Ноутбуки"];
+    return base;
+  }, [products]);
+
+  // 1. Получение данных из Firebase (Статистика и Товары)
+  useEffect(() => {
+    if (!authenticated) return;
+
+    // Слушаем статистику (online и total)
+    const statsRef = ref(database, 'stats');
+    onValue(statsRef, (snapshot) => {
+      if (snapshot.exists()) {
+        setStats(snapshot.val());
+      }
     });
-    if (error) { toast.error(error.message); return null; }
-    const { data: pub } = supabase.storage.from("gift-assets").getPublicUrl(path);
-    return pub.publicUrl;
-  }
 
-  async function createGift(e: React.FormEvent<HTMLFormElement>) {
+    // Слушаем товары
+    const productsRef = ref(database, 'products');
+    onValue(productsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        setProducts(Object.values(data));
+      } else {
+        setProducts([]);
+      }
+    });
+  }, [authenticated]);
+
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    const form = e.currentTarget;
-    const file = (form.elements.namedItem("image") as HTMLInputElement).files?.[0];
-    if (!file) return toast.error("Pick an image");
-    const url = await uploadFile(file, "gifts");
-    if (!url) return;
-    const { error } = await supabase.from("gifts").insert({
-      name: newName, description: newDesc || null, price_stars: newPrice, image_url: url,
-      sort_order: gifts.length,
-    });
-    if (error) return toast.error(error.message);
-    toast.success("Gift created");
-    setNewName(""); setNewDesc(""); setNewPrice(50); form.reset();
-    loadAll();
-  }
+    if (password === ADMIN_PASSWORD) {
+      setAuthenticated(true);
+    } else {
+      toast.error("Неверный пароль!");
+    }
+  };
 
-  async function toggleActive(g: Gift) {
-    await supabase.from("gifts").update({ is_active: !g.is_active }).eq("id", g.id);
-    loadAll();
-  }
+  const handleAddProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newProduct.name || !newProduct.priceSum || !newProduct.image) {
+      toast.error("Заполните все поля!");
+      return;
+    }
 
-  async function deleteGift(id: string) {
-    if (!confirm("Delete gift?")) return;
-    await supabase.from("gifts").delete().eq("id", id);
-    loadAll();
-  }
+    const productsRef = ref(database, 'products');
+    const newProductRef = push(productsRef); // Генерируем ID
+    
+    const productData = {
+      id: newProductRef.key,
+      name: newProduct.name,
+      category: selectedCategory,
+      price_sum: newProduct.priceSum,
+      price_usd: newProduct.priceUsd,
+      photo: newProduct.image,
+      timestamp: addPosition === "begin" ? -Date.now() : Date.now(), // Трюк для сортировки
+    };
 
-  async function uploadReceivedImage(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const url = await uploadFile(file, "received");
-    if (url) setRecvImg(url);
-  }
-
-  async function saveSettings() {
-    const { error } = await supabase
-      .from("app_settings")
-      .update({
-        notification_group_id: groupId || null,
-        gift_received_message: recvMsg || null,
-        gift_received_image_url: recvImg || null,
+    set(newProductRef, productData)
+      .then(() => {
+        toast.success("Товар добавлен на сайт!");
+        setNewProduct({ name: "", image: "", priceSum: "", priceUsd: "" });
+        setTab("products");
       })
-      .eq("id", 1);
-    if (error) toast.error(error.message);
-    else toast.success("Settings saved");
-  }
+      .catch((err) => toast.error("Ошибка: " + err.message));
+  };
 
-  async function registerWebhook() {
-    const url = prompt(
-      "Webhook URL (e.g. https://<project-ref>.supabase.co/functions/v1/telegram-webhook):",
-    );
-    if (!url) return;
-    const { data, error } = await supabase.functions.invoke("set-telegram-webhook", {
-      body: { webhook_url: url },
-    });
-    if (error) toast.error(error.message);
-    else toast.success(JSON.stringify(data));
-  }
+  const handleDeleteProduct = (id: string) => {
+    if (window.confirm("Удалить этот товар?")) {
+      remove(ref(database, `products/${id}`))
+        .then(() => toast.success("Товар удален"))
+        .catch((err) => toast.error("Ошибка удаления"));
+    }
+  };
 
-  if (loading) return null;
-  if (!isAdmin) {
+  if (!authenticated) {
     return (
-      <main className="grid min-h-screen place-items-center">
-        <p className="text-muted-foreground">Admin only.</p>
-      </main>
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="glass rounded-2xl p-8 w-full max-w-sm">
+          <div className="flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mx-auto mb-6">
+            <Lock className="w-8 h-8 text-primary" />
+          </div>
+          <h1 className="text-xl font-bold text-center mb-6">AlfaComp Admin</h1>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Введите пароль"
+              className="w-full bg-muted rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary text-white"
+              autoFocus
+            />
+            <button className="w-full bg-primary text-primary-foreground rounded-xl py-3 font-bold text-sm hover:scale-[1.02] transition-transform">
+              Войти
+            </button>
+          </form>
+        </div>
+      </div>
     );
   }
 
   return (
-    <>
-      <Toaster theme="dark" richColors position="top-center" />
-      <main className="mx-auto max-w-xl px-4 pb-28 pt-8 space-y-8">
-        <h1 className="text-3xl font-bold text-gold">Admin panel</h1>
+    <div className="min-h-screen bg-background text-white">
+      <header className="glass border-b border-border sticky top-0 z-40">
+        <div className="container flex items-center justify-between py-4">
+          <div className="flex items-center gap-3">
+            <button onClick={() => navigate("/")} className="glass rounded-lg w-9 h-9 flex items-center justify-center hover:border-primary transition-all">
+              <ArrowLeft className="w-4 h-4 text-white" />
+            </button>
+            <h1 className="text-lg font-bold">📊 AlfaComp Admin</h1>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+            В сети: {stats.online_now}
+          </div>
+        </div>
+      </header>
 
-        {/* Settings */}
-        <Card className="gradient-card border-primary/20 p-5 space-y-4">
-          <h2 className="text-lg font-semibold">App settings</h2>
-          <div className="space-y-2">
-            <Label>Notification group ID</Label>
-            <Input value={groupId} onChange={(e) => setGroupId(e.target.value)} placeholder="-1001234567890" />
-            <p className="text-xs text-muted-foreground">Add the bot to your group as admin, then paste the group's chat ID here.</p>
+      <div className="container py-8">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+          <div className="glass rounded-xl p-5">
+            <Eye className="w-5 h-5 text-green-400 mb-2" />
+            <p className="text-2xl font-extrabold">{stats.online_now}</p>
+            <p className="text-xs text-muted-foreground mt-1">Онлайн сейчас</p>
           </div>
-          <div className="space-y-2">
-            <Label>"Gift received" message</Label>
-            <Textarea value={recvMsg} onChange={(e) => setRecvMsg(e.target.value)} rows={2} />
+          <div className="glass rounded-xl p-5">
+            <Users className="w-5 h-5 text-primary mb-2" />
+            <p className="text-2xl font-extrabold">{stats.total_devices}</p>
+            <p className="text-xs text-muted-foreground mt-1">Всего заходов</p>
           </div>
-          <div className="space-y-2">
-            <Label>"Gift received" image</Label>
-            <div className="flex items-center gap-3">
-              {recvImg && <img src={recvImg} alt="" className="h-16 w-16 rounded-xl object-cover" />}
-              <label className="flex cursor-pointer items-center gap-2 rounded-md border border-dashed border-primary/40 px-3 py-2 text-sm hover:bg-primary/5">
-                <Upload className="h-4 w-4" />
-                Upload
-                <input type="file" accept="image/*" className="hidden" onChange={uploadReceivedImage} />
-              </label>
-              {recvImg && <Button variant="ghost" size="sm" onClick={() => setRecvImg("")}>Clear</Button>}
-            </div>
+          <div className="glass rounded-xl p-5">
+            <Package className="w-5 h-5 text-accent mb-2" />
+            <p className="text-2xl font-extrabold">{products.length}</p>
+            <p className="text-xs text-muted-foreground mt-1">Товаров в базе</p>
           </div>
-          <div className="flex gap-2">
-            <Button onClick={saveSettings} className="gradient-gold text-primary-foreground font-semibold">Save settings</Button>
-            <Button variant="outline" onClick={registerWebhook}>Register bot webhook</Button>
-          </div>
-        </Card>
+        </div>
 
-        {/* New gift */}
-        <Card className="gradient-card border-primary/20 p-5 space-y-4">
-          <h2 className="text-lg font-semibold">Add gift to catalog</h2>
-          <form onSubmit={createGift} className="space-y-3">
-            <Input placeholder="Gift name" value={newName} onChange={(e) => setNewName(e.target.value)} required />
-            <Textarea placeholder="Description (optional)" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} />
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Price (⭐)</Label>
-                <Input type="number" min={1} value={newPrice} onChange={(e) => setNewPrice(Number(e.target.value))} required />
-              </div>
-              <div>
-                <Label>Image</Label>
-                <Input type="file" name="image" accept="image/*" required />
-              </div>
-            </div>
-            <Button type="submit" className="w-full gradient-gold text-primary-foreground font-semibold">Create gift</Button>
-          </form>
-        </Card>
-
-        {/* Gift list */}
-        <section className="space-y-3">
-          <h2 className="text-lg font-semibold">Catalog ({gifts.length})</h2>
-          {gifts.map((g) => (
-            <div key={g.id} className="flex items-center gap-3 rounded-2xl border border-border gradient-card p-3">
-              <img src={g.image_url} alt={g.name} className="h-14 w-14 rounded-xl object-cover" />
-              <div className="flex-1">
-                <div className="font-medium">{g.name}</div>
-                <div className="inline-flex items-center gap-1 text-sm text-primary">
-                  <Star className="h-3 w-3 fill-primary" />{g.price_stars}
-                </div>
-              </div>
-              <Button variant="ghost" size="sm" onClick={() => toggleActive(g)}>
-                {g.is_active ? "Hide" : "Show"}
-              </Button>
-              <Button variant="ghost" size="icon" onClick={() => deleteGift(g.id)}>
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
-            </div>
+        {/* Tabs */}
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+          {[
+            { id: "stats" as const, label: "Обзор" },
+            { id: "products" as const, label: "Товары" },
+            { id: "add" as const, label: "Добавить +" },
+          ].map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`px-6 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
+                tab === t.id ? "bg-primary text-primary-foreground shadow-lg" : "glass glass-hover"
+              }`}
+            >
+              {t.label}
+            </button>
           ))}
-        </section>
-      </main>
-      <BottomNav isAdmin={isAdmin} />
-    </>
+        </div>
+
+        {/* Products List */}
+        {tab === "products" && (
+          <div className="glass rounded-xl overflow-hidden border border-white/5">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-white/5 border-b border-white/10">
+                    <th className="text-left p-4">Товар</th>
+                    <th className="text-left p-4">Категория</th>
+                    <th className="text-right p-4">Цена</th>
+                    <th className="text-right p-4"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {products.map((p) => (
+                    <tr key={p.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                      <td className="p-4 flex items-center gap-3">
+                        <img src={p.photo} className="w-10 h-10 rounded-lg object-cover" />
+                        <span className="font-medium">{p.name}</span>
+                      </td>
+                      <td className="p-4 text-muted-foreground">{p.category}</td>
+                      <td className="p-4 text-right font-bold text-blue-400">{p.price_sum} сум</td>
+                      <td className="p-4 text-right">
+                        <button onClick={() => handleDeleteProduct(p.id)} className="p-2 hover:text-red-500 transition-colors">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Add Product Form */}
+        {tab === "add" && (
+          <form onSubmit={handleAddProduct} className="glass rounded-2xl p-6 max-w-2xl mx-auto space-y-6 border border-white/10 shadow-2xl">
+            <div className="flex items-center gap-2 mb-4">
+               <Plus className="text-primary w-6 h-6" />
+               <h3 className="text-xl font-bold">Добавить на сайт</h3>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Выберите вкладку</p>
+              <div className="flex flex-wrap gap-2">
+                {categories.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setSelectedCategory(c)}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
+                      selectedCategory === c ? "bg-primary border-primary" : "bg-slate-900 border-white/10 hover:border-white/30"
+                    }`}
+                  >
+                    {c}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setShowAddCategoryInput(!showAddCategoryInput)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 border border-dashed border-white/30 hover:border-primary transition-all"
+                >
+                  + новая вкладка
+                </button>
+              </div>
+              
+              {showAddCategoryInput && (
+                <div className="flex gap-2 mt-2">
+                  <input
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    placeholder="Название новой вкладки"
+                    className="flex-1 bg-slate-900 rounded-xl px-4 py-3 text-sm border border-white/10 outline-none focus:border-primary"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (newCategoryName.trim()) {
+                        setSelectedCategory(newCategoryName.trim());
+                        setNewCategoryName("");
+                        setShowAddCategoryInput(false);
+                      }
+                    }}
+                    className="bg-primary px-4 rounded-xl text-sm font-bold"
+                  >
+                    OK
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-500">ФОТО (URL)</label>
+                <input
+                  value={newProduct.image}
+                  onChange={(e) => setNewProduct({ ...newProduct, image: e.target.value })}
+                  placeholder="https://..."
+                  className="w-full bg-slate-900 rounded-xl px-4 py-3 text-sm border border-white/10 outline-none focus:border-primary"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-500">НАЗВАНИЕ</label>
+                <input
+                  value={newProduct.name}
+                  onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                  placeholder="Напр: PC Gaming X"
+                  className="w-full bg-slate-900 rounded-xl px-4 py-3 text-sm border border-white/10 outline-none focus:border-primary"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-500">ЦЕНА (СУМ)</label>
+                <input
+                  type="number"
+                  value={newProduct.priceSum}
+                  onChange={(e) => {
+                    const sum = e.target.value;
+                    const usd = sum ? String(Math.round(parseInt(sum) / EXCHANGE_RATE)) : "";
+                    setNewProduct({ ...newProduct, priceSum: sum, priceUsd: usd });
+                  }}
+                  className="w-full bg-slate-900 rounded-xl px-4 py-3 text-sm border border-white/10 outline-none focus:border-primary"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-500">ЦЕНА (USD)</label>
+                <input
+                  type="number"
+                  value={newProduct.priceUsd}
+                  onChange={(e) => {
+                    const usd = e.target.value;
+                    const sum = usd ? String(Math.round(parseInt(usd) * EXCHANGE_RATE)) : "";
+                    setNewProduct({ ...newProduct, priceSum: sum, priceUsd: usd });
+                  }}
+                  className="w-full bg-slate-900 rounded-xl px-4 py-3 text-sm border border-white/10 outline-none focus:border-primary"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setAddPosition("begin")}
+                className={`flex-1 py-3 rounded-xl text-xs font-bold border transition-all ${addPosition === "begin" ? "bg-primary border-primary" : "bg-slate-900 border-white/10"}`}
+              >
+                В НАЧАЛО
+              </button>
+              <button
+                type="button"
+                onClick={() => setAddPosition("end")}
+                className={`flex-1 py-3 rounded-xl text-xs font-bold border transition-all ${addPosition === "end" ? "bg-primary border-primary" : "bg-slate-900 border-white/10"}`}
+              >
+                В КОНЕЦ
+              </button>
+            </div>
+
+            <button className="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-xl font-black text-sm transition-all shadow-xl shadow-blue-500/20">
+              УСТАНОВИТЬ НА САЙТ
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
   );
-}
+};
+
+export default Admin;
