@@ -111,8 +111,8 @@ const CatalogSection = ({ products, isLoading, onAddToCart }: CatalogSectionProp
           </div>
         </div>
 
-        {/* Вкладки как на скриншоте (без теней и лишних PX) */}
-        <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
+        {/* Вкладки теперь СЛЕВА (justify-start) */}
+        <div className="flex flex-wrap items-center justify-start gap-2 mb-6">
           {categories.map((cat) => (
             <button
               key={cat}
