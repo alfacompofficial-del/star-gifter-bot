@@ -31,7 +31,7 @@ const Admin = () => {
     const { data, error } = await supabase
       .from("products")
       .select("*")
-      .order("priority", { ascending: false })
+      .order("priority", { ascending: true })
       .order("id", { ascending: true });
       
     if (!error) setProducts(data || []);
@@ -223,8 +223,8 @@ const Admin = () => {
                   </select>
                 </div>
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-4">Позиция (чем выше число, тем раньше в списке)</label>
-                  <input type="number" placeholder="0" value={newProduct.priority} onChange={e => setNewProduct({...newProduct, priority: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-3xl p-6 outline-none focus:border-primary font-bold" />
+                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-4">Позиция (1 - самый первый, 2 - второй и т.д.)</label>
+                  <input type="number" placeholder="1" value={newProduct.priority} onChange={e => setNewProduct({...newProduct, priority: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-3xl p-6 outline-none focus:border-primary font-bold" />
                 </div>
               </div>
 

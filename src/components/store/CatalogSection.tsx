@@ -61,9 +61,9 @@ const CatalogSection = ({ products, isLoading, onAddToCart }: CatalogSectionProp
       const sortB = indexB === -1 ? 999 : indexB;
 
       if (sortA !== sortB) return sortA - sortB;
-      const priorityA = a.priority || 0;
-      const priorityB = b.priority || 0;
-      if (priorityA !== priorityB) return priorityB - priorityA;
+      const priorityA = a.priority || 9999;
+      const priorityB = b.priority || 9999;
+      if (priorityA !== priorityB) return priorityA - priorityB;
       return a.id - b.id;
     });
     
