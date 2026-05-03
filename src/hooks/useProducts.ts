@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import productsData from "@/data/products.json";
 
 export interface Product {
@@ -16,9 +17,28 @@ export const useProducts = () => {
   return useQuery({
     queryKey: ["products"],
     queryFn: async () => {
-      // Имитация загрузки из сети (для сохранения эффекта подгрузки, если нужно)
-      return productsData as Product[];
+      try {
+        const { data, error } = await supabase
+          .from("products")
+          .select("*")
+          .order("id", { ascending: true });
+        
+        if (error) {
+          console.warn("Using local JSON fallback due to Supabase error:", error.message);
+          return productsData as Product[];
+        }
+        
+        if (!data || data.length === 0) {
+          console.warn("Using local JSON fallback because table is empty.");
+          return productsData as Product[];
+        }
+        
+        return data as Product[];
+      } catch (err) {
+        console.error("Critical error fetching products:", err);
+        return productsData as Product[];
+      }
     },
-    staleTime: Infinity, // Данные статичны, обновлять их не нужно
+    refetchInterval: 5000, 
   });
 };
