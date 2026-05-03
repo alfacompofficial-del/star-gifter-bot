@@ -87,7 +87,6 @@ const CatalogSection = ({ products, isLoading, onAddToCart }: CatalogSectionProp
           <p className="text-muted-foreground mt-2">Лучшие предложения по актуальным ценам</p>
         </div>
 
-        {/* Оригинальный стиль поиска */}
         <div className="relative max-w-md mx-auto mb-8">
           <div className="relative flex items-center">
             <Search className="absolute left-4 w-4 h-4 text-muted-foreground" />
@@ -101,11 +100,18 @@ const CatalogSection = ({ products, isLoading, onAddToCart }: CatalogSectionProp
             <button
               onClick={handleAISearch}
               disabled={isAILoading || !search.trim()}
-              className="absolute right-2 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-[10px] font-bold uppercase tracking-wider hover:brightness-110 disabled:opacity-50 flex items-center gap-1"
+              className="absolute right-2 px-3 py-1.5 bg-[#00f2ff] text-black rounded-lg text-[10px] font-bold uppercase tracking-wider hover:brightness-110 disabled:opacity-50 flex items-center gap-1"
             >
               {isAILoading ? <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <><Bot className="w-3 h-3"/> AI</>}
             </button>
           </div>
+        </div>
+
+        {/* Счетчик товаров "чуть сверху" */}
+        <div className="flex justify-center mb-4">
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground bg-muted/30 px-3 py-1 rounded-full">
+            Всего в категории: <span className="text-[#00f2ff]">{filtered.length}</span>
+          </span>
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-2 mb-10">
@@ -115,8 +121,8 @@ const CatalogSection = ({ products, isLoading, onAddToCart }: CatalogSectionProp
               onClick={() => setFilter(cat)}
               className={`px-4 py-2 rounded-full text-xs font-medium transition-all ${
                 filter === cat 
-                  ? "bg-primary text-primary-foreground shadow-md" 
-                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  ? "bg-[#00f2ff] text-black shadow-md" 
+                  : "bg-muted text-muted-foreground hover:bg-[#00f2ff] hover:text-black"
               }`}
             >
               {cat === "all" ? "Все" : cat}
@@ -124,7 +130,7 @@ const CatalogSection = ({ products, isLoading, onAddToCart }: CatalogSectionProp
           ))}
           <button
             onClick={() => { setFilter("all"); setSearch(""); }}
-            className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:text-primary transition-all ml-2"
+            className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:text-[#00f2ff] transition-all ml-2"
           >
             <RotateCcw className="w-3 h-3" />
           </button>

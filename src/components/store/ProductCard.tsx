@@ -28,7 +28,7 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
           onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }}
         />
         {product.in_stock && (
-          <span className="absolute top-2 left-2 bg-primary/90 text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
+          <span className="absolute top-2 left-2 bg-[#00f2ff] text-black text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
             В наличии
           </span>
         )}
