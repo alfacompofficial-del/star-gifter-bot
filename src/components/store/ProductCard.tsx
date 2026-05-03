@@ -1,6 +1,6 @@
 import { Plus, Check } from "lucide-react";
 import { useState } from "react";
-import { formatPrice, convertToUSD } from "@/lib/constants";
+import { formatPrice, convertToUSD, EXCHANGE_RATE } from "@/lib/constants";
 import type { Product } from "@/hooks/useProducts";
 
 interface ProductCardProps {
