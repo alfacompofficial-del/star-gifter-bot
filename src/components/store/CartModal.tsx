@@ -1,5 +1,5 @@
 import { X, Minus, Plus, Trash2, ShoppingCart } from "lucide-react";
-import { formatPrice, convertToUSD, CONTACTS } from "@/lib/constants";
+import { formatPrice, convertToUSD, CONTACTS, EXCHANGE_RATE } from "@/lib/constants";
 import type { CartItem } from "@/hooks/useCart";
 
 interface CartModalProps {
@@ -15,9 +15,12 @@ interface CartModalProps {
 const CartModal = ({ isOpen, onClose, items, total, onUpdateQuantity, onRemove, onClear }: CartModalProps) => {
   if (!isOpen) return null;
 
+  // Рассчитываем цены в сумах для Telegram сообщения
   const checkoutMessage = items
-    .map((i) => `${i.name} x${i.quantity} — ${formatPrice(i.price * i.quantity)} сум`)
+    .map((i) => `${i.name} x${i.quantity} — ${formatPrice(Math.round(i.price * i.quantity * EXCHANGE_RATE))} сум`)
     .join("\n");
+
+  const totalUZS = Math.round(total * EXCHANGE_RATE);
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={onClose}>
@@ -47,7 +50,9 @@ const CartModal = ({ isOpen, onClose, items, total, onUpdateQuantity, onRemove, 
                   <img src={item.image} alt={item.name} className="w-16 h-16 object-contain rounded-lg bg-card" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold truncate">{item.name}</p>
-                    <p className="text-sm font-bold text-primary mt-1">{formatPrice(item.price)} сум</p>
+                    <p className="text-sm font-bold text-primary mt-1">
+                      {formatPrice(Math.round(item.price * EXCHANGE_RATE))} сум
+                    </p>
                     <div className="flex items-center gap-2 mt-2">
                       <button
                         onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
@@ -81,8 +86,8 @@ const CartModal = ({ isOpen, onClose, items, total, onUpdateQuantity, onRemove, 
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Итого:</span>
               <div className="text-right">
-                <p className="font-bold text-lg">{formatPrice(total)} сум</p>
-                <p className="text-xs text-muted-foreground">≈ ${convertToUSD(total)}</p>
+                <p className="font-bold text-lg">{formatPrice(totalUZS)} сум</p>
+                <p className="text-xs text-muted-foreground">≈ ${total}</p>
               </div>
             </div>
             <div className="flex gap-3">
@@ -90,7 +95,7 @@ const CartModal = ({ isOpen, onClose, items, total, onUpdateQuantity, onRemove, 
                 Очистить
               </button>
               <a
-                href={`${CONTACTS.TELEGRAM}?text=${encodeURIComponent("Заказ:\n" + checkoutMessage + "\n\nИтого: " + formatPrice(total) + " сум")}`}
+                href={`${CONTACTS.TELEGRAM}?text=${encodeURIComponent("Заказ:\n" + checkoutMessage + "\n\nИтого: " + formatPrice(totalUZS) + " сум")}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex-1 bg-primary text-primary-foreground rounded-xl py-2.5 text-sm font-bold text-center hover:scale-[1.02] transition-transform"
