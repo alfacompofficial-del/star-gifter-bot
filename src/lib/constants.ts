@@ -46,6 +46,10 @@ export const formatPrice = (price: number) => {
   return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 };
 
-export const convertToUSD = (price: number) => {
-  return Math.round(price / EXCHANGE_RATE);
+export const convertToUZS = (priceUSD: number) => {
+  return Math.round(priceUSD * EXCHANGE_RATE);
+};
+
+export const convertToUSD = (priceUZS: number) => {
+  return Math.round(priceUZS / EXCHANGE_RATE);
 };

@@ -40,11 +40,11 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
           <div>
             {product.old_price && (
               <p className="text-[11px] font-bold text-red-500 line-through mb-0.5 opacity-80 decoration-2">
-                {formatPrice(product.old_price)} сум
+                {formatPrice(Math.round(product.old_price * EXCHANGE_RATE))} сум
               </p>
             )}
-            <p className="text-lg font-extrabold leading-none">{formatPrice(product.price)} сум</p>
-            <p className="text-xs text-muted-foreground mt-1">≈ ${convertToUSD(product.price)}</p>
+            <p className="text-lg font-extrabold leading-none">{formatPrice(Math.round(product.price * EXCHANGE_RATE))} сум</p>
+            <p className="text-xs text-muted-foreground mt-1">≈ ${product.price}</p>
           </div>
           <button
             onClick={handleAdd}
