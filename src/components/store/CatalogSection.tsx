@@ -111,15 +111,16 @@ const CatalogSection = ({ products, isLoading, onAddToCart }: CatalogSectionProp
           </div>
         </div>
 
+        {/* Вкладки как на скриншоте (без теней и лишних PX) */}
         <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
           {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => setFilter(cat)}
-              className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all ${
+              className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${
                 filter === cat 
-                  ? "bg-[#00f2ff] text-black shadow-[0_0_15px_rgba(0,242,255,0.3)]" 
-                  : "bg-[#1A1F2C] text-muted-foreground hover:bg-[#2A2F3C]"
+                  ? "bg-[#00f2ff] text-black" 
+                  : "bg-[#1A1F2C] text-[#8E9196] hover:bg-[#2A2F3C]"
               }`}
             >
               {cat === "all" ? "Все" : cat}
@@ -127,7 +128,6 @@ const CatalogSection = ({ products, isLoading, onAddToCart }: CatalogSectionProp
           ))}
         </div>
 
-        {/* Счетчик теперь слева (убрано max-w-fit mx-auto) */}
         <div className="flex items-center justify-start gap-2.5 mb-10">
           <button
             onClick={handleReset}
