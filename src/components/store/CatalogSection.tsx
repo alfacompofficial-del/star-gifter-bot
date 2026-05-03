@@ -127,7 +127,8 @@ const CatalogSection = ({ products, isLoading, onAddToCart }: CatalogSectionProp
           ))}
         </div>
 
-        <div className="flex items-center justify-start max-w-fit mx-auto gap-2.5 mb-10">
+        {/* Счетчик теперь слева (убрано max-w-fit mx-auto) */}
+        <div className="flex items-center justify-start gap-2.5 mb-10">
           <button
             onClick={handleReset}
             className="w-8 h-8 rounded-full bg-[#1A1F2C] flex items-center justify-center text-muted-foreground hover:text-[#00f2ff] transition-all"
