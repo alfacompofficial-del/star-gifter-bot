@@ -1,4 +1,4 @@
-export const EXCHANGE_RATE = 14000;
+export const EXCHANGE_RATE = 11950;
 
 export const CONTACTS = {
   TELEGRAM: "https://t.me/ALIBABO777",
