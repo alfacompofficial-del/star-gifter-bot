@@ -44,7 +44,7 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
               </p>
             )}
             <p className="text-lg font-extrabold leading-none">{formatPrice(product.price)} сум</p>
-            <p className="text-[10px] text-muted-foreground mt-1 opacity-60 italic">≈ ${convertToUSD(product.price)}</p>
+            <p className="text-xs text-muted-foreground mt-1">≈ ${convertToUSD(product.price)}</p>
           </div>
           <button
             onClick={handleAdd}
