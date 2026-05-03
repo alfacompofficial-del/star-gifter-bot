@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { RotateCcw, Search, X, Bot } from "lucide-react";
+import { RotateCcw, Search, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ProductCard from "./ProductCard";
 import type { Product } from "@/hooks/useProducts";
@@ -27,8 +27,6 @@ const CatalogSection = ({ products, isLoading, onAddToCart }: CatalogSectionProp
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
 
-  const [isAILoading, setIsAILoading] = useState(false);
-
   const categories = useMemo(() => {
     const cats = [...new Set(products.map((p) => p.category))];
     cats.sort((a, b) => {
@@ -45,21 +43,19 @@ const CatalogSection = ({ products, isLoading, onAddToCart }: CatalogSectionProp
   const filtered = useMemo(() => {
     let result = filter === "all" ? products : products.filter((p) => p.category === filter);
     
-    // AI / Smart Search Logic
     if (search.trim()) {
       const q = search.trim().toLowerCase();
-      const terms = q.split(/\s+/);
-      
-      result = result.filter((p) => {
-        const name = p.name.toLowerCase();
-        const cat = (p.category || "").toLowerCase();
-        // Простое умное совпадение: все слова из запроса должны быть где-то в названии или категории
-        return terms.every(term => name.includes(term) || cat.includes(term));
-      });
+      result = result.filter((p) => 
+        p.name.toLowerCase().includes(q) || 
+        (p.brand || "").toLowerCase().includes(q)
+      );
     }
     
-    // Сортируем товары строго по заданному порядку категорий
-    const sortedResult = [...result].reverse().sort((a, b) => {
+    // Сортируем товары: 
+    // 1. По порядку категорий
+    // 2. Внутри категории по ПРИОРИТЕТУ (от большего к меньшему)
+    // 3. По ID (от меньшего к большему = от первых к последним)
+    const finalResult = [...result].sort((a, b) => {
       const catA = a.category || "";
       const catB = b.category || "";
       const indexA = CATEGORY_ORDER.indexOf(catA);
@@ -70,43 +66,25 @@ const CatalogSection = ({ products, isLoading, onAddToCart }: CatalogSectionProp
 
       if (sortA !== sortB) return sortA - sortB;
       
-      // Внутри одной категории сортируем по цене (от меньшей к большей)
-      const priceA = Number(a.price) || 0;
-      const priceB = Number(b.price) || 0;
-      return priceA - priceB;
+      // Внутри категории
+      const priorityA = a.priority || 0;
+      const priorityB = b.priority || 0;
+      if (priorityA !== priorityB) return priorityB - priorityA; // Высокий приоритет в начало
+
+      return a.id - b.id; // От первых к последним
     });
-    
-    // Спец. требование: Ion 600t-33 должен быть вторым
-    const finalResult = [...sortedResult];
-    const targetIndex = finalResult.findIndex(p => p.name === "Ion 600t-33");
-    if (targetIndex !== -1) {
-      const item = finalResult.splice(targetIndex, 1)[0];
-      // Вставляем на второе место (индекс 1)
-      finalResult.splice(1, 0, item);
-    }
     
     return finalResult;
   }, [products, filter, search]);
-
-  const displayed = filtered;
 
   const handleReset = () => {
     setFilter("all");
     setSearch("");
   };
 
-  const handleAISearch = () => {
-    if (!search.trim()) return;
-    setIsAILoading(true);
-    // Эмуляция "AI" подбора (задержка + визуальный эффект)
-    setTimeout(() => {
-      setIsAILoading(false);
-    }, 1500);
-  };
-
   return (
     <section id="catalog" className="py-20">
-      <div className="container">
+      <div className="container px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -114,75 +92,37 @@ const CatalogSection = ({ products, isLoading, onAddToCart }: CatalogSectionProp
           className="text-center mb-12"
         >
           <span className="text-xs font-semibold uppercase tracking-[2px] text-primary">Каталог</span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold mt-2 text-gradient">Все товары</h2>
-          <p className="text-muted-foreground mt-2">Актуальные цены в сумах и долларах</p>
+          <h2 className="text-3xl sm:text-4xl font-extrabold mt-2 text-gradient uppercase tracking-tighter">Наш Ассортимент</h2>
+          <p className="text-muted-foreground mt-2">Прямые поставки по лучшим ценам</p>
         </motion.div>
 
-        {/* Search bar */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="relative max-w-lg mx-auto mb-8"
-        >
-          {/* Logo inside search */}
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full overflow-hidden bg-black/50 border border-primary/20 pointer-events-none flex items-center justify-center p-1 z-10">
-            <img src="/android-chrome-512x512.png" alt="AlfaComp" className="w-full h-full object-contain" />
-          </div>
-          
+        {/* Простой поиск без ИИ */}
+        <div className="relative max-w-lg mx-auto mb-10">
           <input
             type="text"
             value={search}
-            onChange={(e) => { setSearch(e.target.value); }}
-            placeholder="AI поиск товаров..."
-            className={`w-full glass rounded-xl pl-12 pr-20 py-4 text-sm outline-none transition-all duration-500 bg-transparent ${
-              isAILoading ? "border-primary shadow-[0_0_15px_rgba(var(--primary),0.3)]" : "border-border/60 hover:border-primary/40 focus:border-primary/80"
-            } placeholder:text-muted-foreground font-medium`}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Поиск товаров..."
+            className="w-full glass rounded-2xl pl-6 pr-12 py-5 text-sm outline-none border-border/40 focus:border-primary/80 transition-all font-medium"
           />
-          
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-            {search && !isAILoading && (
-              <button
-                onClick={() => setSearch("")}
-                className="text-muted-foreground hover:text-foreground transition-colors p-1"
-              >
-                <X className="w-4 h-4" />
-              </button>
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">
+            {search ? (
+              <button onClick={() => setSearch("")}><X className="w-5 h-5"/></button>
+            ) : (
+              <Search className="w-5 h-5 opacity-40"/>
             )}
-            
-            <button
-              onClick={handleAISearch}
-              disabled={isAILoading || !search.trim()}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                isAILoading || search.trim() ? "bg-primary text-primary-foreground glow-primary" : "bg-muted text-muted-foreground opacity-50 cursor-not-allowed"
-              }`}
-            >
-              {isAILoading ? (
-                <>
-                  <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                  <span>Думаю...</span>
-                </>
-              ) : (
-                <>
-                  <Bot className="w-3.5 h-3.5" />
-                  <span>AI</span>
-                </>
-              )}
-            </button>
           </div>
-        </motion.div>
+        </div>
 
         {/* Filters */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-10">
           <div className="flex flex-wrap gap-2">
             {categories.map((cat) => (
               <button
                 key={cat}
-                onClick={() => { setFilter(cat); }}
-                className={`px-4 py-2 rounded-full text-xs font-medium transition-all ${
-                  filter === cat
-                    ? "bg-primary text-primary-foreground glow-primary"
-                    : "glass glass-hover"
+                onClick={() => setFilter(cat)}
+                className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                  filter === cat ? "bg-primary text-black shadow-lg" : "glass glass-hover opacity-70"
                 }`}
               >
                 {cat === "all" ? "Все" : cat}
@@ -192,53 +132,45 @@ const CatalogSection = ({ products, isLoading, onAddToCart }: CatalogSectionProp
           <div className="flex items-center gap-3">
             <button
               onClick={handleReset}
-              title="Сбросить фильтры"
-              className="w-9 h-9 rounded-full glass flex items-center justify-center text-muted-foreground hover:text-primary hover:rotate-90 transition-all"
+              className="w-10 h-10 rounded-xl glass flex items-center justify-center text-muted-foreground hover:text-primary transition-all"
             >
               <RotateCcw className="w-4 h-4" />
             </button>
-            <span className="text-sm text-muted-foreground">
-              Найдено: <span className="text-primary font-bold">{filtered.length}</span>
+            <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+              Всего: <span className="text-primary">{filtered.length}</span>
             </span>
           </div>
         </div>
 
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4" />
-            <p className="text-sm">Загрузка товаров из базы...</p>
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
           </div>
         ) : (
           <>
-            {/* Empty state */}
-            <AnimatePresence>
-              {filtered.length === 0 && (
+            <AnimatePresence mode="wait">
+              {filtered.length === 0 ? (
                 <motion.div
                   key="empty"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="text-center py-20 text-muted-foreground"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-center py-20"
                 >
-                  <Search className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                  <p className="text-lg font-medium">Ничего не найдено</p>
-                  <p className="text-sm mt-1">Попробуйте другой запрос или сбросьте фильтры</p>
-                  <button
-                    onClick={handleReset}
-                    className="mt-4 glass glass-hover rounded-full px-6 py-2 text-sm font-medium hover:border-primary transition-all"
-                  >
-                    Сбросить
-                  </button>
+                  <Package className="w-16 h-16 mx-auto mb-4 opacity-10" />
+                  <p className="text-muted-foreground font-bold uppercase tracking-widest">Ничего не найдено</p>
+                </motion.div>
+              ) : (
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
+                >
+                  {filtered.map((product) => (
+                    <ProductCard key={product.id} product={product} onAddToCart={onAddToCart} />
+                  ))}
                 </motion.div>
               )}
             </AnimatePresence>
-
-            {/* Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {displayed.map((product) => (
-                <ProductCard key={product.id} product={product} onAddToCart={onAddToCart} />
-              ))}
-            </div>
           </>
         )}
       </div>

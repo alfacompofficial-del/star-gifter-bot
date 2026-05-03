@@ -38,8 +38,13 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
         <h3 className="text-sm font-semibold mt-1 mb-3 line-clamp-2 leading-snug">{product.name}</h3>
         <div className="flex items-end justify-between">
           <div>
-            <p className="text-lg font-extrabold">{formatPrice(product.price)} сум</p>
-            <p className="text-xs text-muted-foreground">≈ ${convertToUSD(product.price)}</p>
+            {product.old_price && (
+              <p className="text-[11px] font-bold text-red-500 line-through mb-0.5 opacity-80 decoration-2">
+                {formatPrice(product.old_price)} сум
+              </p>
+            )}
+            <p className="text-lg font-extrabold leading-none">{formatPrice(product.price)} сум</p>
+            <p className="text-[10px] text-muted-foreground mt-1 opacity-60 italic">≈ ${convertToUSD(product.price)}</p>
           </div>
           <button
             onClick={handleAdd}

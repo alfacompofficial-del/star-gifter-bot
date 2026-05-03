@@ -7,9 +7,11 @@ export interface Product {
   name: string;
   category: string;
   price: number;
+  old_price?: number | null;
   image: string;
   brand: string;
   in_stock: boolean;
+  priority?: number;
   created_at?: string;
 }
 
@@ -21,6 +23,7 @@ export const useProducts = () => {
         const { data, error } = await supabase
           .from("products")
           .select("*")
+          .order("priority", { ascending: false })
           .order("id", { ascending: true });
         
         if (error) {
