@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import productsData from "@/data/products.json";
 
 export interface Product {
   id: number;
@@ -16,26 +16,9 @@ export const useProducts = () => {
   return useQuery({
     queryKey: ["products"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("products")
-        .select("*")
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-      
-      const products = data as Product[];
-      // Хардкод фикс для картинки Archer AX72, так как RLS БД не дает изменить напрямую
-      return products.map(p => {
-        if (p.name === "Archer AX72 AX5400 Dual-Band Wi-Fi 6 Router") {
-          return { 
-            ...p, 
-            image: "https://www.jumbo-computer.com/cdn/shop/files/71zNdUCbUtL._AC_SL1500_1200x.jpg?v=1734668150" 
-          };
-        }
-        return p;
-      });
+      // Имитация загрузки из сети (для сохранения эффекта подгрузки, если нужно)
+      return productsData as Product[];
     },
-    // Keeps catalog price updates "automatic" after admin edits.
-    refetchInterval: 15000,
-    refetchIntervalInBackground: true,
+    staleTime: Infinity, // Данные статичны, обновлять их не нужно
   });
 };
