@@ -1,6 +1,5 @@
 import { useState, useMemo } from "react";
-import { RotateCcw, Search, X, Bot } from "lucide-react";
-import { motion } from "framer-motion";
+import { RotateCcw, Search, Bot } from "lucide-react";
 import ProductCard from "./ProductCard";
 import type { Product } from "@/hooks/useProducts";
 
@@ -79,12 +78,17 @@ const CatalogSection = ({ products, isLoading, onAddToCart }: CatalogSectionProp
     setTimeout(() => setIsAILoading(false), 1500);
   };
 
+  const handleReset = () => {
+    setFilter("all");
+    setSearch("");
+  };
+
   return (
     <section id="catalog" className="py-12">
       <div className="container px-4">
         <div className="text-center mb-10">
           <h2 className="text-3xl font-bold tracking-tight">Каталог товаров</h2>
-          <p className="text-muted-foreground mt-2">Лучшие предложения по актуальным ценам</p>
+          <p className="text-muted-foreground mt-2 font-medium">Актуальные цены в сумах и долларах</p>
         </div>
 
         <div className="relative max-w-md mx-auto mb-8">
@@ -94,52 +98,52 @@ const CatalogSection = ({ products, isLoading, onAddToCart }: CatalogSectionProp
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Поиск товаров..."
-              className="w-full bg-muted/50 border border-border rounded-xl pl-11 pr-20 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+              placeholder="AI поиск товаров..."
+              className="w-full bg-[#1A1F2C] border border-border rounded-xl pl-11 pr-20 py-4 text-sm outline-none focus:ring-1 focus:ring-[#00f2ff]/30 transition-all"
             />
             <button
               onClick={handleAISearch}
               disabled={isAILoading || !search.trim()}
-              className="absolute right-2 px-3 py-1.5 bg-[#00f2ff] text-black rounded-lg text-[10px] font-bold uppercase tracking-wider hover:brightness-110 disabled:opacity-50 flex items-center gap-1"
+              className="absolute right-2 px-3 py-2 bg-[#00f2ff] text-black rounded-lg text-[10px] font-bold uppercase tracking-wider disabled:opacity-50 flex items-center gap-1.5"
             >
               {isAILoading ? <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <><Bot className="w-3 h-3"/> AI</>}
             </button>
           </div>
         </div>
 
-        {/* Счетчик товаров "чуть сверху" */}
-        <div className="flex justify-center mb-4">
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground bg-muted/30 px-3 py-1 rounded-full">
-            Всего в категории: <span className="text-[#00f2ff]">{filtered.length}</span>
-          </span>
-        </div>
-
-        <div className="flex flex-wrap items-center justify-center gap-2 mb-10">
+        <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
           {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => setFilter(cat)}
-              className={`px-4 py-2 rounded-full text-xs font-medium transition-all ${
+              className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all ${
                 filter === cat 
-                  ? "bg-[#00f2ff] text-black shadow-md" 
-                  : "bg-muted text-muted-foreground hover:bg-[#00f2ff] hover:text-black"
+                  ? "bg-[#00f2ff] text-black shadow-[0_0_15px_rgba(0,242,255,0.3)]" 
+                  : "bg-[#1A1F2C] text-muted-foreground hover:bg-[#2A2F3C]"
               }`}
             >
               {cat === "all" ? "Все" : cat}
             </button>
           ))}
+        </div>
+
+        {/* Оригинальный блок счетчика (под категориями) */}
+        <div className="flex items-center justify-center gap-3 mb-10">
           <button
-            onClick={() => { setFilter("all"); setSearch(""); }}
-            className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:text-[#00f2ff] transition-all ml-2"
+            onClick={handleReset}
+            className="w-10 h-10 rounded-full bg-[#1A1F2C] flex items-center justify-center text-muted-foreground hover:text-[#00f2ff] transition-all"
           >
-            <RotateCcw className="w-3 h-3" />
+            <RotateCcw className="w-4 h-4" />
           </button>
+          <span className="text-sm font-medium text-muted-foreground">
+            Найдено: <span className="text-[#00f2ff] font-bold">{filtered.length}</span>
+          </span>
         </div>
 
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4" />
-            <p className="text-xs font-bold uppercase tracking-widest opacity-50">Загрузка...</p>
+            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+            <p className="text-xs font-bold uppercase tracking-widest opacity-50">Загрузка товаров...</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

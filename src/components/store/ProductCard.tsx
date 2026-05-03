@@ -28,7 +28,7 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
           onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }}
         />
         {product.in_stock && (
-          <span className="absolute top-2 left-2 bg-[#00f2ff] text-black text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
+          <span className="absolute top-2 left-2 bg-[#FF0080] text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">
             В наличии
           </span>
         )}
@@ -50,8 +50,8 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
           </div>
           <button
             onClick={handleAdd}
-            className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
-              added ? "bg-green-500 text-white" : "bg-primary text-primary-foreground hover:brightness-110"
+            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+              added ? "bg-green-500 text-white" : "bg-[#1A1F2C] text-white hover:bg-[#2A2F3C]"
             }`}
           >
             {added ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
