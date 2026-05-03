@@ -1,6 +1,6 @@
 import { Plus, Check } from "lucide-react";
 import { useState } from "react";
-import { formatPrice, convertToUSD, EXCHANGE_RATE } from "@/lib/constants";
+import { formatPrice, EXCHANGE_RATE } from "@/lib/constants";
 import type { Product } from "@/hooks/useProducts";
 
 interface ProductCardProps {
@@ -18,40 +18,40 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
   };
 
   return (
-    <div className="glass glass-hover rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_20px_40px_hsl(185_100%_50%/0.12)] group">
-      <div className="relative h-48 sm:h-52 bg-gradient-to-br from-muted to-card flex items-center justify-center overflow-hidden">
+    <div className="bg-card border border-border rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 group">
+      <div className="relative h-48 bg-muted/30 flex items-center justify-center p-6">
         <img
           src={product.image}
           alt={product.name}
-          className="max-w-[80%] max-h-[80%] object-contain transition-transform duration-500 group-hover:scale-110"
+          className="max-w-full max-h-full object-contain transition-transform duration-300 group-hover:scale-105"
           loading="lazy"
           onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }}
         />
         {product.in_stock && (
-          <span className="absolute top-3 left-3 bg-accent text-accent-foreground text-[11px] font-semibold px-2.5 py-1 rounded-full">
+          <span className="absolute top-2 left-2 bg-primary/90 text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
             В наличии
           </span>
         )}
       </div>
-      <div className="p-5">
-        <span className="text-[11px] font-bold uppercase tracking-wider text-primary">{product.brand}</span>
-        <h3 className="text-sm font-semibold mt-1 mb-3 line-clamp-2 leading-snug">{product.name}</h3>
-        <div className="flex items-end justify-between">
-          <div>
+      <div className="p-4">
+        <p className="text-[10px] font-bold text-primary uppercase tracking-widest mb-1">{product.brand}</p>
+        <h3 className="text-sm font-medium line-clamp-2 min-h-[40px] mb-3">{product.name}</h3>
+        <div className="flex items-end justify-between gap-2">
+          <div className="flex-1">
             {product.old_price && (
-              <p className="text-[11px] font-bold text-red-500 line-through mb-0.5 opacity-80 decoration-2">
+              <p className="text-[10px] text-red-500 line-through font-bold">
                 {formatPrice(Math.round(product.old_price * EXCHANGE_RATE))} сум
               </p>
             )}
-            <p className="text-lg font-extrabold leading-none">{formatPrice(Math.round(product.price * EXCHANGE_RATE))} сум</p>
-            <p className="text-xs text-muted-foreground mt-1">≈ ${product.price}</p>
+            <p className="text-base font-bold text-foreground">
+              {formatPrice(Math.round(product.price * EXCHANGE_RATE))} сум
+            </p>
+            <p className="text-[10px] text-muted-foreground">≈ ${product.price}</p>
           </div>
           <button
             onClick={handleAdd}
-            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-              added
-                ? "bg-primary text-primary-foreground"
-                : "glass hover:bg-primary hover:text-primary-foreground hover:scale-110"
+            className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
+              added ? "bg-green-500 text-white" : "bg-primary text-primary-foreground hover:brightness-110"
             }`}
           >
             {added ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
