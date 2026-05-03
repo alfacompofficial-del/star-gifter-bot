@@ -18,7 +18,7 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
   };
 
   return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 group">
+    <div className="bg-card border border-border rounded-xl overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-[#00f2ff]/10 group">
       <div className="relative h-48 bg-muted/30 flex items-center justify-center p-6">
         <img
           src={product.image}
@@ -51,7 +51,9 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
           <button
             onClick={handleAdd}
             className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-              added ? "bg-green-500 text-white" : "bg-[#1A1F2C] text-white hover:bg-[#2A2F3C]"
+              added 
+                ? "bg-green-500 text-white" 
+                : "bg-[#1A1F2C] text-white hover:bg-[#00f2ff] hover:text-black hover:scale-110 active:scale-95 shadow-lg"
             }`}
           >
             {added ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}

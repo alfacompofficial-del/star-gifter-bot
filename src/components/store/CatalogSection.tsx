@@ -127,15 +127,14 @@ const CatalogSection = ({ products, isLoading, onAddToCart }: CatalogSectionProp
           ))}
         </div>
 
-        {/* Оригинальный блок счетчика (под категориями) */}
-        <div className="flex items-center justify-center gap-3 mb-10">
+        <div className="flex items-center justify-start max-w-fit mx-auto gap-2.5 mb-10">
           <button
             onClick={handleReset}
-            className="w-10 h-10 rounded-full bg-[#1A1F2C] flex items-center justify-center text-muted-foreground hover:text-[#00f2ff] transition-all"
+            className="w-8 h-8 rounded-full bg-[#1A1F2C] flex items-center justify-center text-muted-foreground hover:text-[#00f2ff] transition-all"
           >
-            <RotateCcw className="w-4 h-4" />
+            <RotateCcw className="w-3.5 h-3.5" />
           </button>
-          <span className="text-sm font-medium text-muted-foreground">
+          <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">
             Найдено: <span className="text-[#00f2ff] font-bold">{filtered.length}</span>
           </span>
         </div>
