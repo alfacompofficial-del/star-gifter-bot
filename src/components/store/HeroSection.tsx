@@ -76,8 +76,8 @@ const HeroSection = () => {
           >
             <div className="relative rounded-2xl overflow-hidden shadow-2xl group">
               <img
-                src="https://images.unsplash.com/photo-1593642702821-c8da6771f0c6?auto=format&fit=crop&q=80&w=800"
-                alt="Электроника"
+                src="88f25643-9187-49bd-8459-f1fd6cde5d65.png"
+                alt="Премиальная электроника"
                 className="w-full h-auto transition-transform duration-500 group-hover:scale-105"
               />
               <div className="absolute top-4 right-4 bg-accent text-accent-foreground px-4 py-1.5 rounded-full text-sm font-semibold shadow-lg">
