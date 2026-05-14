@@ -25,13 +25,16 @@ const HeroSection = () => {
               ⚡ Официальный поставщик
             </span>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.1] mb-6 tracking-tight">
-              Премиальная Электроника в{" "}
+              Премиальная электроника, kompyuterlar va UPS в{" "}
               <span className="text-primary drop-shadow-[0_0_30px_hsl(185_100%_50%/0.3)]">
                 Узбекистане
               </span>
             </h1>
             <p className="text-base sm:text-lg text-muted-foreground mb-8 max-w-lg">
-              ИБП Ion, игровые мониторы 144–320 Гц, Wi-Fi 6/7 роутеры, SSD NVMe, RTX 50xx — всё в наличии с официальной гарантией.
+              Eng zor kompyuterlar, monitorlar, UPS (ИБП), Wi-Fi routerlar va elektronikalar. Лучшие поставщики премиальной электроники — ИБП Ion, мониторы 144–320 Гц, Wi-Fi 6/7, SSD NVMe, RTX 50xx с гарантией.
+            </p>
+            <p className="sr-only">
+              AlfaComp — eng zor kompyuterlar, monitorlar, UPS, Wi-Fi router, elektronikalar. Лучшие электроники и лучшие поставщики в Ташкенте, Узбекистан. alfacomp.uz
             </p>
 
             <div className="flex gap-8 mb-8">
