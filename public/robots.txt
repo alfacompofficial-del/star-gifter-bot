@@ -12,6 +12,6 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /admin
 
-Sitemap: https://alfacomp.uz/sitemap.xml
-
+Sitemap: https://star-gift-anon.lovable.app/sitemap.xml
