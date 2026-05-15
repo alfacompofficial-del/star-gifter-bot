@@ -87,6 +87,7 @@ const Header = ({ cartCount, onCartClick }: HeaderProps) => {
           {/* Cart */}
           <button
             onClick={onCartClick}
+            aria-label={`Открыть корзину${cartCount > 0 ? `, товаров: ${cartCount}` : ""}`}
             className="glass glass-hover rounded-lg px-3 py-2.5 flex items-center gap-2 text-sm font-medium transition-all hover:border-primary relative"
           >
             <ShoppingCart className="w-4 h-4" />
@@ -101,6 +102,8 @@ const Header = ({ cartCount, onCartClick }: HeaderProps) => {
           {/* Mobile hamburger */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label={mobileOpen ? "Закрыть меню" : "Открыть меню"}
+            aria-expanded={mobileOpen}
             className="md:hidden glass rounded-lg w-10 h-10 flex items-center justify-center"
           >
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
