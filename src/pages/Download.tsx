@@ -50,8 +50,38 @@ const DownloadPage = () => {
     "Компактный размер, быстрая загрузка",
   ];
 
+  const softwareJsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: "AlfaComp для Windows",
+      operatingSystem: "Windows 10, Windows 11",
+      applicationCategory: "BusinessApplication",
+      downloadUrl: PC_URL,
+      offers: { "@type": "Offer", price: "0", priceCurrency: "UZS" },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: "AlfaComp для Android",
+      operatingSystem: "Android 8+",
+      applicationCategory: "BusinessApplication",
+      downloadUrl: APK_URL,
+      offers: { "@type": "Offer", price: "0", priceCurrency: "UZS" },
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <Helmet>
+        <title>Скачать приложение AlfaComp для Windows и Android</title>
+        <meta name="description" content="Скачайте AlfaComp для Windows 10/11 и Android 8+. Удобный доступ к каталогу, заказам и уведомлениям." />
+        <link rel="canonical" href="https://star-gift-anon.lovable.app/download" />
+        <meta property="og:title" content="Скачать AlfaComp — приложения для Windows и Android" />
+        <meta property="og:description" content="Десктопное приложение и APK для Android. Управляйте заказами AlfaComp с компьютера и телефона." />
+        <meta property="og:url" content="https://star-gift-anon.lovable.app/download" />
+        <script type="application/ld+json">{JSON.stringify(softwareJsonLd)}</script>
+      </Helmet>
       <Header cartCount={cart.count} onCartClick={() => cart.setIsOpen(true)} />
 
       <main className="pt-28 pb-20">
