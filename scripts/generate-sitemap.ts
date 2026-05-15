@@ -1,7 +1,7 @@
 import { writeFileSync } from "fs";
 import { resolve } from "path";
 
-const BASE_URL = "https://alfacomp.uz";
+const BASE_URL = "https://star-gift-anon.lovable.app";
 
 interface SitemapEntry {
   path: string;
@@ -11,7 +11,7 @@ interface SitemapEntry {
 
 const entries: SitemapEntry[] = [
   { path: "/", changefreq: "weekly", priority: "1.0" },
-  { path: "/download", changefreq: "monthly", priority: "0.5" },
+  { path: "/download", changefreq: "monthly", priority: "0.7" },
 ];
 
 const xml = [
