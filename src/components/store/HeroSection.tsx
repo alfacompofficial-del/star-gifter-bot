@@ -25,7 +25,7 @@ const HeroSection = () => {
               ⚡ Официальный поставщик
             </span>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.1] mb-6 tracking-tight">
-              Премиальная электроника, kompyuterlar va UPS в{" "}
+              Премиальная электроника в{" "}
               <span className="text-primary drop-shadow-[0_0_30px_hsl(185_100%_50%/0.3)]">
                 Узбекистане
               </span>
@@ -76,8 +76,8 @@ const HeroSection = () => {
           >
             <div className="relative rounded-2xl overflow-hidden shadow-2xl group">
               <img
-                src="88f25643-9187-49bd-8459-f1fd6cde5d65.png"
-                alt="Премиальная электроника"
+                src="https://images.unsplash.com/photo-1593642702821-c8da6771f0c6?auto=format&fit=crop&q=80&w=800"
+                alt="Премиальная электроника — ноутбуки, мониторы, UPS"
                 className="w-full h-auto transition-transform duration-500 group-hover:scale-105"
               />
               <div className="absolute top-4 right-4 bg-accent text-accent-foreground px-4 py-1.5 rounded-full text-sm font-semibold shadow-lg">
