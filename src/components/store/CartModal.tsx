@@ -56,6 +56,7 @@ const CartModal = ({ isOpen, onClose, items, total, onUpdateQuantity, onRemove, 
                     <div className="flex items-center gap-2 mt-2">
                       <button
                         onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
+                        aria-label={`Уменьшить количество: ${item.name}`}
                         className="w-7 h-7 rounded-md glass flex items-center justify-center text-xs"
                       >
                         <Minus className="w-3 h-3" />
@@ -63,12 +64,14 @@ const CartModal = ({ isOpen, onClose, items, total, onUpdateQuantity, onRemove, 
                       <span className="text-sm font-bold w-6 text-center">{item.quantity}</span>
                       <button
                         onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                        aria-label={`Увеличить количество: ${item.name}`}
                         className="w-7 h-7 rounded-md glass flex items-center justify-center text-xs"
                       >
                         <Plus className="w-3 h-3" />
                       </button>
                       <button
                         onClick={() => onRemove(item.id)}
+                        aria-label={`Удалить из корзины: ${item.name}`}
                         className="ml-auto w-7 h-7 rounded-md hover:bg-destructive/20 flex items-center justify-center text-muted-foreground hover:text-destructive"
                       >
                         <Trash2 className="w-3 h-3" />
