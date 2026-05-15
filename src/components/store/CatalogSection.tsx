@@ -99,11 +99,13 @@ const CatalogSection = ({ products, isLoading, onAddToCart }: CatalogSectionProp
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="AI поиск товаров..."
+              aria-label="Поиск товаров"
               className="w-full bg-[#1A1F2C] border border-border rounded-xl pl-11 pr-20 py-4 text-sm outline-none focus:ring-1 focus:ring-[#00f2ff]/30 transition-all"
             />
             <button
               onClick={handleAISearch}
               disabled={isAILoading || !search.trim()}
+              aria-label="Запустить AI-поиск"
               className="absolute right-2 px-3 py-2 bg-[#00f2ff] text-black rounded-lg text-[10px] font-bold uppercase tracking-wider disabled:opacity-50 flex items-center gap-1.5"
             >
               {isAILoading ? <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <><Bot className="w-3 h-3"/> AI</>}
