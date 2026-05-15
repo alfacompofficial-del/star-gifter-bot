@@ -163,11 +163,13 @@ const AIChatWidget = () => {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && send()}
                 placeholder="Напишите сообщение..."
+                aria-label="Сообщение AI-помощнику"
                 className="flex-1 bg-muted rounded-xl px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-primary"
               />
               <button
                 onClick={send}
                 disabled={isLoading || !input.trim()}
+                aria-label="Отправить сообщение"
                 className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-50 hover:scale-105 transition-transform"
               >
                 <Send className="w-4 h-4" />
