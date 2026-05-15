@@ -16,9 +16,9 @@ import {
 } from "lucide-react";
 
 const PC_URL =
-  "https://pvbjuttgvegjfhuqlrsw.supabase.co/storage/v1/object/public/dsf//alfacomp.exe";
+  "https://kpuqkdodgcspopidfuat.supabase.co/storage/v1/object/public/app//alfacomp.exe";
 const APK_URL =
-  "https://pvbjuttgvegjfhuqlrsw.supabase.co/storage/v1/object/public/dsf//app-debug.apk";
+  "https://kpuqkdodgcspopidfuat.supabase.co/storage/v1/object/public/app//app-debug.apk";
 
 const DownloadPage = () => {
   const cart = useCart();
