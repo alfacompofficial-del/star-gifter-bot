@@ -31,7 +31,7 @@ const CartModal = ({ isOpen, onClose, items, total, onUpdateQuantity, onRemove, 
       >
         <div className="flex items-center justify-between p-5 border-b border-border">
           <h2 className="text-lg font-bold">Корзина</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center">
+          <button onClick={onClose} aria-label="Закрыть корзину" className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center">
             <X className="w-5 h-5" />
           </button>
         </div>
