@@ -50,6 +50,7 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
           </div>
           <button
             onClick={handleAdd}
+            aria-label={`Добавить в корзину: ${product.name}`}
             className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
               added 
                 ? "bg-green-500 text-white" 
