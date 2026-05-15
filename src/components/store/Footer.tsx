@@ -15,6 +15,7 @@ const Footer = () => (
               href={CONTACTS.TELEGRAM}
               target="_blank"
               rel="noopener noreferrer"
+              aria-label="Telegram AlfaComp"
               className="w-10 h-10 glass rounded-lg flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all hover:-translate-y-1"
             >
               <Send className="w-4 h-4" />
@@ -23,7 +24,7 @@ const Footer = () => (
         </div>
 
         <div>
-          <h4 className="font-bold mb-4">Навигация</h4>
+          <h3 className="font-bold mb-4">Навигация</h3>
           <ul className="space-y-2.5">
             {["Главная", "Каталог", "FAQ", "Контакты"].map((l) => (
               <li key={l}>
@@ -39,7 +40,7 @@ const Footer = () => (
         </div>
 
         <div>
-          <h4 className="font-bold mb-4">Категории</h4>
+          <h3 className="font-bold mb-4">Категории</h3>
           <ul className="space-y-2.5 text-sm text-muted-foreground">
             {["ИБП", "Мониторы", "Сеть", "Комплектующие", "Моноблоки", "Аксессуары"].map((c) => (
               <li key={c}>{c}</li>
@@ -48,7 +49,7 @@ const Footer = () => (
         </div>
 
         <div>
-          <h4 className="font-bold mb-4">Контакты</h4>
+          <h3 className="font-bold mb-4">Контакты</h3>
           <ul className="space-y-4 text-sm text-muted-foreground">
             <li className="flex gap-3"><MapPin className="w-4 h-4 shrink-0 mt-0.5" />{CONTACTS.ADDRESS}</li>
             <li className="flex gap-3"><Phone className="w-4 h-4 shrink-0 mt-0.5" /><a href={`tel:${CONTACTS.PHONE}`} className="hover:text-primary transition-colors">+998 88 320 33 33</a></li>
