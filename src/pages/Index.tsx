@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { Helmet } from "react-helmet-async";
+import { FAQ_DATA } from "@/lib/constants";
 import Header from "@/components/store/Header";
 import HeroSection from "@/components/store/HeroSection";
 import CatalogSection from "@/components/store/CatalogSection";
@@ -39,8 +41,27 @@ const Index = () => {
     };
   }, []);
 
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: FAQ_DATA.map((f) => ({
+      "@type": "Question",
+      name: f.question,
+      acceptedAnswer: { "@type": "Answer", text: f.answer },
+    })),
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <Helmet>
+        <title>AlfaComp — электроника, ИБП, мониторы и роутеры в Ташкенте</title>
+        <meta name="description" content="AlfaComp — премиальная электроника в Ташкенте: ИБП Ion, мониторы, Wi-Fi роутеры, SSD и видеокарты с гарантией и доставкой по Узбекистану." />
+        <link rel="canonical" href="https://star-gift-anon.lovable.app/" />
+        <meta property="og:title" content="AlfaComp — электроника, ИБП и мониторы в Ташкенте" />
+        <meta property="og:description" content="Премиальная электроника, ИБП Ion, мониторы, Wi-Fi роутеры и комплектующие с гарантией и доставкой по Узбекистану." />
+        <meta property="og:url" content="https://star-gift-anon.lovable.app/" />
+        <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
+      </Helmet>
       <Header cartCount={cart.count} onCartClick={() => cart.setIsOpen(true)} />
       <HeroSection />
 
