@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { Helmet } from "react-helmet-async";
+import { FAQ_DATA } from "@/lib/constants";
 import Header from "@/components/store/Header";
 import HeroSection from "@/components/store/HeroSection";
 import CatalogSection from "@/components/store/CatalogSection";
