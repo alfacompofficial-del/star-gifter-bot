@@ -3,7 +3,7 @@ import { useState, useCallback } from "react";
 import { formatPrice, EXCHANGE_RATE } from "@/lib/constants";
 import { getProductUrl } from "@/lib/slugify";
 import type { Product } from "@/hooks/useProducts";
-
+import { useFavorites } from "@/hooks/useFavorites";
 interface ProductCardProps {
   product: Product;
   onAddToCart: (product: Product) => void;
@@ -12,10 +12,8 @@ interface ProductCardProps {
 
 const ProductCard = ({ product, onAddToCart, onProductClick }: ProductCardProps) => {
   const [added, setAdded] = useState(false);
-  const [liked, setLiked] = useState(() => {
-    const likes = JSON.parse(localStorage.getItem("liked_products") || "[]");
-    return likes.includes(product.id);
-  });
+  const { items: favorites, toggleFavorite } = useFavorites();
+  const liked = favorites.includes(product.id);
   const [copied, setCopied] = useState(false);
 
   const handleAdd = (e: React.MouseEvent) => {
@@ -27,13 +25,8 @@ const ProductCard = ({ product, onAddToCart, onProductClick }: ProductCardProps)
 
   const handleLike = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    const likes: number[] = JSON.parse(localStorage.getItem("liked_products") || "[]");
-    const newLikes = likes.includes(product.id)
-      ? likes.filter((id) => id !== product.id)
-      : [...likes, product.id];
-    localStorage.setItem("liked_products", JSON.stringify(newLikes));
-    setLiked(newLikes.includes(product.id));
-  }, [product.id]);
+    toggleFavorite(product.id);
+  }, [product.id, toggleFavorite]);
 
   const handleShare = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();

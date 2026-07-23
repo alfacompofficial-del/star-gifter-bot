@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
-import { Home, LayoutGrid, Info, HelpCircle, ShoppingCart } from "lucide-react";
+import { Home, LayoutGrid, Info, HelpCircle, ShoppingCart, Heart } from "lucide-react";
 
 interface MobileBottomNavProps {
   cartCount: number;
   onCartClick: () => void;
+  favoritesCount: number;
+  onFavoritesClick: () => void;
 }
 
 const tabs = [
@@ -13,7 +15,7 @@ const tabs = [
   { label: "FAQ", icon: HelpCircle, id: "faq" },
 ];
 
-const MobileBottomNav = ({ cartCount, onCartClick }: MobileBottomNavProps) => {
+const MobileBottomNav = ({ cartCount, onCartClick, favoritesCount, onFavoritesClick }: MobileBottomNavProps) => {
   const [active, setActive] = useState("home");
 
   // Highlight active tab based on scroll position
@@ -179,6 +181,66 @@ const MobileBottomNav = ({ cartCount, onCartClick }: MobileBottomNavProps) => {
             }}
           >
             Корзина
+          </span>
+        </button>
+
+        {/* Favorites button */}
+        <button
+          onClick={onFavoritesClick}
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "4px",
+            border: "none",
+            background: "transparent",
+            cursor: "pointer",
+            padding: "6px 4px",
+            position: "relative",
+            color: favoritesCount > 0 ? "#ff0080" : "rgba(255,255,255,0.45)",
+          }}
+        >
+          <span style={{ position: "relative", display: "inline-block", overflow: "visible" }}>
+            <Heart
+              size={22}
+              strokeWidth={1.7}
+              fill={favoritesCount > 0 ? "currentColor" : "none"}
+            />
+            {favoritesCount > 0 && (
+              <span
+                style={{
+                  position: "absolute",
+                  top: "-6px",
+                  right: "-7px",
+                  background: "#00f2ff",
+                  color: "#000",
+                  fontSize: "9px",
+                  fontWeight: 900,
+                  borderRadius: "999px",
+                  minWidth: "17px",
+                  height: "17px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: "0 0 8px rgba(0,242,255,0.6)",
+                  animation: "bounce 1s infinite",
+                  zIndex: 10,
+                }}
+              >
+                {favoritesCount}
+              </span>
+            )}
+          </span>
+          <span
+            style={{
+              fontSize: "10px",
+              fontWeight: 500,
+              letterSpacing: "0.02em",
+            }}
+          >
+            Избранное
           </span>
         </button>
       </div>

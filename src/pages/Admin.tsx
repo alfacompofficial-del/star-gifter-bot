@@ -46,7 +46,7 @@ const Admin = () => {
 
   const [selectedCategory, setSelectedCategory] = useState<string>("ИБП");
   const [newProduct, setNewProduct] = useState({
-    name: "", image: "", price: "", old_price: "", category: "ИБП", brand: "", priority: "1"
+    name: "", image: "", price: "", old_price: "", category: "ИБП", brand: "", priority: "999"
   });
 
   const fetchProducts = async () => {
@@ -112,7 +112,7 @@ const Admin = () => {
       price: parseFloat(newProduct.price),
       old_price: newProduct.old_price ? parseFloat(newProduct.old_price) : null,
       image: newProduct.image || "https://via.placeholder.com/300",
-      brand: newProduct.brand || "AlfaComp",
+      brand: newProduct.brand || "Не указан",
       priority: parseInt(newProduct.priority || "999"),
       in_stock: true
     };
@@ -120,7 +120,7 @@ const Admin = () => {
     const { error } = await supabase.from("products").insert([productData]);
     if (!error) {
       toast.success("Товар добавлен!");
-      setNewProduct({ name: "", image: "", price: "", old_price: "", category: "ИБП", brand: "", priority: "1" });
+      setNewProduct({ name: "", image: "", price: "", old_price: "", category: "ИБП", brand: "", priority: "999" });
       fetchProducts();
       setTab("products");
     } else {
@@ -429,6 +429,12 @@ const Admin = () => {
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-8">
+                <input
+                  placeholder="Производитель (например: Lexar)"
+                  value={newProduct.brand}
+                  onChange={e => setNewProduct({...newProduct, brand: e.target.value})}
+                  className="w-full bg-white/5 border border-white/10 rounded-3xl p-6 outline-none focus:border-primary font-bold"
+                />
                 <select
                   value={selectedCategory}
                   onChange={e => setSelectedCategory(e.target.value)}

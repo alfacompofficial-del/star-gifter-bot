@@ -3,7 +3,7 @@ import { X, Heart, Share2, ShoppingCart, Zap, ZoomIn, CheckCircle, Copy, Check }
 import { formatPrice, EXCHANGE_RATE } from "@/lib/constants";
 import { getProductUrl } from "@/lib/slugify";
 import type { Product } from "@/hooks/useProducts";
-
+import { useFavorites } from "@/hooks/useFavorites";
 interface ProductModalProps {
   product: Product | null;
   onClose: () => void;
@@ -11,20 +11,14 @@ interface ProductModalProps {
 }
 
 const ProductModal = ({ product, onClose, onAddToCart }: ProductModalProps) => {
-  const [liked, setLiked] = useState(false);
+  const { items: favorites, toggleFavorite } = useFavorites();
+  const liked = product ? favorites.includes(product.id) : false;
   const [addedToCart, setAddedToCart] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
   const [isZooming, setIsZooming] = useState(false);
   const imgContainerRef = useRef<HTMLDivElement>(null);
-
-  // Load liked state
-  useEffect(() => {
-    if (!product) return;
-    const likes = JSON.parse(localStorage.getItem("liked_products") || "[]");
-    setLiked(likes.includes(product.id));
-  }, [product]);
 
   // SEO URL when product opens: /#/products/{category}/{id}
   useEffect(() => {
@@ -61,13 +55,8 @@ const ProductModal = ({ product, onClose, onAddToCart }: ProductModalProps) => {
 
   const handleLike = useCallback(() => {
     if (!product) return;
-    const likes: number[] = JSON.parse(localStorage.getItem("liked_products") || "[]");
-    const newLikes = likes.includes(product.id)
-      ? likes.filter((id) => id !== product.id)
-      : [...likes, product.id];
-    localStorage.setItem("liked_products", JSON.stringify(newLikes));
-    setLiked(newLikes.includes(product.id));
-  }, [product]);
+    toggleFavorite(product.id);
+  }, [product, toggleFavorite]);
 
   const handleShare = useCallback(async () => {
     if (!product) return;

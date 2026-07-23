@@ -3,8 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 // Список разрешённых IP
 const ALLOWED_ADMIN_IPS: string[] = [
-  "213.230.78.107",
-  "213.230.114.169", // Новый IP
+  "84.54.86.89",
 ];
 
 const CACHE_KEY = "admin_ip_cache_v2";
@@ -24,9 +23,11 @@ let cachedAllowed: boolean | null = getPersistedResult();
 let inflight: Promise<boolean> | null = null;
 
 const isAllowedIp = (ip: string | null): boolean => {
-  if (!ip) return false;
-  const normalized = ip.replace(/^::ffff:/, "");
-  return ALLOWED_ADMIN_IPS.includes(normalized);
+  // Защита: админка открывается только если сайт запущен локально (localhost)
+  if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+    return true;
+  }
+  return false;
 };
 
 const logVisit = async (info: {

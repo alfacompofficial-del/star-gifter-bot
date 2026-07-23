@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
-import { ShoppingCart, Download } from "lucide-react";
+import { ShoppingCart, Download, Heart } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 interface HeaderProps {
   cartCount: number;
   onCartClick: () => void;
+  favoritesCount: number;
+  onFavoritesClick: () => void;
 }
 
-const Header = ({ cartCount, onCartClick }: HeaderProps) => {
+const Header = ({ cartCount, onCartClick, favoritesCount, onFavoritesClick }: HeaderProps) => {
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
   const isHome = location.pathname === "/";
@@ -81,19 +83,36 @@ const Header = ({ cartCount, onCartClick }: HeaderProps) => {
             Приложение
           </Link>
 
-          <button
-            onClick={onCartClick}
-            aria-label={`Корзина, товаров: ${cartCount}`}
-            className="relative flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-sm font-semibold bg-[#00f2ff]/10 border border-[#00f2ff]/20 hover:bg-[#00f2ff]/20 hover:border-[#00f2ff]/40 text-[#00f2ff] transition-all btn-premium group"
-          >
-            <ShoppingCart className="w-4 h-4 group-hover:scale-110 transition-transform" />
-            <span className="hidden sm:inline">Корзина</span>
+          <div className="relative">
+            <button
+              onClick={onFavoritesClick}
+              aria-label={`Избранное, товаров: ${favoritesCount}`}
+              className="relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/5 border border-white/10 hover:bg-[#ff0080]/10 hover:border-[#ff0080]/30 hover:text-[#ff0080] text-white/70 transition-all group"
+            >
+              <Heart className="w-4 h-4 sm:w-5 sm:h-5 group-hover:scale-110 transition-transform" />
+            </button>
+            {favoritesCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 bg-[#ff0080] text-white text-[10px] font-black rounded-full w-5 h-5 flex items-center justify-center shadow-lg shadow-[#ff0080]/50 animate-bounce pointer-events-none z-10">
+                {favoritesCount}
+              </span>
+            )}
+          </div>
+
+          <div className="relative">
+            <button
+              onClick={onCartClick}
+              aria-label={`Корзина, товаров: ${cartCount}`}
+              className="relative flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-sm font-semibold bg-[#00f2ff]/10 border border-[#00f2ff]/20 hover:bg-[#00f2ff]/20 hover:border-[#00f2ff]/40 text-[#00f2ff] transition-all btn-premium group"
+            >
+              <ShoppingCart className="w-4 h-4 group-hover:scale-110 transition-transform" />
+              <span className="hidden sm:inline">Корзина</span>
+            </button>
             {cartCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 bg-[#ff0080] text-white text-[10px] font-black rounded-full w-5 h-5 flex items-center justify-center shadow-lg shadow-[#ff0080]/50 animate-bounce">
+              <span className="absolute -top-1.5 -right-1.5 bg-[#ff0080] text-white text-[10px] font-black rounded-full w-5 h-5 flex items-center justify-center shadow-lg shadow-[#ff0080]/50 animate-bounce pointer-events-none z-10">
                 {cartCount}
               </span>
             )}
-          </button>
+          </div>
 
           {/* Mobile: Download App button */}
           <Link

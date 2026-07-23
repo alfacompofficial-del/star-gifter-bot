@@ -16,6 +16,8 @@ import ProductModal from "@/components/store/ProductModal";
 import { useCart } from "@/hooks/useCart";
 import { useProducts } from "@/hooks/useProducts";
 import { useAdminAccess } from "@/hooks/useAdminAccess";
+import { useFavorites } from "@/hooks/useFavorites";
+import FavoritesModal from "@/components/store/FavoritesModal";
 import { parseProductHash } from "@/lib/slugify";
 import type { Product } from "@/hooks/useProducts";
 
@@ -26,6 +28,7 @@ import { ref, increment, update } from "firebase/database";
 
 const Index = () => {
   const cart = useCart();
+  const favorites = useFavorites();
   const { data: products = [], isLoading } = useProducts();
   const isAdmin = useAdminAccess();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -93,7 +96,12 @@ const Index = () => {
           </Link>
         </div>
       )}
-      <Header cartCount={cart.count} onCartClick={() => cart.setIsOpen(true)} />
+      <Header 
+        cartCount={cart.count} 
+        onCartClick={() => cart.setIsOpen(true)} 
+        favoritesCount={favorites.count}
+        onFavoritesClick={() => favorites.setIsOpen(true)}
+      />
       <HeroSection />
 
       <CatalogSection
@@ -139,7 +147,27 @@ const Index = () => {
       <AIChatWidget />
 
       {/* Mobile bottom navigation */}
-      <MobileBottomNav cartCount={cart.count} onCartClick={() => cart.setIsOpen(true)} />
+      <MobileBottomNav 
+        cartCount={cart.count} 
+        onCartClick={() => cart.setIsOpen(true)} 
+        favoritesCount={favorites.count}
+        onFavoritesClick={() => favorites.setIsOpen(true)}
+      />
+
+      <FavoritesModal
+        isOpen={favorites.isOpen}
+        onClose={() => favorites.setIsOpen(false)}
+        items={favorites.items}
+        products={products}
+        onRemove={favorites.toggleFavorite}
+        onClear={favorites.clearFavorites}
+        onAddToCart={(p) => cart.addItem({
+          id: p.id,
+          name: p.name,
+          price: p.price,
+          image: p.image
+        })}
+      />
     </div>
   );
 };
