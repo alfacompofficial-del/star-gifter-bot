@@ -2,6 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import productsData from "@/data/products.json";
 
+export interface ProductSpec {
+  key: string;
+  value: string;
+}
+
 export interface Product {
   id: number;
   name: string;
@@ -12,8 +17,10 @@ export interface Product {
   brand: string;
   in_stock: boolean;
   priority?: number;
+  specs?: ProductSpec[] | null;
   created_at?: string;
 }
+
 
 export const useProducts = () => {
   return useQuery({

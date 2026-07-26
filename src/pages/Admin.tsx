@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Trash2, Search, Upload, Check, X, Pencil } from "lucide-react";
+import { ArrowLeft, Trash2, Search, Upload, Check, X, Pencil, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { EXCHANGE_RATE, formatPrice } from "@/lib/constants";
@@ -24,6 +24,25 @@ const flagEmoji = (code?: string | null) => {
   return String.fromCodePoint(...[...cc].map(c => 127397 + c.charCodeAt(0)));
 };
 
+// ── Undo-aware save helper ────────────────────────────────────────
+const withUndo = (
+  label: string,
+  saveNew: () => Promise<void>,
+  revertOld: () => Promise<void>
+) => {
+  saveNew().then(() => {
+    toast.success(label, {
+      duration: 5000,
+      action: {
+        label: "Отменить",
+        onClick: () => {
+          revertOld().then(() => toast.info("Изменение отменено"));
+        },
+      },
+    });
+  }).catch(() => toast.error("Ошибка сохранения"));
+};
+
 const Admin = () => {
   const [tab, setTab] = useState<"products" | "add" | "stats">("products");
   const [visitors, setVisitors] = useState<VisitorRow[]>([]);
@@ -33,14 +52,24 @@ const Admin = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Inline price editing
+  // ── Inline name editing ───────────────────────────────────────
+  const [editingNameId, setEditingNameId] = useState<number | null>(null);
+  const [editingNameValue, setEditingNameValue] = useState<string>("");
+
+  // ── Inline price editing ──────────────────────────────────────
   const [editingPriceId, setEditingPriceId] = useState<number | null>(null);
   const [editingPriceValue, setEditingPriceValue] = useState<string>("");
 
-  // Inline image uploading
+  // ── Inline image uploading ────────────────────────────────────
   const [uploadingImageId, setUploadingImageId] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const currentUploadProductId = useRef<number | null>(null);
+
+  // ── Drag-and-drop ─────────────────────────────────────────────
+  const [dragId, setDragId] = useState<number | null>(null);
+  const [dragOverId, setDragOverId] = useState<number | null>(null);
+  const dragIndexRef = useRef<number | null>(null);
+  const dropIndexRef = useRef<number | null>(null);
 
   const navigate = useNavigate();
 
@@ -56,14 +85,11 @@ const Admin = () => {
       .select("*")
       .order("priority", { ascending: true })
       .order("id", { ascending: true });
-
     if (!error) setProducts(data || []);
     setLoading(false);
   };
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
+  useEffect(() => { fetchProducts(); }, []);
 
   const fetchVisitors = async () => {
     setVisitorsLoading(true);
@@ -76,9 +102,7 @@ const Admin = () => {
     setVisitorsLoading(false);
   };
 
-  useEffect(() => {
-    if (tab === "stats") fetchVisitors();
-  }, [tab]);
+  useEffect(() => { if (tab === "stats") fetchVisitors(); }, [tab]);
 
   const visitorStats = useMemo(() => {
     const q = visitorSearch.trim().toLowerCase();
@@ -98,14 +122,11 @@ const Admin = () => {
     return { filtered, uniqueIps, topCountries };
   }, [visitors, visitorSearch]);
 
-
-
-
+  // ── Add product ───────────────────────────────────────────────
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProduct.name || !newProduct.price) return toast.error("Заполните цену в долларах!");
     setLoading(true);
-
     const productData = {
       name: newProduct.name,
       category: selectedCategory,
@@ -116,7 +137,6 @@ const Admin = () => {
       priority: parseInt(newProduct.priority || "999"),
       in_stock: true
     };
-
     const { error } = await supabase.from("products").insert([productData]);
     if (!error) {
       toast.success("Товар добавлен!");
@@ -129,16 +149,63 @@ const Admin = () => {
     setLoading(false);
   };
 
+  // ── Delete product ────────────────────────────────────────────
   const handleDeleteProduct = async (id: number) => {
-    if (!window.confirm("Удалить?")) return;
-    const { error } = await supabase.from("products").delete().eq("id", id);
-    if (!error) fetchProducts();
+    if (!window.confirm("Удалить товар?")) return;
+    const deleted = products.find(p => p.id === id);
+    await supabase.from("products").delete().eq("id", id);
+    setProducts(prev => prev.filter(p => p.id !== id));
+    toast.success("Товар удалён", {
+      duration: 5000,
+      action: {
+        label: "Отменить",
+        onClick: async () => {
+          if (!deleted) return;
+          const { id: _id, ...rest } = deleted;
+          await supabase.from("products").insert([{ id: _id, ...rest }]);
+          fetchProducts();
+          toast.info("Удаление отменено");
+        },
+      },
+    });
   };
+
+  // ── Inline name editing ───────────────────────────────────────
+  const startEditName = (p: any) => {
+    setEditingNameId(p.id);
+    setEditingNameValue(p.name);
+    setEditingPriceId(null);
+  };
+
+  const cancelEditName = () => {
+    setEditingNameId(null);
+    setEditingNameValue("");
+  };
+
+  const saveEditName = useCallback(async (id: number) => {
+    const trimmed = editingNameValue.trim();
+    if (!trimmed) return toast.error("Название не может быть пустым");
+    const oldName = products.find(p => p.id === id)?.name ?? "";
+    if (trimmed === oldName) { cancelEditName(); return; }
+
+    setProducts(prev => prev.map(p => p.id === id ? { ...p, name: trimmed } : p));
+    cancelEditName();
+
+    withUndo(
+      `Название изменено → «${trimmed}»`,
+      async () => { await supabase.from("products").update({ name: trimmed }).eq("id", id); },
+      async () => {
+        await supabase.from("products").update({ name: oldName }).eq("id", id);
+        setProducts(prev => prev.map(p => p.id === id ? { ...p, name: oldName } : p));
+      }
+    );
+  }, [editingNameValue, products]);
 
   // ── Inline price editing ──────────────────────────────────────
   const startEditPrice = (p: any) => {
     setEditingPriceId(p.id);
     setEditingPriceValue(String(p.price));
+    setEditingNameId(null);
   };
 
   const cancelEditPrice = () => {
@@ -146,18 +213,24 @@ const Admin = () => {
     setEditingPriceValue("");
   };
 
-  const saveEditPrice = async (id: number) => {
+  const saveEditPrice = useCallback(async (id: number) => {
     const val = parseFloat(editingPriceValue);
     if (isNaN(val) || val <= 0) return toast.error("Введите корректную цену");
-    const { error } = await supabase.from("products").update({ price: val }).eq("id", id);
-    if (!error) {
-      toast.success("Цена обновлена!");
-      setProducts(prev => prev.map(p => p.id === id ? { ...p, price: val } : p));
-      cancelEditPrice();
-    } else {
-      toast.error("Ошибка сохранения");
-    }
-  };
+    const oldPrice = products.find(p => p.id === id)?.price ?? 0;
+    if (val === oldPrice) { cancelEditPrice(); return; }
+
+    setProducts(prev => prev.map(p => p.id === id ? { ...p, price: val } : p));
+    cancelEditPrice();
+
+    withUndo(
+      `Цена изменена → $${val}`,
+      async () => { await supabase.from("products").update({ price: val }).eq("id", id); },
+      async () => {
+        await supabase.from("products").update({ price: oldPrice }).eq("id", id);
+        setProducts(prev => prev.map(p => p.id === id ? { ...p, price: oldPrice } : p));
+      }
+    );
+  }, [editingPriceValue, products]);
 
   // ── Inline image upload ───────────────────────────────────────
   const handleImageClick = (productId: number) => {
@@ -169,49 +242,94 @@ const Admin = () => {
     const file = e.target.files?.[0];
     const productId = currentUploadProductId.current;
     if (!file || !productId) return;
-
-    // Reset input so same file can be re-selected
     e.target.value = "";
-
-    // Validate file type
-    if (!file.type.startsWith("image/")) {
-      return toast.error("Выберите файл изображения");
-    }
-
-    // Max 5MB
-    if (file.size > 5 * 1024 * 1024) {
-      return toast.error("Файл слишком большой (макс. 5MB)");
-    }
-
+    if (!file.type.startsWith("image/")) return toast.error("Выберите файл изображения");
+    if (file.size > 5 * 1024 * 1024) return toast.error("Файл слишком большой (макс. 5MB)");
     setUploadingImageId(productId);
-
+    const oldImage = products.find(p => p.id === productId)?.image ?? "";
     try {
-      // Convert image to base64 data URL
       const reader = new FileReader();
       reader.onload = async (ev) => {
         const dataUrl = ev.target?.result as string;
-
-        const { error } = await supabase
-          .from("products")
-          .update({ image: dataUrl })
-          .eq("id", productId);
-
-        if (!error) {
-          toast.success("Фото обновлено!");
-          setProducts(prev =>
-            prev.map(p => p.id === productId ? { ...p, image: dataUrl } : p)
-          );
-        } else {
-          toast.error("Ошибка загрузки фото");
-        }
+        setProducts(prev => prev.map(p => p.id === productId ? { ...p, image: dataUrl } : p));
         setUploadingImageId(null);
         currentUploadProductId.current = null;
+        withUndo(
+          "Фото обновлено",
+          async () => { await supabase.from("products").update({ image: dataUrl }).eq("id", productId); },
+          async () => {
+            await supabase.from("products").update({ image: oldImage }).eq("id", productId);
+            setProducts(prev => prev.map(p => p.id === productId ? { ...p, image: oldImage } : p));
+          }
+        );
       };
       reader.readAsDataURL(file);
     } catch {
       toast.error("Ошибка при обработке файла");
       setUploadingImageId(null);
     }
+  };
+
+  // ── Drag-and-drop reorder ─────────────────────────────────────
+  const handleDragStart = (e: React.DragEvent, id: number, index: number) => {
+    setDragId(id);
+    dragIndexRef.current = index;
+    e.dataTransfer.effectAllowed = "move";
+    // Set a ghost image so browser drag preview shows nicely
+    const el = (e.currentTarget as HTMLElement).closest("tr");
+    if (el) e.dataTransfer.setDragImage(el, 40, 20);
+  };
+
+  const handleDragOver = (e: React.DragEvent, id: number, index: number) => {
+    e.preventDefault();
+    setDragOverId(id);
+    dropIndexRef.current = index;
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetId: number) => {
+    e.preventDefault();
+    if (dragId === null || dragId === targetId) {
+      setDragId(null);
+      setDragOverId(null);
+      return;
+    }
+
+    // Reorder locally
+    const from = products.findIndex(p => p.id === dragId);
+    const to = products.findIndex(p => p.id === targetId);
+    if (from === -1 || to === -1) return;
+
+    const reordered = [...products];
+    const [moved] = reordered.splice(from, 1);
+    reordered.splice(to, 0, moved);
+
+    // Assign new priorities based on position
+    const updated = reordered.map((p, idx) => ({ ...p, priority: idx + 1 }));
+    const oldProducts = [...products];
+
+    setProducts(updated);
+    setDragId(null);
+    setDragOverId(null);
+
+    withUndo(
+      "Порядок товаров изменён",
+      async () => {
+        await Promise.all(
+          updated.map(p => supabase.from("products").update({ priority: p.priority }).eq("id", p.id))
+        );
+      },
+      async () => {
+        setProducts(oldProducts);
+        await Promise.all(
+          oldProducts.map(p => supabase.from("products").update({ priority: p.priority }).eq("id", p.id))
+        );
+      }
+    );
+  };
+
+  const handleDragEnd = () => {
+    setDragId(null);
+    setDragOverId(null);
   };
 
   const filteredProducts = useMemo(() => {
@@ -221,10 +339,7 @@ const Admin = () => {
     );
   }, [products, searchQuery]);
 
-
-
-
-  // ── Main admin panel ──────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-[#080808] text-white">
       {/* Hidden file input */}
@@ -272,9 +387,11 @@ const Admin = () => {
         {tab === "products" && (
           <div className="space-y-8">
             {/* Hints */}
-            <div className="flex gap-6 text-xs text-white/40 font-bold px-2">
-              <span className="flex items-center gap-2"><Upload className="w-3.5 h-3.5 text-primary/70"/>Нажмите на фото чтобы загрузить новое</span>
+            <div className="flex flex-wrap gap-6 text-xs text-white/40 font-bold px-2">
+              <span className="flex items-center gap-2"><GripVertical className="w-3.5 h-3.5 text-white/40"/>Тащите строку чтобы изменить порядок</span>
+              <span className="flex items-center gap-2"><Pencil className="w-3.5 h-3.5 text-emerald-400/70"/>Нажмите на название чтобы изменить</span>
               <span className="flex items-center gap-2"><Pencil className="w-3.5 h-3.5 text-blue-400/70"/>Нажмите на цену чтобы изменить</span>
+              <span className="flex items-center gap-2"><Upload className="w-3.5 h-3.5 text-primary/70"/>Нажмите на фото чтобы загрузить новое</span>
             </div>
 
             <div className="relative">
@@ -291,6 +408,7 @@ const Admin = () => {
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-white/[0.02] text-[10px] uppercase font-black tracking-[0.2em] text-muted-foreground border-b border-white/5">
+                    <th className="p-8 w-10"></th>
                     <th className="p-8">Товар</th>
                     <th className="p-8 text-right">Цена USD ($)</th>
                     <th className="p-8 text-right">Цена СУМ (авто)</th>
@@ -298,8 +416,34 @@ const Admin = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                  {filteredProducts.map(p => (
-                    <tr key={p.id} className="hover:bg-white/[0.01] transition-colors group">
+                  {filteredProducts.map((p, index) => (
+                    <tr
+                      key={p.id}
+                      onDragOver={e => handleDragOver(e, p.id, index)}
+                      onDrop={e => handleDrop(e, p.id)}
+                      onDragEnd={handleDragEnd}
+                      className={`transition-colors group select-none ${
+                        dragId === p.id
+                          ? "opacity-40 bg-white/5"
+                          : dragOverId === p.id
+                          ? "bg-primary/10 border-l-4 border-primary"
+                          : "hover:bg-white/[0.01]"
+                      }`}
+                    >
+                      {/* Drag handle — ТОЛЬКО отсюда начинается drag */}
+                      <td
+                        className="pl-6 pr-0"
+                        draggable
+                        onDragStart={e => handleDragStart(e, p.id, index)}
+                        onDragEnd={handleDragEnd}
+                      >
+                        <div
+                          className="cursor-grab active:cursor-grabbing text-white/30 hover:text-primary transition-colors flex items-center justify-center w-10 h-10 rounded-xl hover:bg-primary/10 border border-transparent hover:border-primary/30"
+                          title="Потяните чтобы изменить порядок"
+                        >
+                          <GripVertical className="w-5 h-5 pointer-events-none"/>
+                        </div>
+                      </td>
 
                       {/* Image + Name */}
                       <td className="p-8 flex items-center gap-6">
@@ -326,8 +470,46 @@ const Admin = () => {
                             </>
                           )}
                         </div>
-                        <div>
-                          <div className="font-black text-white text-lg">{p.name}</div>
+
+                        {/* Editable name */}
+                        <div className="flex-1 min-w-0">
+                          {editingNameId === p.id ? (
+                            <div className="flex items-center gap-2">
+                              <input
+                                autoFocus
+                                value={editingNameValue}
+                                onChange={e => setEditingNameValue(e.target.value)}
+                                onKeyDown={e => {
+                                  if (e.key === "Enter") saveEditName(p.id);
+                                  if (e.key === "Escape") cancelEditName();
+                                }}
+                                className="flex-1 bg-white/10 border border-emerald-400/50 rounded-xl px-3 py-2 font-black text-base text-white outline-none focus:border-emerald-400"
+                              />
+                              <button
+                                onClick={() => saveEditName(p.id)}
+                                className="w-9 h-9 flex items-center justify-center bg-green-500/20 text-green-400 rounded-xl hover:bg-green-500 hover:text-white transition-all"
+                              >
+                                <Check className="w-4 h-4"/>
+                              </button>
+                              <button
+                                onClick={cancelEditName}
+                                className="w-9 h-9 flex items-center justify-center bg-red-500/20 text-red-400 rounded-xl hover:bg-red-500 hover:text-white transition-all"
+                              >
+                                <X className="w-4 h-4"/>
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => startEditName(p)}
+                              className="text-left group/name flex items-start gap-2 w-full"
+                              title="Нажмите чтобы изменить название"
+                            >
+                              <span className="font-black text-white text-lg leading-tight group-hover/name:text-emerald-400 transition-colors">
+                                {p.name}
+                              </span>
+                              <Pencil className="w-3.5 h-3.5 opacity-0 group-hover/name:opacity-60 transition-opacity mt-1 flex-shrink-0 text-emerald-400"/>
+                            </button>
+                          )}
                           <div className="text-[10px] font-bold text-primary uppercase mt-2">POS: {p.priority} | {p.brand}</div>
                         </div>
                       </td>

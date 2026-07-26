@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { RotateCcw, Search, Bot, Filter, Sparkles } from "lucide-react";
+import { RotateCcw, Search, Bot, Filter, Sparkles, GripVertical } from "lucide-react";
 import ProductCard from "./ProductCard";
 import type { Product } from "@/hooks/useProducts";
 import { motion } from "framer-motion";
@@ -9,6 +9,8 @@ interface CatalogSectionProps {
   isLoading?: boolean;
   onAddToCart: (product: Product) => void;
   onProductClick?: (product: Product) => void;
+  isAdmin?: boolean;
+  onReorder?: (reordered: { id: number; priority: number }[]) => Promise<void>;
 }
 
 const CATEGORY_ORDER = [
@@ -24,10 +26,14 @@ const CATEGORY_ORDER = [
   "Wi-Fi роутеры"
 ];
 
-const CatalogSection = ({ products, isLoading, onAddToCart, onProductClick }: CatalogSectionProps) => {
+const CatalogSection = ({ products, isLoading, onAddToCart, onProductClick, isAdmin = false, onReorder }: CatalogSectionProps) => {
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [isAILoading, setIsAILoading] = useState(false);
+
+  // ── Drag-and-drop state ────────────────────────────────────────
+  const [dragId, setDragId] = useState<number | null>(null);
+  const [dragOverId, setDragOverId] = useState<number | null>(null);
 
   const categories = useMemo(() => {
     const cats = [...new Set(products.map((p) => p.category))];
@@ -85,6 +91,46 @@ const CatalogSection = ({ products, isLoading, onAddToCart, onProductClick }: Ca
     setSearch("");
   };
 
+  // ── Drag-and-drop handlers ────────────────────────────────────
+  const handleDragStart = (e: React.DragEvent, id: number) => {
+    if (!isAdmin) return;
+    setDragId(id);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e: React.DragEvent, id: number) => {
+    if (!isAdmin) return;
+    e.preventDefault();
+    setDragOverId(id);
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetId: number) => {
+    e.preventDefault();
+    if (!isAdmin || dragId === null || dragId === targetId) {
+      setDragId(null);
+      setDragOverId(null);
+      return;
+    }
+
+    const from = filtered.findIndex(p => p.id === dragId);
+    const to = filtered.findIndex(p => p.id === targetId);
+    if (from === -1 || to === -1) { setDragId(null); setDragOverId(null); return; }
+
+    const reordered = [...filtered];
+    const [moved] = reordered.splice(from, 1);
+    reordered.splice(to, 0, moved);
+
+    const updates = reordered.map((p, idx) => ({ id: p.id, priority: idx + 1 }));
+    setDragId(null);
+    setDragOverId(null);
+    if (onReorder) await onReorder(updates);
+  };
+
+  const handleDragEnd = () => {
+    setDragId(null);
+    setDragOverId(null);
+  };
+
   return (
     <section id="catalog" className="py-16 sm:py-24 relative">
       <div className="container px-4 sm:px-6 lg:px-8">
@@ -96,6 +142,14 @@ const CatalogSection = ({ products, isLoading, onAddToCart, onProductClick }: Ca
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight mb-4 text-white">Каталог товаров</h2>
           <p className="text-white/50 text-base sm:text-lg max-w-2xl mx-auto font-medium px-2">Актуальные цены в сумах и долларах. Напрямую от производителя.</p>
         </div>
+
+        {/* Admin drag hint */}
+        {isAdmin && (
+          <div className="flex items-center justify-center gap-2 mb-4 text-xs text-primary/70 font-bold">
+            <GripVertical className="w-4 h-4" />
+            <span>Режим администратора — перетащите карточки чтобы изменить порядок</span>
+          </div>
+        )}
 
         {/* Filters and Search Bar */}
         <div className="glass rounded-2xl sm:rounded-3xl p-4 sm:p-6 mb-8 sm:mb-12 shadow-2xl relative z-10">
@@ -116,7 +170,7 @@ const CatalogSection = ({ products, isLoading, onAddToCart, onProductClick }: Ca
                 disabled={isAILoading || !search.trim()}
                 className="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-2 bg-gradient-to-r from-[#00f2ff] to-[#009dff] text-black rounded-xl text-xs font-black uppercase tracking-wider disabled:opacity-50 flex items-center gap-2 hover:shadow-[0_0_15px_rgba(0,242,255,0.4)] transition-all"
               >
-                {isAILoading ? <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <><Bot className="w-4 h-4"/> AI поиск</>}
+                {isAILoading ? <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <><Bot className="w-4 h-4"/>AI поиск</>}
               </button>
             </div>
 
@@ -182,7 +236,35 @@ const CatalogSection = ({ products, isLoading, onAddToCart, onProductClick }: Ca
             transition={{ duration: 0.5 }}
           >
             {filtered.map((product) => (
-              <ProductCard key={product.id} product={product} onAddToCart={onAddToCart} onProductClick={onProductClick} />
+              <div
+                key={product.id}
+                draggable={isAdmin}
+                onDragStart={isAdmin ? (e) => handleDragStart(e, product.id) : undefined}
+                onDragOver={isAdmin ? (e) => handleDragOver(e, product.id) : undefined}
+                onDrop={isAdmin ? (e) => handleDrop(e, product.id) : undefined}
+                onDragEnd={isAdmin ? handleDragEnd : undefined}
+                className={`relative transition-all duration-200 ${
+                  isAdmin ? "cursor-grab active:cursor-grabbing" : ""
+                } ${
+                  dragId === product.id
+                    ? "opacity-40 scale-95"
+                    : dragOverId === product.id
+                    ? "ring-2 ring-primary ring-offset-2 ring-offset-transparent scale-105"
+                    : ""
+                }`}
+              >
+                {/* Admin drag handle indicator */}
+                {isAdmin && (
+                  <div className="absolute top-2 left-2 z-30 w-7 h-7 bg-primary/20 border border-primary/30 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
+                    <GripVertical className="w-3.5 h-3.5 text-primary" />
+                  </div>
+                )}
+                <ProductCard
+                  product={product}
+                  onAddToCart={onAddToCart}
+                  onProductClick={onProductClick}
+                />
+              </div>
             ))}
           </motion.div>
         )}

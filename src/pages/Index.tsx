@@ -24,14 +24,49 @@ import type { Product } from "@/hooks/useProducts";
 // ПОДКЛЮЧАЕМ FIREBASE
 import { database } from "../firebaseConfig";
 import { ref, increment, update } from "firebase/database";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 
 const Index = () => {
   const cart = useCart();
   const favorites = useFavorites();
-  const { data: products = [], isLoading } = useProducts();
+  const { data: products = [], isLoading, refetch: refetchProducts } = useProducts();
   const isAdmin = useAdminAccess();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  const handleProductUpdated = (updated: Product) => {
+    setSelectedProduct(updated);
+  };
+
+  const handleReorder = async (updates: { id: number; priority: number }[]) => {
+    const oldProducts = [...products];
+    try {
+      await Promise.all(
+        updates.map(({ id, priority }) =>
+          supabase.from("products").update({ priority }).eq("id", id)
+        )
+      );
+      toast.success("Порядок товаров изменён", {
+        duration: 5000,
+        action: {
+          label: "Отменить",
+          onClick: async () => {
+            await Promise.all(
+              oldProducts.map(p =>
+                supabase.from("products").update({ priority: p.priority }).eq("id", p.id)
+              )
+            );
+            refetchProducts();
+            toast.info("Порядок восстановлен");
+          },
+        },
+      });
+      refetchProducts();
+    } catch {
+      toast.error("Ошибка при изменении порядка");
+    }
+  };
 
   // Реальная статистика (только если Firebase настроен)
   useEffect(() => {
@@ -114,6 +149,8 @@ const Index = () => {
           image: p.image
         })}
         onProductClick={(p) => setSelectedProduct(p)}
+        isAdmin={!!isAdmin}
+        onReorder={handleReorder}
       />
 
       <FeaturesSection />
@@ -141,6 +178,8 @@ const Index = () => {
             price: p.price,
             image: p.image
           })}
+          isAdmin={!!isAdmin}
+          onProductUpdated={handleProductUpdated}
         />
       )}
 
