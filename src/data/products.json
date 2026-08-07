@@ -1,0 +1,1242 @@
+[
+  {
+    "id": 1,
+    "name": "Ion 600t-33",
+    "category": "ИБП",
+    "price": 32.96,
+    "image": "https://mtca.uz/image/cache/catalog/product/ups/ion-a_series_1-228x228.jpg",
+    "brand": "Ion",
+    "in_stock": true,
+    "priority": 1
+  },
+  {
+    "id": 2,
+    "name": "Ion a600-35",
+    "category": "ИБП",
+    "price": 34.95,
+    "image": "https://mtca.uz/image/cache/catalog/product/ups/ion-a_series_1-228x228.jpg",
+    "brand": "Ion",
+    "in_stock": true,
+    "priority": 2
+  },
+  {
+    "id": 3,
+    "name": "Ion a800-46",
+    "category": "ИБП",
+    "price": 45.94,
+    "image": "https://mtca.uz/image/cache/catalog/product/ups/ion-a_series_1-228x228.jpg",
+    "brand": "Ion",
+    "in_stock": true,
+    "priority": 3
+  },
+  {
+    "id": 4,
+    "name": "Ion a1500-105",
+    "category": "ИБП",
+    "price": 104.86,
+    "image": "https://mtca.uz/image/cache/catalog/product/ups/ion-a_series_1-228x228.jpg",
+    "brand": "Ion",
+    "in_stock": true,
+    "priority": 4
+  },
+  {
+    "id": 5,
+    "name": "Ion a2000-145",
+    "category": "ИБП",
+    "price": 144.8,
+    "image": "https://mtca.uz/image/cache/catalog/product/ups/ion-a_series_1-228x228.jpg",
+    "brand": "Ion",
+    "in_stock": true,
+    "priority": 5
+  },
+  {
+    "id": 6,
+    "name": "Ion v650 -41",
+    "category": "ИБП",
+    "price": 40.94,
+    "image": "https://mtca.uz/image/cache/catalog/product/ups/ion-v_series650-800-700x500.jpg",
+    "brand": "Ion",
+    "in_stock": true,
+    "priority": 6
+  },
+  {
+    "id": 7,
+    "name": "Ion v850-54",
+    "category": "ИБП",
+    "price": 53.93,
+    "image": "https://mtca.uz/image/cache/catalog/product/ups/ion-v_series650-800-700x500.jpg",
+    "brand": "Ion",
+    "in_stock": true,
+    "priority": 7
+  },
+  {
+    "id": 8,
+    "name": "Ion v1000t-67",
+    "category": "ИБП",
+    "price": 66.91,
+    "image": "https://mtca.uz/image/cache/catalog/product/ups/ion-v_series650-800-700x500.jpg",
+    "brand": "Ion",
+    "in_stock": true,
+    "priority": 8
+  },
+  {
+    "id": 9,
+    "name": "Ion v1000-78",
+    "category": "ИБП",
+    "price": 77.89,
+    "image": "https://mtca.uz/image/cache/catalog/product/ups/ion-v_series650-800-700x500.jpg",
+    "brand": "Ion",
+    "in_stock": true,
+    "priority": 9
+  },
+  {
+    "id": 10,
+    "name": "Ion v1000lcd 85",
+    "category": "ИБП",
+    "price": 84.88,
+    "image": "https://mtca.uz/image/cache/catalog/product/ups/ion-v_series650-800-700x500.jpg",
+    "brand": "Ion",
+    "in_stock": true,
+    "priority": 10
+  },
+  {
+    "id": 11,
+    "name": "Ion v1200t-88",
+    "category": "ИБП",
+    "price": 87.88,
+    "image": "https://mtca.uz/image/cache/catalog/product/ups/ion-v_series650-800-700x500.jpg",
+    "brand": "Ion",
+    "in_stock": true,
+    "priority": 11
+  },
+  {
+    "id": 12,
+    "name": "Ion v2000-185",
+    "category": "ИБП",
+    "price": 184.75,
+    "image": "https://mtca.uz/image/cache/catalog/product/ups/ion-v_series650-800-700x500.jpg",
+    "brand": "Ion",
+    "in_stock": true,
+    "priority": 12
+  },
+  {
+    "id": 13,
+    "name": "Ion v2000lcd -190",
+    "category": "ИБП",
+    "price": 189.74,
+    "image": "https://mtca.uz/image/cache/catalog/product/ups/ion-v_series650-800-700x500.jpg",
+    "brand": "Ion",
+    "in_stock": true,
+    "priority": 13
+  },
+  {
+    "id": 14,
+    "name": "Ion v3000 lcd -335",
+    "category": "ИБП",
+    "price": 334.54,
+    "image": "https://mtca.uz/image/cache/catalog/product/ups/ion-v_series650-800-700x500.jpg",
+    "brand": "Ion",
+    "in_stock": true,
+    "priority": 14
+  },
+  {
+    "id": 15,
+    "name": "Ion G2000lcd -440",
+    "category": "ИБП",
+    "price": 439.4,
+    "image": "https://seventrade.uz/upload/iblock/783/u12tb6a0au8zk6bzkq6jsu2ueqi1mz6c.jpg",
+    "brand": "Ion",
+    "in_stock": true,
+    "priority": 15
+  },
+  {
+    "id": 16,
+    "name": "Ion g3000lcd 550",
+    "category": "ИБП",
+    "price": 549.25,
+    "image": "https://seventrade.uz/upload/iblock/783/u12tb6a0au8zk6bzkq6jsu2ueqi1mz6c.jpg",
+    "brand": "Ion",
+    "in_stock": true,
+    "priority": 16
+  },
+  {
+    "id": 17,
+    "name": "Ion g6000 v2 lcd -1230",
+    "category": "ИБП",
+    "price": 1228.32,
+    "image": "https://seventrade.uz/upload/iblock/783/u12tb6a0au8zk6bzkq6jsu2ueqi1mz6c.jpg",
+    "brand": "Ion",
+    "in_stock": true,
+    "priority": 17
+  },
+  {
+    "id": 18,
+    "name": "Ion g10.000 v2 lcd -1500",
+    "category": "ИБП",
+    "price": 1497.96,
+    "image": "https://seventrade.uz/upload/iblock/783/u12tb6a0au8zk6bzkq6jsu2ueqi1mz6c.jpg",
+    "brand": "Ion",
+    "in_stock": true,
+    "priority": 18
+  },
+  {
+    "id": 19,
+    "name": "Ion wp 1000lcd -230",
+    "category": "ИБП",
+    "price": 229.69,
+    "image": "https://seventrade.uz/upload/iblock/783/u12tb6a0au8zk6bzkq6jsu2ueqi1mz6c.jpg",
+    "brand": "Ion",
+    "in_stock": true,
+    "priority": 19
+  },
+  {
+    "id": 20,
+    "name": "Ion wp 2000lcd -440",
+    "category": "ИБП",
+    "price": 439.4,
+    "image": "https://seventrade.uz/upload/iblock/783/u12tb6a0au8zk6bzkq6jsu2ueqi1mz6c.jpg",
+    "brand": "Ion",
+    "in_stock": true,
+    "priority": 20
+  },
+  {
+    "id": 21,
+    "name": "Ion wp 3000lcd -540",
+    "category": "ИБП",
+    "price": 539.26,
+    "image": "https://seventrade.uz/upload/iblock/783/u12tb6a0au8zk6bzkq6jsu2ueqi1mz6c.jpg",
+    "brand": "Ion",
+    "in_stock": true,
+    "priority": 21
+  },
+  {
+    "id": 22,
+    "name": "Ion wp 6000lcd -1200",
+    "category": "ИБП",
+    "price": 1198.37,
+    "image": "https://seventrade.uz/upload/iblock/783/u12tb6a0au8zk6bzkq6jsu2ueqi1mz6c.jpg",
+    "brand": "Ion",
+    "in_stock": true,
+    "priority": 22
+  },
+  {
+    "id": 23,
+    "name": "Ion wp 10.000 lcd -1400",
+    "category": "ИБП",
+    "price": 1398.09,
+    "image": "https://seventrade.uz/upload/iblock/783/u12tb6a0au8zk6bzkq6jsu2ueqi1mz6c.jpg",
+    "brand": "Ion",
+    "in_stock": true,
+    "priority": 23
+  },
+  {
+    "id": 24,
+    "name": "Ion 20KVA G3 PRO",
+    "category": "ИБП",
+    "price": 3794.82,
+    "image": "https://seventrade.uz/upload/iblock/783/u12tb6a0au8zk6bzkq6jsu2ueqi1mz6c.jpg",
+    "brand": "Ion",
+    "in_stock": true,
+    "priority": 24
+  },
+  {
+    "id": 25,
+    "name": "ION 30KVA G3 PRO",
+    "category": "ИБП",
+    "price": 4893.32,
+    "image": "https://seventrade.uz/upload/iblock/783/u12tb6a0au8zk6bzkq6jsu2ueqi1mz6c.jpg",
+    "brand": "Ion",
+    "in_stock": true,
+    "priority": 25
+  },
+  {
+    "id": 26,
+    "name": "ION 40KVA G3 PRO",
+    "category": "ИБП",
+    "price": 5941.89,
+    "image": "https://seventrade.uz/upload/iblock/783/u12tb6a0au8zk6bzkq6jsu2ueqi1mz6c.jpg",
+    "brand": "Ion",
+    "in_stock": true,
+    "priority": 26
+  },
+  {
+    "id": 27,
+    "name": "ION 80KVA 64KW",
+    "category": "ИБП",
+    "price": 12982.29,
+    "image": "https://seventrade.uz/upload/iblock/783/u12tb6a0au8zk6bzkq6jsu2ueqi1mz6c.jpg",
+    "brand": "Ion",
+    "in_stock": true,
+    "priority": 27
+  },
+  {
+    "id": 28,
+    "name": "ION 120KVA 96KW",
+    "category": "ИБП",
+    "price": 18974.12,
+    "image": "https://seventrade.uz/upload/iblock/783/u12tb6a0au8zk6bzkq6jsu2ueqi1mz6c.jpg",
+    "brand": "Ion",
+    "in_stock": true,
+    "priority": 28
+  },
+  {
+    "id": 29,
+    "name": "REDMI G27Q 2K 200HZ",
+    "category": "Мониторы",
+    "price": 164.78,
+    "image": "https://frankfurt.apollo.olxcdn.com/v1/files/4k641gc9u63h3-UZ/image",
+    "brand": "Redmi",
+    "in_stock": true,
+    "priority": 29
+  },
+  {
+    "id": 30,
+    "name": "Philips 27m2n3500",
+    "category": "Мониторы",
+    "price": 194.73,
+    "image": "https://www.displayspecifications.com/images/model/f09d3c09/640/main.jpg",
+    "brand": "Philips",
+    "in_stock": true,
+    "priority": 30
+  },
+  {
+    "id": 31,
+    "name": "Philips 27m2n3500uf",
+    "category": "Мониторы",
+    "price": 224.69,
+    "image": "https://gw.alicdn.com/imgextra/i4/2415742114/O1CN01D1GpDN1RUGN1WV3QS_!!4611686018427382946-2-item_pic.png_.webp",
+    "brand": "Philips",
+    "in_stock": true,
+    "priority": 31
+  },
+  {
+    "id": 32,
+    "name": "Redmi x27g",
+    "category": "Мониторы",
+    "price": 109.85,
+    "image": "https://goodmi.ru/images/detailed/64/section-15-g27.jpg",
+    "brand": "Redmi",
+    "in_stock": true,
+    "priority": 32
+  },
+  {
+    "id": 33,
+    "name": "Mercusys 4g LTE",
+    "category": "Сеть",
+    "price": 25.96,
+    "image": "https://frankfurt.apollo.olxcdn.com/v1/files/qceybl5vffvl1-UZ/image",
+    "brand": "Mercusys",
+    "in_stock": true,
+    "priority": 33
+  },
+  {
+    "id": 34,
+    "name": "Mercusys ms108gp poe",
+    "category": "Сеть",
+    "price": 24.97,
+    "image": "https://m.media-amazon.com/images/I/61P3uwEx7JL.jpg",
+    "brand": "Mercusys",
+    "in_stock": true,
+    "priority": 34
+  },
+  {
+    "id": 35,
+    "name": "MERCUSYS MR80X",
+    "category": "Сеть",
+    "price": 31.96,
+    "image": "https://frankfurt.apollo.olxcdn.com/v1/files/dz2leesf7jog2-UZ/image;s=1000x1000",
+    "brand": "Mercusys",
+    "in_stock": true,
+    "priority": 35
+  },
+  {
+    "id": 36,
+    "name": "Mercusy mr70x ax1800 wifi6",
+    "category": "Сеть",
+    "price": 30.96,
+    "image": "https://maxcom.uz/storage/product/kjOQeHMxEAPNN92e8dymfou1z3YTqwSTqFd1krhe.jpeg",
+    "brand": "Mercusys",
+    "in_stock": true,
+    "priority": 36
+  },
+  {
+    "id": 37,
+    "name": "Mercusys MR62X",
+    "category": "Сеть",
+    "price": 21.97,
+    "image": "https://static.mercusys.com/product-image/MR62X_1_normal20240614135507.jpg",
+    "brand": "Mercusys",
+    "in_stock": true,
+    "priority": 37
+  },
+  {
+    "id": 38,
+    "name": "Mercusys MR60X",
+    "category": "Сеть",
+    "price": 22.97,
+    "image": "https://maxcom.uz/storage/product/szg0UXfgONRRniPMNoGuYsFxljXv53XAdV2ESMGr.jpeg",
+    "brand": "Mercusys",
+    "in_stock": true,
+    "priority": 38
+  },
+  {
+    "id": 39,
+    "name": "MERCUSYS MR47BE",
+    "category": "Сеть",
+    "price": 124.83,
+    "image": "https://static.mercusys.com/product-image/2_large20230717060240.jpg",
+    "brand": "Mercusys",
+    "in_stock": true,
+    "priority": 39
+  },
+  {
+    "id": 40,
+    "name": "Mercusys WIFI 7 MR27BE",
+    "category": "Сеть",
+    "price": 54.93,
+    "image": "https://static.mercusys.com/product-image/MB235-4G_EU_1.0_overview_1_normal20250610023123.jpg",
+    "brand": "Mercusys",
+    "in_stock": true,
+    "priority": 40
+  },
+  {
+    "id": 41,
+    "name": "Mercusys WIFI 7 MR25BE",
+    "category": "Сеть",
+    "price": 49.93,
+    "image": "https://static.mercusys.com/product-image/MR25BE_EU_3.0_overview_normal20251209053849.png",
+    "brand": "Mercusys",
+    "in_stock": true,
+    "priority": 41
+  },
+  {
+    "id": 42,
+    "name": "Mercusys MB130-4G",
+    "category": "Сеть",
+    "price": 29.96,
+    "image": "https://static.mercusys.com/product-image/MB130-4G_EU_1.0_overview_07_normal20240111060818.jpg",
+    "brand": "Mercusys",
+    "in_stock": true,
+    "priority": 42
+  },
+  {
+    "id": 43,
+    "name": "Mercusys MB115-4G",
+    "category": "Сеть",
+    "price": 29.96,
+    "image": "https://static.mercusys.com/product-image/MB115-4G_EU_1.0_overview_2_normal20250116112821.jpg",
+    "brand": "Mercusys",
+    "in_stock": true,
+    "priority": 43
+  },
+  {
+    "id": 44,
+    "name": "Mercusys WI-FI 6E MA86XE",
+    "category": "Сеть",
+    "price": 21.97,
+    "image": "https://files.glotr.uz/company/000/002/429/proposals/2025/12/13/2025-12-13-14-19-53-338364-595ee47a5f00eccdb048f2bba42e7a60.webp",
+    "brand": "Mercusys",
+    "in_stock": true,
+    "priority": 44
+  },
+  {
+    "id": 45,
+    "name": "MERCUSYS WIFI 6E MA80XE",
+    "category": "Сеть",
+    "price": 20.97,
+    "image": "https://files.glotr.uz/company/000/002/429/proposals/2025/12/13/2025-12-13-14-24-30-516628-c61adbba5ca5e514dfed0f797e63a219.webp",
+    "brand": "Mercusys",
+    "in_stock": true,
+    "priority": 45
+  },
+  {
+    "id": 46,
+    "name": "MERCUSYS WIFI 6E MA70XE",
+    "category": "Сеть",
+    "price": 16.98,
+    "image": "https://static.mercusys.com/product-image/MA70XE_EU_1.0_overview_09_large20250214074652.jpg",
+    "brand": "Mercusys",
+    "in_stock": true,
+    "priority": 46
+  },
+  {
+    "id": 47,
+    "name": "MERCUSYS WI-FI 6E HALO H80X 3Pck",
+    "category": "Сеть",
+    "price": 89.88,
+    "image": "https://static.mercusys.com/product-image/Halo_H80X(3-pack)_3_normal20221124142617.jpg",
+    "brand": "Mercusys",
+    "in_stock": true,
+    "priority": 47
+  },
+  {
+    "id": 48,
+    "name": "MERCUSYS WI-FI 6E HALO H70X 3Pck",
+    "category": "Сеть",
+    "price": 89.88,
+    "image": "https://static.mercusys.com/product-image/Halo_H60X(3-pack)_3_normal20240605080733.jpg",
+    "brand": "Mercusys",
+    "in_stock": true,
+    "priority": 48
+  },
+  {
+    "id": 49,
+    "name": "MERCUSYS WI-FI 6E HALO H60X 3Pck",
+    "category": "Сеть",
+    "price": 64.91,
+    "image": "https://static.mercusys.com/product-image/Halo_H60X(3-pack)_10_normal20240605080923.png",
+    "brand": "Mercusys",
+    "in_stock": true,
+    "priority": 49
+  },
+  {
+    "id": 50,
+    "name": "MERCUSYS WI-FI 6E HALO H50g 3Pck",
+    "category": "Сеть",
+    "price": 64.91,
+    "image": "https://static.mercusys.com/product-image/Halo_H50G_1_for_3-pack20220117090715.jpg",
+    "brand": "Mercusys",
+    "in_stock": true,
+    "priority": 50
+  },
+  {
+    "id": 51,
+    "name": "MERCUSYS HALO WI-FI 7 H27BE (3-PACK)",
+    "category": "Сеть",
+    "price": 129.82,
+    "image": "https://static.mercusys.com/product-image/Halo_H27BE(3-pack_2-pack)_EU_1.0_overview_01_normal20250225013747.jpg",
+    "brand": "Mercusys",
+    "in_stock": true,
+    "priority": 51
+  },
+  {
+    "id": 52,
+    "name": "4tb 990 pro",
+    "category": "Комплектующие",
+    "price": 399.46,
+    "image": "https://files.ox-sys.com/cache/800x_/image/18/43/16/18431627f88de7b55f568bb517e211295455a2a182d2b59ac4acfb3627ae98bf.jpg",
+    "brand": "Samsung",
+    "in_stock": true,
+    "priority": 52
+  },
+  {
+    "id": 53,
+    "name": "4tb kingston",
+    "category": "Комплектующие",
+    "price": 319.56,
+    "image": "https://files.ox-sys.com/cache/800x_/image/cb/7d/63/cb7d6398beb2de1a14e3bcedc498a3ab7c6d73471aa85273a73b73171d201507.jpg",
+    "brand": "Kingston",
+    "in_stock": true,
+    "priority": 53
+  },
+  {
+    "id": 54,
+    "name": "Wd red plus 12TB",
+    "category": "Комплектующие",
+    "price": 334.54,
+    "image": "https://maxcom.uz/storage/product/rHofyrVvmTe2ZJCOAwaj1BZePfmCj0viqb1JC0ci.jpeg",
+    "brand": "WD",
+    "in_stock": true,
+    "priority": 54
+  },
+  {
+    "id": 55,
+    "name": "WD RED PLUS 10TB",
+    "category": "Комплектующие",
+    "price": 298.59,
+    "image": "https://maxcom.uz/storage/product/PMdYoSuvMgSDF5IOGWgviT74PT7TUHFzH4NAh1o0.jpeg",
+    "brand": "WD",
+    "in_stock": true,
+    "priority": 55
+  },
+  {
+    "id": 56,
+    "name": "WD RED PLUS 8TB",
+    "category": "Комплектующие",
+    "price": 219.7,
+    "image": "https://itmir.uz/image/cache/catalog/SERVERI/KOMPLEKTUYSHEYI/hdd/redpro/WD80EFPX-1000x1000.jpg",
+    "brand": "WD",
+    "in_stock": true,
+    "priority": 56
+  },
+  {
+    "id": 57,
+    "name": "WD RED PLUS 4TB",
+    "category": "Комплектующие",
+    "price": 189.74,
+    "image": "https://maxcom.uz/storage/product/mfKs7vSdpwbnGVxLWuQ1nQiFBxR02u0dSIDRIIxE.jpeg",
+    "brand": "WD",
+    "in_stock": true,
+    "priority": 57
+  },
+  {
+    "id": 58,
+    "name": "Wd MY PASSPORT 5TB USB",
+    "category": "Комплектующие",
+    "price": 139.81,
+    "image": "https://olcha.uz/image/original/products/2021-01-29/wd-my-passport-5tb-hhd-21016-2.jpeg",
+    "brand": "WD",
+    "in_stock": true,
+    "priority": 58
+  },
+  {
+    "id": 59,
+    "name": "usb hdd apacer 1tb",
+    "category": "Комплектующие",
+    "price": 59.92,
+    "image": "https://api.idea.uz/storage/products/March2023/vUVgUfyGubc1n60yMyU4.jpg",
+    "brand": "Apacer",
+    "in_stock": true,
+    "priority": 59
+  },
+  {
+    "id": 60,
+    "name": "Usb hdd apacer 2tb",
+    "category": "Комплектующие",
+    "price": 74.9,
+    "image": "https://tovar.uz/images/company/265/tovar/52301/o_1_5f9f9d71ab1a5.jpg",
+    "brand": "Apacer",
+    "in_stock": true,
+    "priority": 60
+  },
+  {
+    "id": 61,
+    "name": "Usb ssd 1tb",
+    "category": "Комплектующие",
+    "price": 99.86,
+    "image": "https://icd.uz/upload/iblock/5e0/8480gyg5whhm7rnqa4jkpbjblosh0lm3.jpg",
+    "brand": "Generic",
+    "in_stock": true,
+    "priority": 61
+  },
+  {
+    "id": 62,
+    "name": "Usp ssd 2tb",
+    "category": "Комплектующие",
+    "price": 1.0,
+    "image": "https://frankfurt.apollo.olxcdn.com/v1/files/3d092sqidfri-UZ/image",
+    "brand": "Generic",
+    "in_stock": true,
+    "priority": 62
+  },
+  {
+    "id": 63,
+    "name": "Msi h610",
+    "category": "Комплектующие",
+    "price": 56.92,
+    "image": "https://files.ox-sys.com/cache/800x_/image/c4/c6/89/c4c689a3dea74212948fa1173bc80517c13ded937a0f008d4caf002f389b60bc.jpg",
+    "brand": "MSI",
+    "in_stock": true,
+    "priority": 63
+  },
+  {
+    "id": 64,
+    "name": "ULTRA 9285K",
+    "category": "Комплектующие",
+    "price": 549.25,
+    "image": "https://files.ox-sys.com/cache/800x_/image/d3/1b/c8/d31bc845624e5a91df45b21156b1793e12ce3fe7c6d45e10c0ce390d5c963ed4.jpg",
+    "brand": "Intel",
+    "in_stock": true,
+    "priority": 64
+  },
+  {
+    "id": 65,
+    "name": "I7 -14700K",
+    "category": "Комплектующие",
+    "price": 349.52,
+    "image": "https://imgproxy.onliner.by/qw3ziK62LOwv6YXrgNQSs-Et1_FHkMnCDoMweairSDQ/w:170/h:250/z:2/f:jpg/aHR0cHM6Ly9jb250ZW50Lm9ubGluZXIuYnkvY2F0YWxvZy9kZXZpY2Uvb3JpZ2luYWwvMGYzMTZmM2QwNTFlMTliMzliMzE5ODEyMDE4MjRlNzcuanBn",
+    "brand": "Intel",
+    "in_stock": true,
+    "priority": 65
+  },
+  {
+    "id": 66,
+    "name": "I7 14700kf",
+    "category": "Комплектующие",
+    "price": 319.56,
+    "image": "https://www.regard.ru/photo/goods/5999401.png",
+    "brand": "Intel",
+    "in_stock": true,
+    "priority": 66
+  },
+  {
+    "id": 67,
+    "name": "I9 13900k",
+    "category": "Комплектующие",
+    "price": 394.46,
+    "image": "https://files.ox-sys.com/cache/original/image/4e/6e/98/4e6e987ba9ab1758529fb4f07e567ff0215faacc91fffc55001bef17c4764515.jpg",
+    "brand": "Intel",
+    "in_stock": true,
+    "priority": 67
+  },
+  {
+    "id": 68,
+    "name": "Asus RTX 5060 OC 8GB",
+    "category": "Комплектующие",
+    "price": 349.52,
+    "image": "https://files.ox-sys.com/cache/original/image/3f/28/53/3f28532ad9983a9aff68fb88776674c1c72dee66387050a7087d6388367c3c3b.jpg",
+    "brand": "ASUS",
+    "in_stock": true,
+    "priority": 68
+  },
+  {
+    "id": 69,
+    "name": "ZOTAG GAMING RTX5060 8GB",
+    "category": "Комплектующие",
+    "price": 339.54,
+    "image": "https://files.ox-sys.com/cache/original/image/42/5e/4d/425e4d9e77f58b99e0aa0f2417260001f70b265069d4e4c73cb60c25e97e3b74.jpg",
+    "brand": "ZOTAC",
+    "in_stock": true,
+    "priority": 69
+  },
+  {
+    "id": 70,
+    "name": "Acer AIO 23,8 IPS 120HZ",
+    "category": "Моноблоки",
+    "price": 514.3,
+    "image": "https://m.media-amazon.com/images/I/81d8+iP6SCL._AC_SL1000__.jpg",
+    "brand": "Acer",
+    "in_stock": true,
+    "priority": 70
+  },
+  {
+    "id": 71,
+    "name": "Acer AIO 27 IPS 120HZ",
+    "category": "Моноблоки",
+    "price": 619.16,
+    "image": "https://pcmarket.uz/wp-content/uploads/2025/08/u0w0mwg9qk6yypa079o51o3gax8hg8ev-removebg-preview.png",
+    "brand": "Acer",
+    "in_stock": true,
+    "priority": 71
+  },
+  {
+    "id": 72,
+    "name": "LENOVO AIO 23.8 100HZ IPS",
+    "category": "Моноблоки",
+    "price": 619.16,
+    "image": "https://officemax.uz/media/uploads/1_z4PCnJt.jpg",
+    "brand": "Lenovo",
+    "in_stock": true,
+    "priority": 72
+  },
+  {
+    "id": 73,
+    "name": "LENOVO AIO 23.8 100HZ IPS v2",
+    "category": "Моноблоки",
+    "price": 659.1,
+    "image": "https://microless.com/cdn/products/16a0613bfaaecdcccc577bf4b71d4456-hi.jpg",
+    "brand": "Lenovo",
+    "in_stock": true,
+    "priority": 73
+  },
+  {
+    "id": 74,
+    "name": "Usb DVD",
+    "category": "Аксессуары",
+    "price": 31.96,
+    "image": "https://frankfurt.apollo.olxcdn.com/v1/files/juimedzbe2223-UZ/image",
+    "brand": "Generic",
+    "in_stock": true,
+    "priority": 74
+  },
+  {
+    "id": 75,
+    "name": "Aula F75 3 IN 1 GASKET KEYBOARD",
+    "category": "Аксессуары",
+    "price": 49.93,
+    "image": "https://www.aulastar.com/uploads/allimg/20250117/1-25011GHFW24.jpg",
+    "brand": "Aula",
+    "in_stock": true,
+    "priority": 75
+  },
+  {
+    "id": 76,
+    "name": "Aula f75 ru RED SWITCH",
+    "category": "Аксессуары",
+    "price": 34.95,
+    "image": "https://mobileplanet.ua/uploads/small_photos/2024-11-25/magazin-mobileplanet-aula-f75-keycap-krgd-blue-usb-ua-black-69483912028-3303733674.webp",
+    "brand": "Aula",
+    "in_stock": true,
+    "priority": 76
+  },
+  {
+    "id": 77,
+    "name": "Aula f99 pro ru",
+    "category": "Аксессуары",
+    "price": 59.92,
+    "image": "https://www.clife.ru/upload/himg_cache/detail-middle/e04/e049e012a1230db5eb4d16503e35722c/aula_99_pro_black_2.jpg",
+    "brand": "Aula",
+    "in_stock": true,
+    "priority": 77
+  },
+  {
+    "id": 78,
+    "name": "Aula s98 pro ru",
+    "category": "Аксессуары",
+    "price": 59.92,
+    "image": "https://m.media-amazon.com/images/I/71+WPdLb6tL._AC_SL1500_.jpg",
+    "brand": "Aula",
+    "in_stock": true,
+    "priority": 78
+  },
+  {
+    "id": 79,
+    "name": "Aula sc380 pro",
+    "category": "Аксессуары",
+    "price": 24.97,
+    "image": "https://dynaquestpc.com/cdn/shop/files/374_21a1fba1-0c83-433b-9671-9aaea9f4a2ca.png?v=1766376850&width=1214",
+    "brand": "Aula",
+    "in_stock": true,
+    "priority": 79
+  },
+  {
+    "id": 80,
+    "name": "Yandex stansiya 3",
+    "category": "Аксессуары",
+    "price": 319.56,
+    "image": "https://images.uzum.uz/ct88t26i4n3ehka297sg/t_product_low.jpg",
+    "brand": "Yandex",
+    "in_stock": true,
+    "priority": 80
+  },
+  {
+    "id": 81,
+    "name": "YANDEX MAX 65W",
+    "category": "Аксессуары",
+    "price": 369.5,
+    "image": "https://frankfurt.apollo.olxcdn.com/v1/files/4954xcwl4idh3-UZ/image;s=600x600",
+    "brand": "Yandex",
+    "in_stock": true,
+    "priority": 81
+  },
+  {
+    "id": 82,
+    "name": "Sony M6 Black",
+    "category": "Аксессуары",
+    "price": 329.55,
+    "image": "https://i.ytimg.com/vi/wtCmdWaXqYo/maxresdefault.jpg",
+    "brand": "Sony",
+    "in_stock": true,
+    "priority": 82
+  },
+  {
+    "id": 83,
+    "name": "Hopestor A85",
+    "category": "Колонки",
+    "price": 84.88,
+    "image": "https://frontalka.com.ua/images/b3/6e/bluetooth-kolonka-hopestar-a85-400w-black-245656-3_large.webp",
+    "brand": "Hopestar",
+    "in_stock": true,
+    "priority": 83
+  },
+  {
+    "id": 84,
+    "name": "Hopestor A80",
+    "category": "Колонки",
+    "price": 64.91,
+    "image": "https://frankfurt.apollo.olxcdn.com/v1/files/xyjqph79l67-UZ/image",
+    "brand": "Hopestar",
+    "in_stock": true,
+    "priority": 84
+  },
+  {
+    "id": 101,
+    "name": "LDT101-C012 White+Blue 24-57 up to 30kg",
+    "category": "Кронштейны",
+    "price": 55.91,
+    "image": "https://maxcom.uz/storage/product/FiFEVLA6kU8JQnhV8B5cG7Ox4SrRdst7a0dxnezN.jpeg",
+    "brand": "LDT",
+    "in_stock": true,
+    "priority": 85
+  },
+  {
+    "id": 102,
+    "name": "LDT99-C024 White 24-45 up to 27kg",
+    "category": "Кронштейны",
+    "price": 95.63,
+    "image": "https://maxcom.uz/storage/product/rC3oo2BOX3CIA4IifSDxb1xRIuW8ALcaztjCYSf9.jpeg",
+    "brand": "LDT",
+    "in_stock": true,
+    "priority": 86
+  },
+  {
+    "id": 103,
+    "name": "LDT99-C012 White 24-57 up to 27kg",
+    "category": "Кронштейны",
+    "price": 51.0,
+    "image": "https://www.bigw.com.au/medias/sys_master/images/images/h6c/hff/116278831218718.jpg",
+    "brand": "LDT",
+    "in_stock": true,
+    "priority": 87
+  },
+  {
+    "id": 104,
+    "name": "LDT95-C012 Black+White 24-57 up to 30kg",
+    "category": "Кронштейны",
+    "price": 51.0,
+    "image": "https://www.bigw.com.au/medias/sys_master/images/images/hd8/hcc/116460648235038.jpg",
+    "brand": "LDT",
+    "in_stock": true,
+    "priority": 88
+  },
+  {
+    "id": 105,
+    "name": "LDT94-C012E White 17-40 up to 12kg",
+    "category": "Кронштейны",
+    "price": 18.64,
+    "image": "https://maxcom.uz/storage/product/kCzLuS0VzFPs8g7eC8tlJSNPE2o34WumgpjqoqpN.jpeg",
+    "brand": "LDT",
+    "in_stock": true,
+    "priority": 89
+  },
+  {
+    "id": 106,
+    "name": "LDT93-C012 Black+White 17-45 up to 16kg",
+    "category": "Кронштейны",
+    "price": 29.42,
+    "image": "https://dl.bs365.uz/storage/products/30478/D1jr4zoc0mGLdZeIyZJe-large_default.jpg",
+    "brand": "LDT",
+    "in_stock": true,
+    "priority": 90
+  },
+  {
+    "id": 107,
+    "name": "LDT88-C012 Space Grey+White 17-32 up to 9kg",
+    "category": "Кронштейны",
+    "price": 16.18,
+    "image": "https://maxcom.uz/storage/product/YeVh35ajV5AtYLpkQDsOXTDWetHLTuNGvcxxRVcL.jpeg",
+    "brand": "LDT",
+    "in_stock": true,
+    "priority": 91
+  },
+  {
+    "id": 108,
+    "name": "LDT85-C024 White 17-35 up to 20kg",
+    "category": "Кронштейны",
+    "price": 85.82,
+    "image": "https://a.scdn.gr/images/sku_main_images/057766/57766653/xlarge_20241205114027_brateck_vasi_grafeiou_othonis_eos_49_me_vrachiona_leyki_ldt85_c012.jpeg",
+    "brand": "LDT",
+    "in_stock": true,
+    "priority": 92
+  },
+  {
+    "id": 109,
+    "name": "LDT85-C012L White 17-49 up to 20kg RGB Gaming",
+    "category": "Кронштейны",
+    "price": 64.24,
+    "image": "https://dl.bs365.uz/storage/products/30482/RbzXXrgksQCOybb7cCmG.jpg",
+    "brand": "LDT",
+    "in_stock": true,
+    "priority": 93
+  },
+  {
+    "id": 111,
+    "name": "LDT81N-C024 White 17-35 up to 20kg",
+    "category": "Кронштейны",
+    "price": 81.41,
+    "image": "https://dl.bs365.uz/storage/products/30484/Y47Ru8rDWtarGUCm3zny-medium_default.jpg",
+    "brand": "LDT",
+    "in_stock": true,
+    "priority": 94
+  },
+  {
+    "id": 112,
+    "name": "LDT81N-C012 White 17-49 up to 20kg",
+    "category": "Кронштейны",
+    "price": 43.16,
+    "image": "https://maxcom.uz/storage/product/E8z2inRTCKfJGPU7b4Zhe0k6tBrAOell21PpzaA6.jpeg",
+    "brand": "LDT",
+    "in_stock": true,
+    "priority": 95
+  },
+  {
+    "id": 113,
+    "name": "LDT39-C024 Black 17-32 up to 8kg",
+    "category": "Кронштейны",
+    "price": 74.54,
+    "image": "https://maxcom.uz/storage/product/af1FmjFkIkAsEGsVvEJkkRgjfWCqQFwCpUCB18Rd.png",
+    "brand": "LDT",
+    "in_stock": true,
+    "priority": 96
+  },
+  {
+    "id": 114,
+    "name": "LDT39-C012U Black 17-32 up to 8kg",
+    "category": "Кронштейны",
+    "price": 80.43,
+    "image": "https://imgs.lumi.cn/3dproduct/LDT39-C012U/11.jpg",
+    "brand": "LDT",
+    "in_stock": true,
+    "priority": 97
+  },
+  {
+    "id": 115,
+    "name": "LDT39-C012 Black 17-32 up to 8kg",
+    "category": "Кронштейны",
+    "price": 42.67,
+    "image": "https://encrypted-tbn0.gstatic.com/images",
+    "brand": "LDT",
+    "in_stock": true,
+    "priority": 98
+  },
+  {
+    "id": 118,
+    "name": "LDT85-C012-KP01 White 17-40 up to 12kg",
+    "category": "Кронштейны",
+    "price": 43.16,
+    "image": "https://a.scdn.gr/images/sku_main_images/057766/57766653/xlarge_20241205114027_brateck_vasi_grafeiou_othonis_eos_49_me_vrachiona_leyki_ldt85_c012.jpeg",
+    "brand": "LDT",
+    "in_stock": true,
+    "priority": 99
+  },
+  {
+    "id": 119,
+    "name": "Deco X68 (1-pack) AX3600 Tri-Band",
+    "category": "Deco",
+    "price": 107.0,
+    "image": "https://smartit.uz/storage/product/I40RRXBRMvuWqwEzf26XVrQMSUP4sV2tHShL2DK1.webp",
+    "brand": "TP-Link",
+    "in_stock": true,
+    "priority": 100
+  },
+  {
+    "id": 120,
+    "name": "Deco X60 (3-pack) AX5400",
+    "category": "Deco",
+    "price": 285.33,
+    "image": "https://www.icd.uz/upload/iblock/8e1/pmsc2icn6d2znzwrwzu72qjm9e2ttf1m.png",
+    "brand": "TP-Link",
+    "in_stock": true,
+    "priority": 101
+  },
+  {
+    "id": 121,
+    "name": "Deco X60 (2-pack) AX5400",
+    "category": "Deco",
+    "price": 199.73,
+    "image": "https://images.satu.kz/224746629_w300_h300_besprovodnaya-mesh-sistema-wi-fi.jpg",
+    "brand": "TP-Link",
+    "in_stock": true,
+    "priority": 102
+  },
+  {
+    "id": 122,
+    "name": "Deco X60 (1-pack) AX5400",
+    "category": "Deco",
+    "price": 107.0,
+    "image": "https://maxcom.uz/storage/product/5Dxdf7t7h1Ka9BohbvXa41QYXen4cdeXgOZ3mgfa.jpeg",
+    "brand": "TP-Link",
+    "in_stock": true,
+    "priority": 103
+  },
+  {
+    "id": 123,
+    "name": "Deco X55 (3-pack) AX3000 Tri-Band",
+    "category": "Deco",
+    "price": 228.26,
+    "image": "https://fpg.uz/_next/image",
+    "brand": "TP-Link",
+    "in_stock": true,
+    "priority": 104
+  },
+  {
+    "id": 124,
+    "name": "Deco X55 (2-pack) AX3000",
+    "category": "Deco",
+    "price": 156.93,
+    "image": "https://i.ebayimg.com/images/g/~vkAAOSwuLJnmSAb/s-l1200.jpg",
+    "brand": "TP-Link",
+    "in_stock": true,
+    "priority": 105
+  },
+  {
+    "id": 125,
+    "name": "Deco X55 (1-pack) AX3000",
+    "category": "Deco",
+    "price": 85.6,
+    "image": "https://maxcom.uz/storage/product/QJwCQS5ET5fF2UDQYUlOvUBa9ittm5xr7un0GJc5.jpeg",
+    "brand": "TP-Link",
+    "in_stock": true,
+    "priority": 106
+  },
+  {
+    "id": 126,
+    "name": "Deco X50 Pro (3-pack) AX3000",
+    "category": "Deco",
+    "price": 249.66,
+    "image": "https://www.luxtech.uz/uploads/images/202312/img_1920x_656f1a6c2f5750-19112847-28393990.jpg",
+    "brand": "TP-Link",
+    "in_stock": true,
+    "priority": 107
+  },
+  {
+    "id": 127,
+    "name": "Deco X50 Pro (2-pack) AX3000",
+    "category": "Deco",
+    "price": 178.33,
+    "image": "https://fortpro.uz/uploads/product/r2.jpg",
+    "brand": "TP-Link",
+    "in_stock": true,
+    "priority": 108
+  },
+  {
+    "id": 128,
+    "name": "Deco X50 Pro (1-pack) AX3000",
+    "category": "Deco",
+    "price": 92.73,
+    "image": "https://m.media-amazon.com/images/I/71zLrcDXjOL._AC_UF1000,1000_QL80_.jpg",
+    "brand": "TP-Link",
+    "in_stock": true,
+    "priority": 109
+  },
+  {
+    "id": 129,
+    "name": "Deco X50 (3-pack) AX3000",
+    "category": "Deco",
+    "price": 213.99,
+    "image": "https://www.luxtech.uz/uploads/images/202312/img_1920x_656f1a6c2f5750-19112847-28393990.jpg",
+    "brand": "TP-Link",
+    "in_stock": true,
+    "priority": 110
+  },
+  {
+    "id": 130,
+    "name": "Deco X50 (2-pack) AX3000",
+    "category": "Deco",
+    "price": 149.8,
+    "image": "https://fpg.uz/_next/image",
+    "brand": "TP-Link",
+    "in_stock": true,
+    "priority": 111
+  },
+  {
+    "id": 131,
+    "name": "Deco X50 (1-pack) AX3000",
+    "category": "Deco",
+    "price": 78.46,
+    "image": "https://content.secur.ua/products/deco_x50_1-pack__overview_01_large_20211225093734f.jpeg",
+    "brand": "TP-Link",
+    "in_stock": true,
+    "priority": 112
+  },
+  {
+    "id": 132,
+    "name": "Deco PX50 (3-pack) AX3000 + Powerline",
+    "category": "Deco",
+    "price": 271.06,
+    "image": "https://luxtech.uz/uploads/images/202405/img_1920x_663225b6776964-13481599-31652210.jpg",
+    "brand": "TP-Link",
+    "in_stock": true,
+    "priority": 113
+  },
+  {
+    "id": 133,
+    "name": "Deco PX50 (2-pack) AX3000 + Powerline",
+    "category": "Deco",
+    "price": 192.59,
+    "image": "https://www.discomp.cz/img.asp?attid=4466139",
+    "brand": "TP-Link",
+    "in_stock": true,
+    "priority": 114
+  },
+  {
+    "id": 134,
+    "name": "Deco X20 (3-pack) AX1800",
+    "category": "Deco",
+    "price": 171.2,
+    "image": "https://m.media-amazon.com/images/I/41niCo+PX7L.jpg",
+    "brand": "TP-Link",
+    "in_stock": true,
+    "priority": 115
+  },
+  {
+    "id": 135,
+    "name": "Deco X20 (2-pack) AX1800",
+    "category": "Deco",
+    "price": 121.26,
+    "image": "https://dl.bs365.uz/storage/products/27600/813ZLl77mSBkhlyp0Wv3-large_default.jpg",
+    "brand": "TP-Link",
+    "in_stock": true,
+    "priority": 116
+  },
+  {
+    "id": 136,
+    "name": "Deco X20 (1-pack) AX1800",
+    "category": "Deco",
+    "price": 64.2,
+    "image": "https://fortpro.uz/uploads/product/ya111.jpg",
+    "brand": "TP-Link",
+    "in_stock": true,
+    "priority": 117
+  },
+  {
+    "id": 137,
+    "name": "Deco X10 (3-pack) AX1500",
+    "category": "Deco",
+    "price": 135.53,
+    "image": "https://maxcom.uz/storage/product/Wl5fMvWVOwpw90GglfG1A0NAng6g5q8oUdInL0yu.jpeg",
+    "brand": "TP-Link",
+    "in_stock": true,
+    "priority": 118
+  },
+  {
+    "id": 138,
+    "name": "Deco X10 (2-pack) AX1500",
+    "category": "Deco",
+    "price": 99.86,
+    "image": "https://www.excelbd.com/wp-content/uploads/2022/09/Deco-X602-pack-AX3000-Whole-Home-Mesh-Gigabit-Wi-Fi-6-SystemQualcomm-1-GHz-Quad-core-CPU.jpg",
+    "brand": "TP-Link",
+    "in_stock": true,
+    "priority": 119
+  },
+  {
+    "id": 139,
+    "name": "Deco X10 (1-pack) AX1500",
+    "category": "Deco",
+    "price": 53.5,
+    "image": "https://m.media-amazon.com/images/I/51Bla2xsyfL._AC_UF894,1000_QL80_.jpg",
+    "brand": "TP-Link",
+    "in_stock": true,
+    "priority": 120
+  },
+  {
+    "id": 140,
+    "name": "Archer AX73 AX5400 Dual-Band Wi-Fi 6 Router",
+    "category": "Wi-Fi роутеры",
+    "price": 102.98,
+    "image": "https://m.media-amazon.com/images/I/71+PCZhyyBL._AC_UF1000,1000_QL80_.jpg",
+    "brand": "TP-Link",
+    "in_stock": true,
+    "priority": 121
+  },
+  {
+    "id": 141,
+    "name": "Archer AX72 Pro AX5400 Dual-Band Wi-Fi 6 Router",
+    "category": "Wi-Fi роутеры",
+    "price": 88.27,
+    "image": "https://fpg.uz/_next/image",
+    "brand": "TP-Link",
+    "in_stock": true,
+    "priority": 122
+  },
+  {
+    "id": 142,
+    "name": "Archer AX72 AX5400 Dual-Band Wi-Fi 6 Router",
+    "category": "Wi-Fi роутеры",
+    "price": 84.35,
+    "image": "https://static.tp-link.com/upload/image-line/product_01_normal_20210812031149t.png",
+    "brand": "TP-Link",
+    "in_stock": true,
+    "priority": 123
+  },
+  {
+    "id": 143,
+    "name": "Archer AX55 AX3000 Dual-Band Wi-Fi 6 Router",
+    "category": "Wi-Fi роутеры",
+    "price": 57.87,
+    "image": "https://www.netxl.com/_next/image/",
+    "brand": "TP-Link",
+    "in_stock": true,
+    "priority": 124
+  }
+]
