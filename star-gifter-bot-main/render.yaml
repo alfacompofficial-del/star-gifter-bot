@@ -1,0 +1,9 @@
+services:
+  - type: static
+    name: alfacomp-store
+    # NODE_OPTIONS задаётся прямо в команде — гарантированно применяется к vite build
+    buildCommand: npm ci --no-audit && NODE_OPTIONS="--max-old-space-size=4096" npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: NODE_ENV
+        value: production
