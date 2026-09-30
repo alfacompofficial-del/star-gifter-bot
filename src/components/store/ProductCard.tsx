@@ -1,5 +1,6 @@
 import { Plus, Check, Star, Heart, Share2, Pencil, Eye } from "lucide-react";
 import { useState, useCallback } from "react";
+import { motion } from "framer-motion";
 import { formatPrice, EXCHANGE_RATE } from "@/lib/constants";
 import { getProductUrl } from "@/lib/slugify";
 import type { Product } from "@/hooks/useProducts";
@@ -38,6 +39,8 @@ const ProductCard = ({
     return likes.includes(product.id);
   });
   const [copied, setCopied] = useState(false);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = useState(false);
 
   // Admin: inline price editing
   const [editingPrice, setEditingPrice] = useState(false);
@@ -138,12 +141,20 @@ const ProductCard = ({
   };
 
   return (
-    <div
-      className={`card-premium rounded-2xl overflow-hidden group relative flex flex-col h-full bg-card transition-all cursor-pointer ${
+    <motion.div
+      whileHover={{ y: -6 }}
+      transition={{ type: "spring", stiffness: 350, damping: 25 }}
+      className={`card-premium rounded-2xl overflow-hidden group relative flex flex-col h-full bg-card transition-colors cursor-pointer border border-white/10 hover:border-[#00f2ff]/40 ${
         isDragging ? "opacity-40 scale-[0.97] shadow-none" : ""
       } ${
         isDragOver ? "ring-2 ring-[#00f2ff] ring-offset-2 ring-offset-transparent scale-[1.02]" : ""
       }`}
+      onMouseMove={(e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       onClick={handleCardClick}
       role="button"
       tabIndex={0}
@@ -152,8 +163,18 @@ const ProductCard = ({
       onDragOver={isAdmin ? onDragOverProp : undefined}
       onDrop={isAdmin ? onDrop : undefined}
     >
+      {/* Dynamic Cursor Spotlight */}
+      {isHovered && (
+        <div
+          className="absolute inset-0 pointer-events-none z-0 transition-opacity duration-200"
+          style={{
+            background: `radial-gradient(320px circle at ${mousePos.x}px ${mousePos.y}px, rgba(0, 242, 255, 0.09), transparent 75%)`,
+          }}
+        />
+      )}
+
       {/* Glossy top border */}
-      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#00f2ff]/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+      <div className="absolute top-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-transparent via-[#00f2ff]/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10" />
 
       {/* Admin: drag handle */}
       {isAdmin && (
@@ -170,14 +191,14 @@ const ProductCard = ({
         </div>
       )}
 
-      <div className="relative aspect-square bg-[#0a0a0a] flex items-center justify-center p-4 sm:p-8 overflow-hidden">
+      <div className="relative aspect-square bg-[#08080a] flex items-center justify-center p-4 sm:p-8 overflow-hidden z-10">
         {/* Subtle background glow behind product */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#00f2ff]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
         <img
           src={product.image}
           alt={product.name}
-          className="max-w-full max-h-full object-contain transition-all duration-500 group-hover:scale-110 group-hover:rotate-1 z-10"
+          className="max-w-full max-h-full object-contain transition-all duration-500 group-hover:scale-110 group-hover:rotate-1 z-10 drop-shadow-[0_8px_16px_rgba(0,0,0,0.5)]"
           loading="lazy"
           onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }}
         />
@@ -185,16 +206,16 @@ const ProductCard = ({
         {/* Badges */}
         <div className="absolute top-2 left-2 sm:top-3 sm:left-3 z-20 flex flex-col gap-1.5 sm:gap-2">
           {product.in_stock ? (
-            <span className="bg-[#00f2ff]/10 border border-[#00f2ff]/30 text-[#00f2ff] text-[9px] sm:text-[10px] font-black px-2 py-1 sm:px-2.5 rounded-full uppercase tracking-widest backdrop-blur-md">
+            <span className="bg-[#00f2ff]/10 border border-[#00f2ff]/30 text-[#00f2ff] text-[9px] sm:text-[10px] font-black px-2 py-1 sm:px-2.5 rounded-full uppercase tracking-widest backdrop-blur-md shadow-sm">
               В наличии
             </span>
           ) : (
-            <span className="bg-red-500/10 border border-red-500/30 text-red-400 text-[9px] sm:text-[10px] font-black px-2 py-1 sm:px-2.5 rounded-full uppercase tracking-widest backdrop-blur-md">
+            <span className="bg-red-500/10 border border-red-500/30 text-red-400 text-[9px] sm:text-[10px] font-black px-2 py-1 sm:px-2.5 rounded-full uppercase tracking-widest backdrop-blur-md shadow-sm">
               Нет в наличии
             </span>
           )}
           {product.priority && product.priority < 10 && (
-            <span className="bg-[#ff0080]/10 border border-[#ff0080]/30 text-[#ff0080] text-[9px] sm:text-[10px] font-black px-2 py-1 sm:px-2.5 rounded-full uppercase tracking-widest backdrop-blur-md w-fit flex items-center gap-1">
+            <span className="bg-[#ff0080]/15 border border-[#ff0080]/40 text-[#ff0080] text-[9px] sm:text-[10px] font-black px-2 py-1 sm:px-2.5 rounded-full uppercase tracking-widest backdrop-blur-md w-fit flex items-center gap-1 shadow-sm">
               <Star className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-current" /> Топ
             </span>
           )}
@@ -214,7 +235,8 @@ const ProductCard = ({
 
         {/* Like & Share buttons — visible on hover (desktop) or always (touch) */}
         <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-20 flex flex-col gap-1.5 sm:gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200">
-          <button
+          <motion.button
+            whileTap={{ scale: 0.86 }}
             onClick={handleLike}
             aria-label="Добавить в избранное"
             className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center transition-all border backdrop-blur-md ${
@@ -224,29 +246,30 @@ const ProductCard = ({
             }`}
           >
             <Heart className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${liked ? "fill-current" : ""}`} />
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.86 }}
             onClick={handleShare}
             aria-label="Поделиться"
             className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center transition-all border backdrop-blur-md ${
               copied
-                ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400"
+                ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.3)]"
                 : "bg-black/50 border-white/10 text-white/60 hover:text-[#00f2ff] hover:border-[#00f2ff]/40"
             }`}
           >
             <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          </button>
+          </motion.button>
         </div>
 
         {/* Copied tooltip */}
         {copied && (
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-30 bg-black/90 text-emerald-400 text-[10px] font-bold px-3 py-1.5 rounded-full border border-emerald-500/30 whitespace-nowrap">
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-30 bg-black/90 text-emerald-400 text-[10px] font-bold px-3 py-1.5 rounded-full border border-emerald-500/30 whitespace-nowrap shadow-lg">
             Ссылка скопирована!
           </div>
         )}
       </div>
 
-      <div className="p-4 sm:p-5 flex flex-col flex-1 border-t border-white/5">
+      <div className="p-4 sm:p-5 flex flex-col flex-1 border-t border-white/5 relative z-10">
         <p className="text-[9px] sm:text-[10px] font-black text-[#8E9196] uppercase tracking-[0.2em] mb-1.5 sm:mb-2">{product.brand}</p>
         <h3 className="text-sm sm:text-base font-bold leading-snug mb-3 sm:mb-4 flex-1 group-hover:text-[#00f2ff] transition-colors line-clamp-2">{product.name}</h3>
 
@@ -301,7 +324,9 @@ const ProductCard = ({
             <p className="text-[10px] sm:text-[11px] font-bold text-[#00f2ff]/70 mt-0.5">≈ ${product.price}</p>
           </div>
 
-          <button
+          <motion.button
+            whileTap={{ scale: 0.88 }}
+            whileHover={product.in_stock ? { scale: 1.05 } : {}}
             onClick={handleAdd}
             disabled={!product.in_stock}
             aria-label={`Добавить в корзину: ${product.name}`}
@@ -309,15 +334,15 @@ const ProductCard = ({
               !product.in_stock
                 ? "bg-white/5 text-white/30 cursor-not-allowed"
                 : added
-                  ? "bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.4)]"
+                  ? "bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.5)]"
                   : "bg-[#00f2ff]/10 text-[#00f2ff] border border-[#00f2ff]/30 hover:bg-[#00f2ff] hover:text-black hover:shadow-[0_0_25px_rgba(0,242,255,0.4)]"
             }`}
           >
             {added ? <Check className="w-4 h-4 sm:w-5 sm:h-5" /> : <Plus className="w-4 h-4 sm:w-5 sm:h-5" />}
-          </button>
+          </motion.button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

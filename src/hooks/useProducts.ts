@@ -48,8 +48,10 @@ export const useProducts = () => {
 
       return data as Product[];
     },
-    staleTime: 1000 * 60 * 2,
-    gcTime: 1000 * 60 * 10,
-    refetchOnWindowFocus: false,
+    staleTime: 1000 * 30,          // 30 sec — show cached instantly, revalidate quickly
+    gcTime: 1000 * 60 * 10,        // keep in memory 10 min
+    refetchOnWindowFocus: true,    // refresh if user switches tabs and comes back
+    refetchOnMount: true,          // always check for updates on mount
+    retry: 2,
   });
 };

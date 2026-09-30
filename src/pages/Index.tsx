@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { AnimatePresence } from "framer-motion";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import { Shield } from "lucide-react";
@@ -126,23 +127,34 @@ const Index = () => {
       />
 
       {/* Product Detail Modal */}
-      {selectedProduct && (
-        <ErrorBoundary>
-          <ProductModal
-            product={selectedProduct}
-            onClose={handleCloseModal}
-            onAddToCart={(p) => cart.addItem({
-              id: p.id,
-              name: p.name,
-              price: p.price,
-              image: p.image
-            })}
-            isAdmin={isAdmin ?? false}
-          />
-        </ErrorBoundary>
-      )}
+      <AnimatePresence>
+        {selectedProduct && (
+          <ErrorBoundary>
+            <ProductModal
+              product={selectedProduct}
+              onClose={handleCloseModal}
+              onAddToCart={(p) => cart.addItem({
+                id: p.id,
+                name: p.name,
+                price: p.price,
+                image: p.image
+              })}
+              isAdmin={isAdmin ?? false}
+            />
+          </ErrorBoundary>
+        )}
+      </AnimatePresence>
 
-      <AIChatWidget />
+      <AIChatWidget
+        products={products}
+        onSelectProduct={(p) => setSelectedProduct(p)}
+        onAddToCart={(p) => cart.addItem({
+          id: p.id,
+          name: p.name,
+          price: p.price,
+          image: p.image,
+        })}
+      />
 
       {/* Mobile bottom navigation */}
       <MobileBottomNav cartCount={cart.count} onCartClick={() => cart.setIsOpen(true)} />

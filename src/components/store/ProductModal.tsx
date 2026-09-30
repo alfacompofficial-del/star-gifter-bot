@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { motion } from "framer-motion";
 import { X, Heart, Share2, ShoppingCart, Zap, ZoomIn, CheckCircle, Copy, Check, Pencil, Plus, Trash2, Eye } from "lucide-react";
 import { formatPrice, EXCHANGE_RATE } from "@/lib/constants";
 import { getProductUrl } from "@/lib/slugify";
@@ -303,10 +304,91 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
     }
   };
 
+  // Toggle in_stock for admin
+  const handleToggleStock = async () => {
+    if (!isAdmin || !product) return;
+    try {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { error } = await supabase.from("products").update({ in_stock: !product.in_stock }).eq("id", product.id);
+      if (!error) {
+        product.in_stock = !product.in_stock;
+        toast.success(product.in_stock ? "Товар в наличии!" : "Снято с продажи");
+        window.dispatchEvent(new CustomEvent("products-updated"));
+      } else {
+        toast.error("Ошибка обновления статуса");
+      }
+    } catch {
+      toast.error("Ошибка соединения");
+    }
+  };
+
   if (!product) return null;
 
   const priceUZS = formatPrice(Math.round(product.price * EXCHANGE_RATE));
   const oldPriceUZS = product.old_price ? formatPrice(Math.round(product.old_price * EXCHANGE_RATE)) : null;
+
+  // Default specs per category (shown if DB doesn't override them)
+  const DEFAULT_CATEGORY_SPECS: Record<string, Record<string, string>> = {
+    "ИБП": {
+      "Тип": "Источник бесперебойного питания",
+      "Стандарт": "Line-Interactive / Online",
+      "Форм-фактор": "Tower",
+      "Интерфейс": "USB, RS-232",
+      "Защита": "От перегрузки, короткого замыкания, перегрева",
+      "Гарантия": "24 месяца",
+    },
+    "Мониторы": {
+      "Тип панели": "IPS / VA",
+      "Частота обновления": "144–320 Гц",
+      "Время отклика": "1–5 мс",
+      "Подсветка": "LED",
+      "Подключение": "HDMI 2.1, DisplayPort 1.4, USB-C",
+      "Подставка": "Регулировка высоты, наклон, поворот",
+      "Гарантия": "24 месяца",
+    },
+    "Сеть": {
+      "Стандарт Wi-Fi": "Wi-Fi 6 (802.11ax) / Wi-Fi 7",
+      "Диапазон": "2.4 ГГц + 5 ГГц (Dual-band)",
+      "Скорость LAN": "Gigabit Ethernet",
+      "Антенны": "Внешние всенаправленные",
+      "Протоколы безопасности": "WPA3, WPA2",
+      "Гарантия": "24 месяца",
+    },
+    "Комплектующие": {
+      "Совместимость": "AMD / Intel",
+      "Форм-фактор": "ATX / mATX / ITX",
+      "Гарантия": "12–36 месяцев",
+    },
+    "Моноблоки": {
+      "ОС": "Windows 11 Home",
+      "Оперативная память": "8–32 ГБ DDR4",
+      "Хранилище": "SSD NVMe",
+      "Камера": "встроенная HD-камера",
+      "Гарантия": "12 месяцев",
+    },
+    "Аксессуары": {
+      "Подключение": "USB / Bluetooth",
+      "Гарантия": "6–12 месяцев",
+    },
+    "Колонки": {
+      "Тип": "2.0 / 2.1 / 5.1",
+      "Подключение": "Bluetooth 5.0, AUX, USB",
+      "Частотный диапазон": "20 Гц — 20 кГц",
+      "Гарантия": "12 месяцев",
+    },
+    "Смартфоны": {
+      "ОС": "Android 14 / iOS",
+      "Дисплей": "AMOLED / IPS LCD",
+      "Аккумулятор": "4000–6000 мАч",
+      "Камера": "Тройная / Квадро",
+      "Связь": "5G / 4G LTE",
+      "Гарантия": "12 месяцев",
+    },
+  };
+
+  // Merge default specs with DB specs (DB overrides defaults)
+  const categoryDefaults = DEFAULT_CATEGORY_SPECS[product.category] || {};
+  const mergedSpecs = { ...categoryDefaults, ...specs };
 
   // Static specs (always shown)
   const staticSpecs = [
@@ -315,20 +397,27 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
     { key: "Наличие", value: product.in_stock ? "Есть в наличии" : "Нет в наличии", colorClass: product.in_stock ? "text-emerald-400" : "text-red-400" },
   ];
 
-  // Dynamic specs from DB
-  const dynamicSpecEntries = Object.entries(specs);
+  // Dynamic specs from DB merged with defaults
+  const dynamicSpecEntries = Object.entries(mergedSpecs);
 
   return (
     <>
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm"
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[200] bg-black/85 backdrop-blur-md"
         onClick={onClose}
       />
 
       {/* Modal */}
       <div className="fixed inset-0 z-[201] flex items-center justify-center p-2 sm:p-4 pointer-events-none">
-        <div
+        <motion.div
+          initial={{ opacity: 0, scale: 0.94, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.94, y: 20 }}
+          transition={{ type: "spring", damping: 26, stiffness: 350 }}
           className="relative w-full max-w-4xl max-h-[95vh] overflow-y-auto bg-[#0d0d0d] rounded-2xl sm:rounded-3xl border border-white/10 shadow-2xl pointer-events-auto"
           onClick={(e) => e.stopPropagation()}
         >
@@ -336,12 +425,13 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
           <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#ff0080]/60 to-transparent" />
 
           {/* Close button */}
-          <button
+          <motion.button
+            whileTap={{ scale: 0.88 }}
             onClick={onClose}
             className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10 w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition-all"
           >
             <X className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
+          </motion.button>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
             {/* LEFT: Image */}
@@ -416,12 +506,25 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
                     <span className="flex items-center gap-1.5" title="Просмотры"><Eye className="w-4 h-4 text-[#00f2ff]"/> {product.views || 0}</span>
                     <span className="flex items-center gap-1.5" title="Добавлено в избранное"><Heart className="w-4 h-4 text-[#ff0080]"/> {product.likes || 0}</span>
                   </div>
-                  <button 
-                    onClick={handleDuplicate} 
-                    className="ml-auto text-blue-400 flex items-center gap-1.5 hover:text-blue-300 text-xs font-bold uppercase tracking-wider bg-blue-500/10 px-3 py-1.5 rounded-lg border border-blue-500/20"
-                  >
-                    <Copy className="w-3.5 h-3.5"/> Дублировать
-                  </button>
+                  <div className="ml-auto flex items-center gap-2">
+                    <button
+                      onClick={handleToggleStock}
+                      className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg border transition-all ${
+                        product.in_stock
+                          ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20"
+                          : "bg-red-500/10 text-red-400 border-red-500/20 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/20"
+                      }`}
+                      title={product.in_stock ? "Снять с продажи" : "Добавить в наличие"}
+                    >
+                      {product.in_stock ? "✓ В наличии" : "✗ Нет"}
+                    </button>
+                    <button 
+                      onClick={handleDuplicate} 
+                      className="text-blue-400 flex items-center gap-1.5 hover:text-blue-300 text-xs font-bold uppercase tracking-wider bg-blue-500/10 px-3 py-1.5 rounded-lg border border-blue-500/20"
+                    >
+                      <Copy className="w-3.5 h-3.5"/> Дублировать
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -697,7 +800,7 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Lightbox */}

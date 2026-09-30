@@ -76,11 +76,21 @@ export default {
           "0%, 100%": { boxShadow: "0 0 20px hsl(185 100% 50% / 0.2)" },
           "50%": { boxShadow: "0 0 40px hsl(185 100% 50% / 0.4)" },
         },
+        marquee: {
+          "0%": { transform: "translateX(0%)" },
+          "100%": { transform: "translateX(-50%)" },
+        },
+        shimmer: {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",
+        marquee: "marquee 30s linear infinite",
+        shimmer: "shimmer 2s ease-in-out infinite",
       },
     },
   },

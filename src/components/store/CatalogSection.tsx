@@ -434,9 +434,29 @@ const CatalogSection = ({ products, isLoading, error, onAddToCart, onProductClic
 
         {/* Products Grid */}
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-32">
-            <div className="w-12 h-12 border-4 border-[#00f2ff]/20 border-t-[#00f2ff] rounded-full animate-spin mb-6" />
-            <p className="text-sm font-black uppercase tracking-[0.2em] text-[#00f2ff]/50 animate-pulse">Загрузка каталога...</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div
+                key={i}
+                className="card-premium rounded-2xl overflow-hidden bg-card/60 border border-white/5 p-4 sm:p-5 flex flex-col gap-4 relative animate-pulse"
+              >
+                <div className="aspect-square bg-white/5 rounded-xl flex items-center justify-center relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
+                </div>
+                <div className="space-y-2 mt-1">
+                  <div className="h-3 w-16 bg-white/10 rounded-full" />
+                  <div className="h-4 w-4/5 bg-white/10 rounded-full" />
+                  <div className="h-4 w-2/3 bg-white/5 rounded-full" />
+                </div>
+                <div className="flex items-center justify-between pt-4 mt-auto border-t border-white/5">
+                  <div className="space-y-1.5">
+                    <div className="h-5 w-24 bg-white/10 rounded-full" />
+                    <div className="h-3 w-12 bg-white/5 rounded-full" />
+                  </div>
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/10 rounded-xl" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : error ? (
           <div className="glass rounded-3xl py-24 text-center">
