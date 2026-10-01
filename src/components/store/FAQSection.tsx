@@ -1,72 +1,88 @@
 import { useState } from "react";
-import { ChevronDown, MessageCircleQuestion } from "lucide-react";
-import { motion } from "framer-motion";
+import { ChevronDown } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { FAQ_DATA } from "@/lib/constants";
 
 const FAQSection = () => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
-    <section id="faq" className="py-16 sm:py-24 relative overflow-hidden">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] sm:w-[800px] h-[400px] sm:h-[800px] bg-[#00f2ff]/5 rounded-full blur-[120px] pointer-events-none" />
-
+    <section id="faq" className="py-14 sm:py-20 relative border-t border-white/[0.05]">
       <div className="container px-4 sm:px-6 relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-10 sm:mb-16"
-        >
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 bg-white/5 mb-4">
-            <MessageCircleQuestion className="w-4 h-4 text-[#ff0080]" />
-            <span className="text-xs font-bold text-white/80 uppercase tracking-widest">Ответы</span>
-          </div>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mt-2 text-white">
-            Часто задаваемые вопросы
-          </h2>
-        </motion.div>
 
-        <div className="max-w-3xl mx-auto space-y-3 sm:space-y-4">
-          {FAQ_DATA.map((item, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.08 }}
-              className={`glass rounded-xl sm:rounded-2xl overflow-hidden border transition-all duration-300 ${
-                openIndex === i
-                  ? "border-[#00f2ff]/30 shadow-[0_0_30px_rgba(0,242,255,0.1)]"
-                  : "border-white/5 hover:border-white/20"
-              }`}
-            >
-              <button
-                onClick={() => setOpenIndex(openIndex === i ? null : i)}
-                aria-expanded={openIndex === i}
-                className="w-full flex items-center justify-between p-4 sm:p-6 text-left font-bold text-sm sm:text-base hover:bg-white/5 transition-colors group"
+        {/* Header */}
+        <div className="text-center mb-10 max-w-xl mx-auto">
+          <div className="text-label text-[#FF5A00] mb-2 flex items-center justify-center gap-2">
+            <span className="w-3 h-px bg-[#FF5A00]" />
+            СПРАВОЧНЫЙ ЦЕНТР
+            <span className="w-3 h-px bg-[#FF5A00]" />
+          </div>
+          <h2 className="text-[1.75rem] sm:text-[2.1rem] font-bold tracking-tight text-white mb-2">
+            Частые вопросы
+          </h2>
+          <p className="text-[13px] text-white/45">
+            О доставке, гарантии, способах оплаты и оформлении заказа.
+          </p>
+        </div>
+
+        {/* Accordion */}
+        <div className="max-w-2xl mx-auto space-y-2">
+          {FAQ_DATA.map((item, i) => {
+            const isOpen = openIndex === i;
+            return (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.35, delay: i * 0.06, ease: [0.16, 1, 0.3, 1] }}
+                className={`rounded-xl border overflow-hidden transition-all duration-200 ${
+                  isOpen
+                    ? "border-[#FF5A00]/30 bg-[#0f1117]"
+                    : "border-white/[0.07] bg-[#0f1117] hover:border-white/[0.12]"
+                }`}
               >
-                <span className={`transition-colors pr-4 leading-snug ${openIndex === i ? "text-[#00f2ff]" : "text-white group-hover:text-[#00f2ff]"}`}>
-                  {item.question}
-                </span>
-                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center shrink-0 transition-all ${
-                  openIndex === i
-                    ? "bg-[#00f2ff]/20 text-[#00f2ff]"
-                    : "bg-white/5 text-white/50 group-hover:bg-white/10"
-                }`}>
-                  <ChevronDown className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 ${openIndex === i ? "rotate-180" : ""}`} />
-                </div>
-              </button>
-              <div className={`overflow-hidden transition-all duration-500 ease-in-out ${openIndex === i ? "max-h-96 opacity-100" : "max-h-0 opacity-0"}`}>
-                <div className="px-4 sm:px-6 pb-4 sm:pb-6 pt-2">
-                  <div className="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent mb-3 sm:mb-4" />
-                  <p className="text-xs sm:text-sm text-white/60 whitespace-pre-line leading-relaxed font-medium">
-                    {item.answer}
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          ))}
+                <button
+                  onClick={() => setOpenIndex(isOpen ? null : i)}
+                  aria-expanded={isOpen}
+                  className="w-full flex items-center justify-between p-4 sm:p-5 text-left group"
+                >
+                  <span className={`pr-4 text-[13px] sm:text-[14px] font-semibold leading-snug tracking-tight transition-colors ${
+                    isOpen ? "text-[#FF5A00]" : "text-white group-hover:text-white"
+                  }`}>
+                    {item.question}
+                  </span>
+
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border transition-all duration-200 ${
+                    isOpen
+                      ? "bg-[#FF5A00]/12 border-[#FF5A00]/25 text-[#FF5A00]"
+                      : "bg-[#181B22] border-white/[0.09] text-white/40 group-hover:text-white/70"
+                  }`}>
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-250 ${isOpen ? "rotate-180" : ""}`} />
+                  </div>
+                </button>
+
+                <AnimatePresence initial={false}>
+                  {isOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                      style={{ overflow: "hidden" }}
+                    >
+                      <div className="px-4 sm:px-5 pb-4 sm:pb-5">
+                        <div className="h-px w-full bg-white/[0.05] mb-3" />
+                        <p className="text-[12.5px] text-white/55 whitespace-pre-line leading-relaxed font-normal">
+                          {item.answer}
+                        </p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            );
+          })}
         </div>
       </div>
     </section>

@@ -1,6 +1,12 @@
 import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  setCachedProducts,
+  subscribeToProductsUpdate,
+  getSynchronousPreload,
+  waitForPreload,
+} from "@/lib/productsDb";
 
 export interface Product {
   id: number;
@@ -21,12 +27,37 @@ export interface Product {
 export const useProducts = () => {
   const queryClient = useQueryClient();
 
+  // 1. Подписка на обновления товаров (локально + между вкладками через BroadcastChannel)
   useEffect(() => {
-    const handleUpdate = () => {
+    const unsubscribe = subscribeToProductsUpdate(() => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
+    });
+    return unsubscribe;
+  }, [queryClient]);
+
+  // 2. Асинхронная гидратация из IndexedDB, если в React Query памяти еще пусто
+  useEffect(() => {
+    let isMounted = true;
+    const currentData = queryClient.getQueryData<Product[]>(["products"]);
+
+    if (!currentData || currentData.length === 0) {
+      waitForPreload().then((cached) => {
+        if (!isMounted) return;
+        if (cached && cached.products && cached.products.length > 0) {
+          const freshCheck = queryClient.getQueryData<Product[]>(["products"]);
+          // Записываем кэш в React Query только если сетевой запрос еще не успел вернуть данные
+          if (!freshCheck || freshCheck.length === 0) {
+            queryClient.setQueryData(["products"], cached.products, {
+              updatedAt: cached.timestamp,
+            });
+          }
+        }
+      });
+    }
+
+    return () => {
+      isMounted = false;
     };
-    window.addEventListener("products-updated", handleUpdate);
-    return () => window.removeEventListener("products-updated", handleUpdate);
   }, [queryClient]);
 
   return useQuery({
@@ -42,16 +73,31 @@ export const useProducts = () => {
         throw new Error(error.message);
       }
 
-      if (!data || data.length === 0) {
-        return [];
+      const products = (data || []) as Product[];
+
+      // При успешном получении свежих данных из Supabase обновляем IndexedDB в фоне
+      if (products.length > 0) {
+        setCachedProducts(products).catch((err) => {
+          console.warn("[IndexedDB] Could not sync products to persistent cache:", err);
+        });
       }
 
-      return data as Product[];
+      return products;
     },
-    staleTime: 1000 * 30,          // 30 sec — show cached instantly, revalidate quickly
-    gcTime: 1000 * 60 * 10,        // keep in memory 10 min
-    refetchOnWindowFocus: true,    // refresh if user switches tabs and comes back
-    refetchOnMount: true,          // always check for updates on mount
+    // Мгновенная инициализация из предзагруженного кэша IndexedDB (если готов)
+    initialData: () => {
+      const preload = getSynchronousPreload();
+      return preload && preload.products.length > 0 ? preload.products : undefined;
+    },
+    initialDataUpdatedAt: () => {
+      const preload = getSynchronousPreload();
+      return preload ? preload.timestamp : 0;
+    },
+    // При повторном открытии сайта показывать кэш сразу, но ВСЕГДА проверять Supabase в фоне
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    staleTime: 1000 * 30, // 30 секунд — активная сессия без лишних запросов
+    gcTime: 1000 * 60 * 60 * 24, // 24 часа в памяти React Query
     retry: 2,
   });
 };

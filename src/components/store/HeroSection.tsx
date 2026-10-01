@@ -1,199 +1,237 @@
 import { useRef } from "react";
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
-import { Send, Zap, ChevronRight, ShieldCheck } from "lucide-react";
+import { motion } from "framer-motion";
+import { ChevronDown, Send, ArrowUpRight, Zap, Shield, Truck } from "lucide-react";
 import { CONTACTS } from "@/lib/constants";
-
+import { useExchangeRate } from "@/hooks/useExchangeRate";
 import heroPcImage from "@/assets/hero-pc.png";
 
+// ── Stagger animation helpers ──────────────────────────
+const fadeUp = (delay: number = 0) => ({
+  initial: { opacity: 0, y: 14 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.55, delay, ease: [0.16, 1, 0.3, 1] as const },
+});
+
 const HeroSection = () => {
+  const { exchangeRate } = useExchangeRate();
+  const sectionRef = useRef<HTMLElement>(null);
+
   const scrollToCatalog = () => {
     document.getElementById("catalog")?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // 3D Parallax Tilt Effect
-  const cardRef = useRef<HTMLDivElement>(null);
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-
-  const mouseXSpring = useSpring(x, { stiffness: 220, damping: 25 });
-  const mouseYSpring = useSpring(y, { stiffness: 220, damping: 25 });
-
-  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["14deg", "-14deg"]);
-  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-14deg", "14deg"]);
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-    const xPct = mouseX / rect.width - 0.5;
-    const yPct = mouseY / rect.height - 0.5;
-    x.set(xPct);
-    y.set(yPct);
+  const handleCategoryJump = (categoryName: string) => {
+    const catalogEl = document.getElementById("catalog");
+    if (catalogEl) {
+      catalogEl.scrollIntoView({ behavior: "smooth" });
+      window.dispatchEvent(new CustomEvent("select-category", { detail: categoryName }));
+    }
   };
 
-  const handleMouseLeave = () => {
-    x.set(0);
-    y.set(0);
-  };
+  const hardwarePills = [
+    { label: "Мониторы 144–320 Гц", cat: "Мониторы" },
+    { label: "ИБП Ion", cat: "ИБП" },
+    { label: "Wi-Fi роутеры", cat: "Сеть" },
+    { label: "Комплектующие", cat: "Комплектующие" },
+    { label: "Моноблоки", cat: "Моноблоки" },
+  ];
+
+  const stats = [
+    { label: "Курс USD/UZS", value: `${exchangeRate.toLocaleString()}`, unit: "сум" },
+    { label: "Доставка Ташкент", value: "1 день", unit: "" },
+    { label: "Оплата", value: "Click · Payme", unit: "" },
+  ];
 
   return (
-    <section id="home" className="min-h-screen flex flex-col justify-center pt-24 pb-8 relative overflow-hidden mesh-bg">
-      {/* Living animated glow effects */}
-      <motion.div
-        animate={{
-          x: [0, 30, -25, 0],
-          y: [0, -35, 20, 0],
-          scale: [1, 1.12, 0.95, 1],
-        }}
-        transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-1/4 right-0 w-[320px] sm:w-[550px] h-[320px] sm:h-[550px] bg-[#00f2ff]/15 rounded-full blur-[130px] pointer-events-none"
-      />
-      <motion.div
-        animate={{
-          x: [0, -35, 25, 0],
-          y: [0, 30, -25, 0],
-          scale: [1, 0.92, 1.15, 1],
-        }}
-        transition={{ duration: 17, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-        className="absolute bottom-12 left-1/4 w-[280px] sm:w-[480px] h-[280px] sm:h-[480px] bg-[#ff0080]/15 rounded-full blur-[120px] pointer-events-none"
-      />
+    <section
+      id="home"
+      ref={sectionRef}
+      className="relative pt-24 pb-10 sm:pt-32 sm:pb-16 overflow-hidden"
+    >
+      {/* Subtle top accent line */}
+      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#FF5A00]/20 to-transparent pointer-events-none" />
 
-      <div className="container relative z-10 px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-8 sm:gap-10 lg:gap-8 items-center">
-          
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: [0.25, 0.8, 0.25, 1] }}
-            className="order-2 lg:order-1"
-          >
-            <motion.div 
-              whileHover={{ scale: 1.03 }}
-              className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full glass border-[#00f2ff]/30 mb-5 sm:mb-8 shadow-[0_0_15px_rgba(0,242,255,0.15)] cursor-default"
-            >
-              <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#00f2ff] animate-pulse" />
-              <span className="text-[11px] sm:text-sm font-bold text-white/90">Официальный поставщик в Узбекистане</span>
+      <div className="container px-4 sm:px-6 relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_0.88fr] gap-8 lg:gap-14 items-center">
+
+          {/* ── LEFT: Copy & CTAs ─────────────────────── */}
+          <div className="flex flex-col">
+
+            {/* Section marker */}
+            <motion.div {...fadeUp(0.05)} className="flex items-center gap-2.5 mb-5">
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-[#0f1117] border border-white/[0.07] w-fit">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e] status-dot-pulse" />
+                <span className="text-data text-[10px] text-white/55 tracking-[0.1em] uppercase">
+                  Ташкент · Склад
+                </span>
+              </div>
+              <div className="h-px flex-1 max-w-[80px] bg-gradient-to-r from-white/[0.08] to-transparent hidden sm:block" />
             </motion.div>
-            
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-[1.05] tracking-tight mb-5 sm:mb-8">
-              Создай свою <br />
-              <span className="relative inline-block mt-2">
-                <span className="absolute -inset-2 bg-gradient-to-r from-[#00f2ff]/40 via-[#9d00ff]/30 to-[#ff0080]/40 blur-2xl opacity-60"></span>
-                <span className="relative text-transparent bg-clip-text bg-gradient-to-r from-[#00f2ff] via-[#00c8ff] to-[#ff0080]">Мечту</span>
-              </span>
-            </h1>
-            
-            <p className="text-sm sm:text-base lg:text-lg text-white/60 mb-7 sm:mb-10 max-w-xl leading-relaxed font-medium">
-              Eng zo'r kompyuterlar, monitorlar, UPS, Wi-Fi routerlar va elektronikalar. 
-              Премиальная электроника — мониторы 144–320 Гц, Wi-Fi 6/7, SSD NVMe, мощные видеокарты с официальной гарантией.
-            </p>
 
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-8 sm:mb-12">
+            {/* Main headline */}
+            <motion.div {...fadeUp(0.10)}>
+              <h1 className="text-display mb-1">
+                <span className="block text-[2.4rem] sm:text-[3.2rem] lg:text-[3rem] xl:text-[3.4rem] text-white leading-[1.06]">
+                  Компьютеры<br />и оборудование
+                </span>
+              </h1>
+              <h1 className="text-display">
+                <span className="block text-[2.4rem] sm:text-[3.2rem] lg:text-[3rem] xl:text-[3.4rem] text-white/40 leading-[1.06] mb-5">
+                  в Ташкенте.
+                </span>
+              </h1>
+            </motion.div>
+
+            {/* Descriptor */}
+            <motion.p {...fadeUp(0.16)} className="text-[14px] sm:text-[15px] text-white/52 leading-[1.7] max-w-lg mb-6 font-normal tracking-[-0.005em]">
+              Игровые и рабочие ПК, мониторы 144–320&nbsp;Гц, ИБП&nbsp;Ion,
+              Wi‑Fi&nbsp;роутеры и комплектующие. Гарантия и доставка по&nbsp;Узбекистану.
+            </motion.p>
+
+            {/* Category quick-access pills */}
+            <motion.div {...fadeUp(0.22)} className="flex flex-wrap gap-1.5 mb-7">
+              {hardwarePills.map((pill) => (
+                <button
+                  key={pill.label}
+                  onClick={() => handleCategoryJump(pill.cat)}
+                  className="px-3 py-1.5 rounded-md text-[11.5px] font-medium tracking-[-0.01em]
+                    text-white/55 bg-[#0f1117] border border-white/[0.07]
+                    hover:border-[#FF5A00]/40 hover:text-white/90 hover:bg-[#14171E]
+                    transition-all duration-200"
+                >
+                  {pill.label}
+                </button>
+              ))}
+            </motion.div>
+
+            {/* Primary CTAs */}
+            <motion.div {...fadeUp(0.28)} className="flex flex-col sm:flex-row gap-3 mb-9">
               <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.96 }}
+                whileTap={{ scale: 0.97 }}
                 onClick={scrollToCatalog}
-                className="group flex items-center justify-center gap-2 bg-gradient-to-r from-[#00f2ff] to-[#009dff] text-black px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-black text-sm sm:text-base transition-all shadow-[0_0_25px_rgba(0,242,255,0.3)] hover:shadow-[0_0_40px_rgba(0,242,255,0.55)]"
+                className="btn-primary text-[13px] h-11 px-6 rounded-lg shadow-[0_4px_24px_rgba(255,90,0,0.20)] hover:shadow-[0_4px_28px_rgba(255,90,0,0.35)]"
               >
-                В каталог товаров
-                <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1.5 transition-transform" />
+                <span>Смотреть каталог</span>
+                <ChevronDown className="w-4 h-4" />
               </motion.button>
-              
+
               <motion.a
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.96 }}
+                whileTap={{ scale: 0.97 }}
                 href={CONTACTS.TELEGRAM}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 glass px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-bold text-sm sm:text-base hover:bg-white/10 hover:border-white/25 transition-all group shadow-sm hover:shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+                className="btn-ghost text-[13px] h-11 px-6 rounded-lg"
               >
-                <Send className="w-4 h-4 sm:w-5 sm:h-5 text-[#00f2ff] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-transform" />
-                Связаться в TG
+                <Send className="w-3.5 h-3.5 text-[#FF5A00]" />
+                <span>Консультация</span>
               </motion.a>
-            </div>
+            </motion.div>
 
-            <div className="grid grid-cols-3 gap-3 sm:gap-6 pt-5 sm:pt-6 border-t border-white/10">
-              {[
-                { value: "80+", label: "Товаров" },
-                { value: "1–3 Года", label: "Гарантия" },
-                { value: "24/7", label: "Поддержка" },
-              ].map((s) => (
-                <div key={s.label}>
-                  <div className="text-xl sm:text-2xl lg:text-3xl font-black text-white">{s.value}</div>
-                  <div className="text-[10px] sm:text-xs font-semibold text-[#00f2ff] uppercase tracking-wider mt-1">{s.label}</div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, rotate: -3 }}
-            animate={{ opacity: 1, scale: 1, rotate: 0 }}
-            transition={{ duration: 1, delay: 0.2, ease: [0.25, 0.8, 0.25, 1] }}
-            className="order-1 lg:order-2 relative"
-            style={{ perspective: 1200 }}
-          >
-            {/* Decorative background elements behind image */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-[#00f2ff]/25 to-[#ff0080]/25 rounded-3xl blur-2xl transform rotate-6 scale-105 pointer-events-none" />
-            
-            <motion.div 
-              ref={cardRef}
-              onMouseMove={handleMouseMove}
-              onMouseLeave={handleMouseLeave}
-              style={{
-                rotateX,
-                rotateY,
-                transformStyle: "preserve-3d",
-              }}
-              whileHover={{ scale: 1.02 }}
-              transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              className="group relative rounded-2xl sm:rounded-3xl overflow-hidden border border-white/15 bg-card/60 backdrop-blur-md p-2 sm:p-4 shadow-2xl shadow-black/80 cursor-pointer select-none transition-shadow duration-300 hover:shadow-[0_20px_60px_rgba(0,242,255,0.22)]"
-            >
-              {/* 3D Floating Badge 1 - Original */}
-              <div 
-                style={{ transform: "translateZ(50px)" }}
-                className="absolute top-4 right-4 sm:top-8 sm:right-8 z-20 flex items-center gap-1.5 sm:gap-2 bg-black/80 backdrop-blur-md border border-[#00f2ff]/30 text-white px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-sm font-bold shadow-[0_8px_20px_rgba(0,0,0,0.6)]"
-              >
-                <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#00f2ff]" />
-                Оригинал 100%
+            {/* Stats bar */}
+            <motion.div {...fadeUp(0.34)}>
+              <div className="pt-5 border-t border-white/[0.07] grid grid-cols-3 gap-4 sm:gap-6">
+                {stats.map((s) => (
+                  <div key={s.label}>
+                    <div className="text-label mb-1.5">{s.label}</div>
+                    <div className="text-data text-[13px] sm:text-[14px] font-bold text-white leading-none">
+                      {s.value}
+                      {s.unit && <span className="text-white/40 text-[10px] ml-1 font-normal">{s.unit}</span>}
+                    </div>
+                  </div>
+                ))}
               </div>
-              
-              {/* 3D Depth Image */}
-              <div style={{ transform: "translateZ(20px)" }} className="relative overflow-hidden rounded-xl sm:rounded-2xl">
+            </motion.div>
+          </div>
+
+          {/* ── RIGHT: Hardware Display ───────────────── */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.65, delay: 0.18, ease: [0.16, 1, 0.3, 1] }}
+            className="relative"
+          >
+            {/* Outer frame */}
+            <div className="relative rounded-2xl overflow-hidden border border-white/[0.1] bg-[#0c0e14] shadow-[0_32px_80px_rgba(0,0,0,0.80)]">
+              {/* Top reflection */}
+              <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/[0.18] to-transparent z-10 pointer-events-none" />
+
+              {/* Frame header bar */}
+              <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.06] bg-[#0f1016]">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#22c55e] status-dot-pulse" />
+                  <span className="text-data text-[10px] text-white/35 tracking-[0.08em] uppercase">
+                    ALFACOMP // HARDWARE-EXHIBIT
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-data text-[10px] text-white/25">TASHKENT</span>
+                  <ArrowUpRight className="w-3 h-3 text-white/20" />
+                </div>
+              </div>
+
+              {/* Main product image stage */}
+              <div className="relative bg-[#08090c] flex items-center justify-center overflow-hidden"
+                style={{ aspectRatio: "4/3" }}>
+                {/* Radial spotlight */}
+                <div className="absolute inset-0 pointer-events-none"
+                  style={{ background: "radial-gradient(ellipse 80% 70% at 50% 50%, rgba(255,90,0,0.04) 0%, transparent 70%)" }}
+                />
                 <img
                   src={heroPcImage}
-                  alt="Premium PC Setup"
-                  className="w-full h-auto rounded-xl sm:rounded-2xl object-cover aspect-[4/3] transform transition-transform duration-700 group-hover:scale-105"
+                  alt="Компьютерные системы AlfaComp"
+                  className="w-full h-full object-contain p-6 sm:p-8 transition-transform duration-700 hover:scale-[1.03]"
+                  loading="eager"
                 />
               </div>
-              
-              {/* 3D Floating Badge 2 - Best Seller */}
-              <div 
-                style={{ transform: "translateZ(55px)" }}
-                className="absolute bottom-4 left-4 sm:bottom-8 sm:left-8 z-20 glass px-3 sm:px-6 py-2 sm:py-4 rounded-xl sm:rounded-2xl border-white/20 shadow-[0_12px_30px_rgba(0,0,0,0.6)]"
-              >
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#ff0080] to-purple-600 flex items-center justify-center text-white font-black text-base sm:text-xl shadow-lg shadow-[#ff0080]/40">
-                    🔥
-                  </div>
-                  <div>
-                    <div className="text-[9px] sm:text-xs font-bold text-white/60 uppercase tracking-wider mb-0.5 sm:mb-1">Хит продаж</div>
-                    <div className="text-sm sm:text-lg font-black text-white">Игровые сборки</div>
-                  </div>
-                </div>
-              </div>
 
-              {/* Dynamic Glare light reflection on hover */}
-              <div
-                className="pointer-events-none absolute inset-0 rounded-2xl sm:rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30"
-                style={{
-                  background: "radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.12) 0%, transparent 65%)",
-                }}
-              />
+              {/* Bottom spec grid */}
+              <div className="grid grid-cols-2 gap-px bg-white/[0.05] border-t border-white/[0.05]">
+                {[
+                  { label: "Дисплеи", value: "IPS · 144–320 Гц · 2K / 4K" },
+                  { label: "Электропитание", value: "ИБП Ion Line-Interactive" },
+                ].map((spec) => (
+                  <div key={spec.label} className="bg-[#0f1117] px-3.5 py-2.5">
+                    <div className="text-label mb-1">{spec.label}</div>
+                    <div className="text-[11.5px] font-semibold text-white leading-tight tracking-[-0.01em]">
+                      {spec.value}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Floating trust badges */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.55, ease: [0.16, 1, 0.3, 1] }}
+              className="absolute -bottom-4 -left-3 sm:-left-5 flex flex-col gap-1.5 pointer-events-none"
+            >
+              {[
+                { icon: Shield, text: "Гарантия до 36 мес." },
+                { icon: Truck, text: "Доставка 1 день" },
+              ].map(({ icon: Icon, text }) => (
+                <div key={text} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg
+                  bg-[#0f1117]/95 border border-white/[0.09] backdrop-blur-sm
+                  shadow-[0_4px_16px_rgba(0,0,0,0.5)]">
+                  <Icon className="w-3 h-3 text-[#FF5A00] shrink-0" />
+                  <span className="text-[11px] font-medium text-white/75 whitespace-nowrap">{text}</span>
+                </div>
+              ))}
+            </motion.div>
+
+            {/* SKU tag */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4, delay: 0.7 }}
+              className="absolute -top-2.5 -right-2.5 sm:-right-4 px-2.5 py-1 rounded-md
+                bg-[#14171E] border border-white/[0.08]
+                text-data text-[9px] text-white/30 tracking-[0.1em] uppercase pointer-events-none"
+            >
+              ORIGINAL HARDWARE
             </motion.div>
           </motion.div>
-          
         </div>
       </div>
     </section>

@@ -82,16 +82,16 @@ const Index = () => {
         <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
       </Helmet>
       {isAdmin && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] bg-primary text-black text-sm font-bold px-4 py-3 rounded-full flex items-center gap-4 shadow-2xl shadow-primary/50 border-[3px] border-black/10">
-          <span className="hidden sm:flex items-center gap-2">
-            <Shield className="w-4 h-4" />
-            Управление сайтом
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] bg-[#14171E] text-white text-xs font-mono px-4 py-2 rounded-lg flex items-center gap-3 shadow-2xl border border-[#FF5A00]/40">
+          <span className="hidden sm:flex items-center gap-1.5 text-white/70">
+            <Shield className="w-3.5 h-3.5 text-[#FF5A00]" />
+            Режим администратора
           </span>
           <Link
             to="/admin"
-            className="px-6 py-2 bg-black text-primary rounded-full uppercase text-xs tracking-widest hover:brightness-125 transition"
+            className="px-3 py-1 bg-[#FF5A00] text-white rounded font-sans text-xs font-semibold hover:bg-[#FF6A15] transition"
           >
-            Открыть админ-панель →
+            Панель управления →
           </Link>
         </div>
       )}

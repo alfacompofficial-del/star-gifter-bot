@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import type { Product } from "@/hooks/useProducts";
+import { formatPrice } from "@/lib/constants";
+import { useExchangeRate } from "@/hooks/useExchangeRate";
 
 type Message = { role: "user" | "assistant"; content: string };
 
@@ -27,6 +29,7 @@ export interface AIChatWidgetProps {
 }
 
 const AIChatWidget = ({ products = [], onSelectProduct, onAddToCart }: AIChatWidgetProps) => {
+  const { exchangeRate } = useExchangeRate();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -129,7 +132,7 @@ const AIChatWidget = ({ products = [], onSelectProduct, onAddToCart }: AIChatWid
         const specsText = p.specs && Object.keys(p.specs).length > 0
           ? `| ${Object.entries(p.specs).slice(0, 3).map(([k, v]) => `${k}: ${v}`).join(", ")}`
           : "";
-        return `[ID:${p.id}] "${p.name}" | Кат: ${p.category} | ${p.price.toLocaleString("ru-RU")} сум | ${p.in_stock ? "В наличии" : "Под заказ"} | Бренд: ${p.brand || "AlfaComp"} ${specsText}`;
+        return `[ID:${p.id}] "${p.name}" | Кат: ${p.category} | $${p.price} (~${formatPrice(Math.round(p.price * exchangeRate))} сум) | ${p.in_stock ? "В наличии" : "Под заказ"} | Бренд: ${p.brand || "AlfaComp"} ${specsText}`;
       })
       .join("\n");
 
@@ -277,7 +280,7 @@ ${productCatalogText}
               return (
                 <div
                   key={p.id}
-                  className="p-2.5 rounded-xl border border-white/15 bg-black/60 backdrop-blur-md flex flex-col gap-2 hover:border-[#00f2ff]/50 transition-all shadow-lg"
+                  className="p-2.5 rounded-xl border border-white/10 bg-[#111317] flex flex-col gap-2 hover:border-[#FF5A00]/50 transition-all shadow-lg"
                 >
                   <div className="flex gap-2.5 items-center">
                     <img
@@ -306,8 +309,8 @@ ${productCatalogText}
                       <h5 className="text-xs font-bold text-white truncate" title={p.name}>
                         {p.name}
                       </h5>
-                      <div className="text-xs font-black text-[#00f2ff]">
-                        {p.price.toLocaleString("ru-RU")} сум
+                      <div className="text-xs font-mono font-bold text-white">
+                        {formatPrice(Math.round(p.price * exchangeRate))} сум
                       </div>
                     </div>
                   </div>
@@ -316,7 +319,7 @@ ${productCatalogText}
                   <div className="flex items-center gap-2 pt-1 border-t border-white/10">
                     <button
                       onClick={() => onSelectProduct?.(p)}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg bg-gradient-to-r from-[#00f2ff] to-[#00c8ff] hover:brightness-110 text-black font-black text-[11px] shadow-sm transition-all"
+                      className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg bg-[#FF5A00] hover:bg-[#FF6A15] text-white font-semibold text-[11px] shadow-sm transition-all"
                     >
                       <Eye className="w-3.5 h-3.5" />
                       Посмотреть товар
@@ -360,19 +363,18 @@ ${productCatalogText}
       {/* Floating Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        aria-label={isOpen ? "Закрыть AI-чат" : "Открыть AI-чат"}
+        aria-label={isOpen ? "Закрыть чат" : "Открыть технический чат"}
         aria-expanded={isOpen}
-        className="fixed right-4 sm:bottom-6 sm:right-6 z-50 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-tr from-[#00f2ff] to-[#00bfff] text-black flex items-center justify-center shadow-[0_0_25px_rgba(0,242,255,0.4)] hover:shadow-[0_0_35px_rgba(0,242,255,0.65)] hover:scale-110 active:scale-95 transition-all"
+        className="fixed right-4 sm:bottom-6 sm:right-6 z-50 w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-[#14171E] border border-white/[0.12] hover:border-[#FF5A00]/60 text-white flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-all"
         style={{ bottom: "calc(62px + env(safe-area-inset-bottom, 0px) + 16px)" }}
       >
         {isOpen ? (
-          <X className="w-5 h-5 sm:w-6 sm:h-6" />
+          <X className="w-5 h-5 text-white" />
         ) : (
           <>
-            <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6" />
-            <span className="absolute -top-1 -right-1 flex h-4 w-4">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ff0080] opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-4 w-4 bg-[#ff0080] text-[9px] font-black text-white items-center justify-center">
+            <MessageCircle className="w-5 h-5 text-[#FF5A00]" />
+            <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+              <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-[#FF5A00] text-[8px] font-mono font-bold text-white items-center justify-center">
                 AI
               </span>
             </span>
@@ -387,23 +389,23 @@ ${productCatalogText}
           style={{ bottom: "calc(62px + env(safe-area-inset-bottom, 0px) + 16px + 56px)" }}
         >
           {/* Header */}
-          <div className="p-3.5 border-b border-white/10 flex items-center justify-between bg-black/40 backdrop-blur-md">
+          <div className="p-3.5 border-b border-white/10 flex items-center justify-between bg-[#121419]">
             <div className="flex items-center gap-2.5">
               <div className="relative">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#00f2ff] to-[#9d00ff] flex items-center justify-center shadow-[0_0_12px_rgba(0,242,255,0.4)]">
-                  <Bot className="w-5 h-5 text-black" />
+                <div className="w-8 h-8 rounded-lg bg-[#181B22] border border-white/10 flex items-center justify-center">
+                  <Bot className="w-4 h-4 text-[#FF5A00]" />
                 </div>
-                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-[#0c1017]" />
+                <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#10B981]" />
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
-                  <p className="text-sm font-black text-white">AlfaComp AI</p>
-                  <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-[#00f2ff]/20 text-[#00f2ff] border border-[#00f2ff]/30">
+                  <p className="text-xs font-bold text-white">Консультант AlfaComp</p>
+                  <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-[#10B981]/20 text-[#10B981] border border-[#10B981]/30">
                     ONLINE
                   </span>
                 </div>
-                <p className="text-[11px] text-white/60 font-medium">
-                  📦 {totalCount} товаров • {inStockCount} в наличии
+                <p className="text-[10px] font-mono text-white/50">
+                  {totalCount} товаров • {inStockCount} в наличии
                 </p>
               </div>
             </div>
@@ -432,12 +434,12 @@ ${productCatalogText}
           <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3.5 custom-scrollbar">
             {messages.length === 0 && (
               <div className="text-center py-4 px-1 space-y-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#00f2ff]/20 to-[#ff0080]/20 border border-[#00f2ff]/30 flex items-center justify-center mx-auto shadow-[0_0_20px_rgba(0,242,255,0.15)]">
-                  <Sparkles className="w-6 h-6 text-[#00f2ff]" />
+                <div className="w-12 h-12 rounded-xl bg-[#FF5A00]/10 border border-[#FF5A00]/30 flex items-center justify-center mx-auto shadow-inner text-[#FF5A00]">
+                  <Sparkles className="w-6 h-6 text-[#FF5A00]" />
                 </div>
                 <div>
                   <h4 className="text-sm sm:text-base font-black text-white">
-                    Привет! Я AI-консультант AlfaComp
+                    Привет! Я ассистент AlfaComp
                   </h4>
                   <p className="text-xs text-white/65 mt-1 max-w-[290px] mx-auto leading-relaxed">
                     Знаю все цены, характеристики и наличие техники. Напишите «покажи этот товар», и я сразу открою его!
@@ -447,17 +449,17 @@ ${productCatalogText}
                 {/* Live Counters Banner */}
                 <div className="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-left">
                   <div className="flex items-center gap-2">
-                    <Package className="w-4 h-4 text-[#00f2ff] shrink-0" />
+                    <Package className="w-4 h-4 text-[#FF5A00] shrink-0" />
                     <div>
                       <div className="text-[10px] text-white/50 uppercase font-semibold">Всего в базе</div>
-                      <div className="text-xs font-black text-white">{totalCount} товаров</div>
+                      <div className="text-xs font-mono font-black text-white">{totalCount} товаров</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
                     <div>
                       <div className="text-[10px] text-white/50 uppercase font-semibold">В наличии</div>
-                      <div className="text-xs font-black text-emerald-400">{inStockCount} позиций</div>
+                      <div className="text-xs font-mono font-black text-emerald-400">{inStockCount} позиций</div>
                     </div>
                   </div>
                 </div>
@@ -476,10 +478,10 @@ ${productCatalogText}
                     <button
                       key={promptText}
                       onClick={() => send(promptText)}
-                      className="w-full text-left text-xs text-white/80 hover:text-white p-2 rounded-lg bg-white/[0.03] hover:bg-[#00f2ff]/10 hover:border-[#00f2ff]/30 border border-white/5 transition-all flex items-center justify-between group"
+                      className="w-full text-left text-xs text-white/80 hover:text-white p-2 rounded-lg bg-white/[0.03] hover:bg-[#FF5A00]/10 hover:border-[#FF5A00]/30 border border-white/5 transition-all flex items-center justify-between group"
                     >
                       <span className="truncate">{promptText}</span>
-                      <ChevronRight className="w-3.5 h-3.5 text-white/30 group-hover:text-[#00f2ff] group-hover:translate-x-0.5 transition-all shrink-0" />
+                      <ChevronRight className="w-3.5 h-3.5 text-white/30 group-hover:text-[#FF5A00] group-hover:translate-x-0.5 transition-all shrink-0" />
                     </button>
                   ))}
                 </div>
@@ -493,15 +495,15 @@ ${productCatalogText}
                 className={`flex gap-2.5 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 {msg.role === "assistant" && (
-                  <div className="w-7 h-7 rounded-full bg-[#00f2ff]/20 border border-[#00f2ff]/30 flex items-center justify-center shrink-0 mt-0.5">
-                    <Bot className="w-4 h-4 text-[#00f2ff]" />
+                  <div className="w-7 h-7 rounded-lg bg-[#FF5A00]/15 border border-[#FF5A00]/30 flex items-center justify-center shrink-0 mt-0.5">
+                    <Bot className="w-4 h-4 text-[#FF5A00]" />
                   </div>
                 )}
                 <div
-                  className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm shadow-md ${
+                  className={`max-w-[85%] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm shadow-md ${
                     msg.role === "user"
-                      ? "bg-gradient-to-r from-[#00f2ff] to-[#00a6ff] text-black font-semibold rounded-tr-none"
-                      : "bg-white/[0.07] border border-white/10 text-white rounded-tl-none"
+                      ? "bg-[#FF5A00] text-white font-medium rounded-tr-none"
+                      : "bg-[#14171E] border border-white/10 text-white rounded-tl-none"
                   }`}
                 >
                   {msg.role === "assistant" ? renderMessageContent(msg) : msg.content}
@@ -517,35 +519,35 @@ ${productCatalogText}
             {/* Thinking / Streaming Indicator */}
             {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
               <div className="flex gap-2.5 items-center">
-                <div className="w-7 h-7 rounded-full bg-[#00f2ff]/20 border border-[#00f2ff]/30 flex items-center justify-center shrink-0">
-                  <Bot className="w-4 h-4 text-[#00f2ff] animate-pulse" />
+                <div className="w-7 h-7 rounded-lg bg-[#14171E] border border-white/10 flex items-center justify-center shrink-0">
+                  <Bot className="w-4 h-4 text-[#FF5A00] animate-pulse" />
                 </div>
-                <div className="bg-white/[0.07] border border-white/10 rounded-2xl rounded-tl-none px-3.5 py-2 text-xs text-white/60 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#00f2ff] animate-ping" />
-                  Подбираю технику...
+                <div className="bg-[#14171E] border border-white/10 rounded-xl rounded-tl-none px-3.5 py-2 text-xs text-white/60 flex items-center gap-1.5 font-mono">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#FF5A00] animate-ping" />
+                  Поиск в базе склада...
                 </div>
               </div>
             )}
           </div>
 
           {/* Input Bar */}
-          <div className="p-3 border-t border-white/10 bg-black/40 backdrop-blur-md">
+          <div className="p-3 border-t border-white/10 bg-[#121419]">
             <div className="flex gap-2">
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && send()}
                 placeholder="Спросите или напишите «покажи товар»..."
-                aria-label="Сообщение AI-помощнику"
-                className="flex-1 bg-white/[0.06] border border-white/15 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white outline-none placeholder:text-white/40 focus:border-[#00f2ff] focus:ring-1 focus:ring-[#00f2ff] transition-all"
+                aria-label="Сообщение консультанту"
+                className="flex-1 bg-[#0A0B0E] border border-white/15 rounded-lg px-3.5 py-2 text-xs text-white outline-none placeholder:text-white/40 focus:border-[#FF5A00] transition-all font-sans"
               />
               <button
                 onClick={() => send()}
                 disabled={isLoading || !input.trim()}
                 aria-label="Отправить сообщение"
-                className="w-10 h-10 rounded-xl bg-gradient-to-r from-[#00f2ff] to-[#00c8ff] text-black flex items-center justify-center disabled:opacity-40 disabled:hover:scale-100 hover:scale-105 active:scale-95 transition-all shadow-md shrink-0"
+                className="w-9 h-9 rounded-lg bg-[#FF5A00] hover:bg-[#FF6A15] text-white flex items-center justify-center disabled:opacity-40 transition-all shrink-0"
               >
-                <Send className="w-4 h-4" />
+                <Send className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>

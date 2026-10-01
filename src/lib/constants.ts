@@ -1,3 +1,4 @@
+export const DEFAULT_EXCHANGE_RATE = 14000;
 export const EXCHANGE_RATE = 14000;
 
 export const CONTACTS = {
@@ -46,10 +47,10 @@ export const formatPrice = (price: number) => {
   return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 };
 
-export const convertToUZS = (priceUSD: number) => {
-  return Math.round(priceUSD * EXCHANGE_RATE);
+export const convertToUZS = (priceUSD: number, rate = EXCHANGE_RATE) => {
+  return Math.round(priceUSD * rate);
 };
 
-export const convertToUSD = (priceUZS: number) => {
-  return Math.round(priceUZS / EXCHANGE_RATE);
+export const convertToUSD = (priceUZS: number, rate = EXCHANGE_RATE) => {
+  return Math.round(priceUZS / rate);
 };

@@ -3,16 +3,8 @@ import { HelmetProvider } from "react-helmet-async";
 import App from "./App.tsx";
 import "./index.css";
 
-// Регистрация Service Worker для PWA и управления кэшем
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").then((registration) => {
-      console.log("SW registered:", registration);
-    }).catch((error) => {
-      console.log("SW registration failed:", error);
-    });
-  });
-}
+// Инициализация предварительной загрузки кэша IndexedDB до монтирования компонентов
+import "@/lib/productsDb";
 
 createRoot(document.getElementById("root")!).render(
   <HelmetProvider>

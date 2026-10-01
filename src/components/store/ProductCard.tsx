@@ -1,7 +1,8 @@
 import { Plus, Check, Star, Heart, Share2, Pencil, Eye } from "lucide-react";
 import { useState, useCallback } from "react";
-import { motion } from "framer-motion";
-import { formatPrice, EXCHANGE_RATE } from "@/lib/constants";
+import { motion, AnimatePresence } from "framer-motion";
+import { formatPrice } from "@/lib/constants";
+import { useExchangeRate } from "@/hooks/useExchangeRate";
 import { getProductUrl } from "@/lib/slugify";
 import type { Product } from "@/hooks/useProducts";
 import { toast } from "sonner";
@@ -33,14 +34,13 @@ const ProductCard = ({
   onDrop,
   onDragEnd,
 }: ProductCardProps) => {
+  const { exchangeRate } = useExchangeRate();
   const [added, setAdded] = useState(false);
   const [liked, setLiked] = useState(() => {
     const likes = JSON.parse(localStorage.getItem("liked_products") || "[]");
     return likes.includes(product.id);
   });
   const [copied, setCopied] = useState(false);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [isHovered, setIsHovered] = useState(false);
 
   // Admin: inline price editing
   const [editingPrice, setEditingPrice] = useState(false);
@@ -51,7 +51,7 @@ const ProductCard = ({
     e.stopPropagation();
     onAddToCart(product);
     setAdded(true);
-    setTimeout(() => setAdded(false), 1500);
+    setTimeout(() => setAdded(false), 1400);
   };
 
   const handleLike = useCallback((e: React.MouseEvent) => {
@@ -69,7 +69,7 @@ const ProductCard = ({
     const url = `${window.location.origin}${window.location.pathname}${getProductUrl(product.id, product.category).replace("/#", "#")}`;
     const shareData = {
       title: product.name,
-      text: `${product.name} — ${formatPrice(Math.round(product.price * EXCHANGE_RATE))} сум`,
+      text: `${product.name} — ${formatPrice(Math.round(product.price * exchangeRate))} сум`,
       url,
     };
     try {
@@ -87,14 +87,14 @@ const ProductCard = ({
         setTimeout(() => setCopied(false), 2000);
       } catch { /* silent */ }
     }
-  }, [product]);
+  }, [product, exchangeRate]);
 
   const handleCardClick = () => {
     if (editingPrice) return;
     onProductClick?.(product);
   };
 
-  // Admin: open price editor
+  // Admin: price edit handlers
   const handlePriceClick = (e: React.MouseEvent) => {
     if (!isAdmin) return;
     e.stopPropagation();
@@ -112,7 +112,6 @@ const ProductCard = ({
     setSavingPrice(true);
     try {
       const { supabase } = await import("@/integrations/supabase/client");
-      const { useQueryClient } = await import("@tanstack/react-query");
       const { error } = await supabase.from("products").update({ price: val }).eq("id", product.id);
       if (!error) {
         toast.success("Цена обновлена!");
@@ -140,209 +139,262 @@ const ProductCard = ({
     }
   };
 
+  const priceUZS = formatPrice(Math.round(product.price * exchangeRate));
+  const oldPriceUZS = product.old_price
+    ? formatPrice(Math.round(product.old_price * exchangeRate))
+    : null;
+  const discount = product.old_price && product.price < product.old_price
+    ? Math.round((1 - product.price / product.old_price) * 100)
+    : null;
+
   return (
-    <motion.div
-      whileHover={{ y: -6 }}
-      transition={{ type: "spring", stiffness: 350, damping: 25 }}
-      className={`card-premium rounded-2xl overflow-hidden group relative flex flex-col h-full bg-card transition-colors cursor-pointer border border-white/10 hover:border-[#00f2ff]/40 ${
-        isDragging ? "opacity-40 scale-[0.97] shadow-none" : ""
-      } ${
-        isDragOver ? "ring-2 ring-[#00f2ff] ring-offset-2 ring-offset-transparent scale-[1.02]" : ""
-      }`}
-      onMouseMove={(e) => {
-        const rect = e.currentTarget.getBoundingClientRect();
-        setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-      }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+    <div
       onClick={handleCardClick}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === "Enter" && handleCardClick()}
-      aria-label={`Открыть ${product.name}`}
+      aria-label={`Открыть товар: ${product.name}`}
       onDragOver={isAdmin ? onDragOverProp : undefined}
       onDrop={isAdmin ? onDrop : undefined}
+      className={`group relative flex flex-col h-full
+        bg-[#0f1117] rounded-xl border
+        transition-all duration-250 cursor-pointer overflow-hidden
+        ${isDragging ? "opacity-30 scale-[0.98]" : ""}
+        ${isDragOver
+          ? "border-[#FF5A00] shadow-[0_0_0_1px_rgba(255,90,0,0.3)]"
+          : "border-white/[0.07] hover:border-white/[0.15] hover:shadow-[0_16px_48px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,90,0,0.12)] hover:-translate-y-[3px]"
+        }`}
+      style={{ willChange: "transform" }}
     >
-      {/* Dynamic Cursor Spotlight */}
-      {isHovered && (
-        <div
-          className="absolute inset-0 pointer-events-none z-0 transition-opacity duration-200"
-          style={{
-            background: `radial-gradient(320px circle at ${mousePos.x}px ${mousePos.y}px, rgba(0, 242, 255, 0.09), transparent 75%)`,
-          }}
-        />
-      )}
+      {/* Top hairline reflection */}
+      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/[0.13] to-transparent pointer-events-none z-10" />
 
-      {/* Glossy top border */}
-      <div className="absolute top-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-transparent via-[#00f2ff]/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10" />
-
-      {/* Admin: drag handle */}
+      {/* Admin drag handle */}
       {isAdmin && (
-        <div 
+        <div
           className="absolute top-0 inset-x-0 z-30 flex justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
           draggable
           onDragStart={onDragStart}
           onDragEnd={onDragEnd}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="bg-[#00f2ff]/20 border border-[#00f2ff]/30 text-[#00f2ff] text-[9px] font-black px-4 py-1 rounded-b-lg uppercase tracking-widest backdrop-blur-sm pointer-events-auto hover:bg-[#00f2ff]/30 transition-colors shadow-[0_4px_12px_rgba(0,242,255,0.2)]">
-            ⠿ Захватить
+          <div className="bg-[#181B22] border border-white/20 text-[#FF5A00] text-[9px] font-mono px-3 py-0.5 rounded-b uppercase tracking-wider backdrop-blur-sm shadow-md">
+            ⠿ Порядок
           </div>
         </div>
       )}
 
-      <div className="relative aspect-square bg-[#08080a] flex items-center justify-center p-4 sm:p-8 overflow-hidden z-10">
-        {/* Subtle background glow behind product */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#00f2ff]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+      {/* ── Image Stage ─────────────────────────────── */}
+      <div className="relative bg-[#08090c] flex items-center justify-center p-5 sm:p-6 overflow-hidden border-b border-white/[0.05]"
+        style={{ aspectRatio: "1/1" }}>
+        {/* Ambient spotlight behind product */}
+        <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+          style={{ background: "radial-gradient(ellipse 70% 60% at 50% 60%, rgba(255,90,0,0.05), transparent 70%)" }}
+        />
 
         <img
           src={product.image}
           alt={product.name}
-          className="max-w-full max-h-full object-contain transition-all duration-500 group-hover:scale-110 group-hover:rotate-1 z-10 drop-shadow-[0_8px_16px_rgba(0,0,0,0.5)]"
+          className="max-w-full max-h-full object-contain relative z-10
+            transition-transform duration-400 group-hover:scale-[1.04]"
+          style={{ willChange: "transform" }}
           loading="lazy"
           onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }}
         />
 
-        {/* Badges */}
-        <div className="absolute top-2 left-2 sm:top-3 sm:left-3 z-20 flex flex-col gap-1.5 sm:gap-2">
+        {/* ── Badges (top-left) ── */}
+        <div className="absolute top-2.5 left-2.5 z-20 flex flex-col gap-1.5 pointer-events-none">
           {product.in_stock ? (
-            <span className="bg-[#00f2ff]/10 border border-[#00f2ff]/30 text-[#00f2ff] text-[9px] sm:text-[10px] font-black px-2 py-1 sm:px-2.5 rounded-full uppercase tracking-widest backdrop-blur-md shadow-sm">
+            <span className="badge-stock-in">
+              <span className="status-dot status-dot-green status-dot-pulse" />
               В наличии
             </span>
           ) : (
-            <span className="bg-red-500/10 border border-red-500/30 text-red-400 text-[9px] sm:text-[10px] font-black px-2 py-1 sm:px-2.5 rounded-full uppercase tracking-widest backdrop-blur-md shadow-sm">
-              Нет в наличии
+            <span className="badge-stock-out">
+              Под заказ
             </span>
           )}
+
           {product.priority && product.priority < 10 && (
-            <span className="bg-[#ff0080]/15 border border-[#ff0080]/40 text-[#ff0080] text-[9px] sm:text-[10px] font-black px-2 py-1 sm:px-2.5 rounded-full uppercase tracking-widest backdrop-blur-md w-fit flex items-center gap-1 shadow-sm">
-              <Star className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-current" /> Топ
+            <span className="badge-top">
+              <Star className="w-2.5 h-2.5 fill-current" />
+              ТОП
             </span>
           )}
-          
-          {/* Admin analytics overlay */}
+
+          {discount && (
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold font-mono
+              bg-[#FF5A00]/18 border border-[#FF5A00]/30 text-[#FF5A00]">
+              −{discount}%
+            </span>
+          )}
+
+          {/* Admin analytics */}
           {isAdmin && (
-            <div className="flex gap-1.5 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <span className="bg-black/60 border border-white/10 text-white/80 text-[10px] font-black px-2 py-1 rounded-full flex items-center gap-1 backdrop-blur-md shadow-lg" title="Просмотры">
-                <Eye className="w-2.5 h-2.5 text-[#00f2ff]" /> {product.views || 0}
+            <div className="flex gap-1 mt-0.5 pointer-events-auto">
+              <span className="bg-black/75 border border-white/10 text-white/70 text-[10px] font-mono px-1.5 py-0.5 rounded flex items-center gap-1">
+                <Eye className="w-2.5 h-2.5 text-[#FF5A00]" /> {product.views || 0}
               </span>
-              <span className="bg-black/60 border border-white/10 text-white/80 text-[10px] font-black px-2 py-1 rounded-full flex items-center gap-1 backdrop-blur-md shadow-lg" title="Избранное">
-                <Heart className="w-2.5 h-2.5 text-[#ff0080]" /> {product.likes || 0}
+              <span className="bg-black/75 border border-white/10 text-white/70 text-[10px] font-mono px-1.5 py-0.5 rounded flex items-center gap-1">
+                <Heart className="w-2.5 h-2.5 text-red-400" /> {product.likes || 0}
               </span>
             </div>
           )}
         </div>
 
-        {/* Like & Share buttons — visible on hover (desktop) or always (touch) */}
-        <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-20 flex flex-col gap-1.5 sm:gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200">
-          <motion.button
-            whileTap={{ scale: 0.86 }}
+        {/* ── Like & Share (top-right, appear on hover) ── */}
+        <div className="absolute top-2.5 right-2.5 z-20 flex flex-col gap-1.5 opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200">
+          <button
             onClick={handleLike}
             aria-label="Добавить в избранное"
-            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center transition-all border backdrop-blur-md ${
+            className={`w-7 h-7 rounded-md flex items-center justify-center transition-all border ${
               liked
-                ? "bg-[#ff0080]/20 border-[#ff0080]/50 text-[#ff0080] shadow-[0_0_12px_rgba(255,0,128,0.3)]"
-                : "bg-black/50 border-white/10 text-white/60 hover:text-[#ff0080] hover:border-[#ff0080]/40"
+                ? "bg-red-500/15 border-red-500/35 text-red-400"
+                : "bg-[#0f1117]/90 border-white/10 text-white/45 hover:text-white hover:border-white/25"
             }`}
           >
-            <Heart className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${liked ? "fill-current" : ""}`} />
-          </motion.button>
-          <motion.button
-            whileTap={{ scale: 0.86 }}
+            <Heart className={`w-3 h-3 ${liked ? "fill-current" : ""}`} />
+          </button>
+
+          <button
             onClick={handleShare}
-            aria-label="Поделиться"
-            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center transition-all border backdrop-blur-md ${
+            aria-label="Поделиться товаром"
+            className={`w-7 h-7 rounded-md flex items-center justify-center transition-all border ${
               copied
-                ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.3)]"
-                : "bg-black/50 border-white/10 text-white/60 hover:text-[#00f2ff] hover:border-[#00f2ff]/40"
+                ? "bg-[#22c55e]/15 border-[#22c55e]/35 text-[#22c55e]"
+                : "bg-[#0f1117]/90 border-white/10 text-white/45 hover:text-white hover:border-white/25"
             }`}
           >
-            <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          </motion.button>
+            <Share2 className="w-3 h-3" />
+          </button>
         </div>
 
-        {/* Copied tooltip */}
-        {copied && (
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-30 bg-black/90 text-emerald-400 text-[10px] font-bold px-3 py-1.5 rounded-full border border-emerald-500/30 whitespace-nowrap shadow-lg">
-            Ссылка скопирована!
-          </div>
-        )}
+        {/* Copied toast */}
+        <AnimatePresence>
+          {copied && (
+            <motion.div
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="absolute bottom-2 left-1/2 -translate-x-1/2 z-30 bg-black/90
+                text-[#22c55e] text-[10px] font-mono px-2.5 py-1 rounded border border-[#22c55e]/25
+                whitespace-nowrap shadow-lg pointer-events-none"
+            >
+              Ссылка скопирована
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      <div className="p-4 sm:p-5 flex flex-col flex-1 border-t border-white/5 relative z-10">
-        <p className="text-[9px] sm:text-[10px] font-black text-[#8E9196] uppercase tracking-[0.2em] mb-1.5 sm:mb-2">{product.brand}</p>
-        <h3 className="text-sm sm:text-base font-bold leading-snug mb-3 sm:mb-4 flex-1 group-hover:text-[#00f2ff] transition-colors line-clamp-2">{product.name}</h3>
+      {/* ── Info Panel ────────────────────────────────── */}
+      <div className="p-4 flex flex-col flex-1 gap-2.5">
+        <div>
+          {/* Brand label */}
+          <div className="text-label mb-1.5 truncate">
+            {product.brand || "ALFACOMP"}
+          </div>
 
-        <div className="flex items-end justify-between gap-2 sm:gap-3 mt-auto">
-          <div>
-            {product.old_price && (
-              <p className="text-[10px] sm:text-xs text-red-500/70 line-through font-bold mb-0.5">
-                {formatPrice(Math.round(product.old_price * EXCHANGE_RATE))} сум
-              </p>
+          {/* Product name */}
+          <h3 className="text-[13px] font-semibold text-white leading-snug line-clamp-2
+            group-hover:text-[#FF5A00] transition-colors duration-200 tracking-[-0.01em]">
+            {product.name}
+          </h3>
+        </div>
+
+        {/* ── Price & CTA ─────────────────────────────── */}
+        <div className="flex items-end justify-between gap-2 pt-2.5 border-t border-white/[0.05] mt-auto">
+          <div className="min-w-0">
+            {oldPriceUZS && (
+              <div className="text-data text-[10px] text-white/30 line-through leading-none mb-1">
+                {oldPriceUZS} <span className="text-white/20">сум</span>
+              </div>
             )}
 
             {/* Admin inline price editor */}
             {isAdmin && editingPrice ? (
-              <div
-                className="flex items-center gap-1 mt-0.5"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <span className="text-blue-400 font-black text-sm">$</span>
+              <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                <span className="text-[11px] font-mono text-[#FF5A00]">$</span>
                 <input
                   type="number"
                   value={priceValue}
                   onChange={(e) => setPriceValue(e.target.value)}
                   onKeyDown={handlePriceKeyDown}
                   autoFocus
-                  className="w-20 bg-white/10 border border-primary/60 rounded-lg px-2 py-1 text-sm font-black text-blue-400 outline-none focus:border-primary text-right"
+                  className="w-16 bg-[#181B22] border border-[#FF5A00] rounded px-1.5 py-0.5
+                    text-xs font-mono text-white outline-none text-right"
                 />
                 <button
                   onClick={handlePriceSave}
                   disabled={savingPrice}
-                  className="w-6 h-6 flex items-center justify-center bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500 hover:text-white transition-all"
+                  className="w-5 h-5 flex items-center justify-center bg-[#22c55e]/20 text-[#22c55e] rounded"
                 >
                   <Check className="w-3 h-3" />
                 </button>
                 <button
                   onClick={handlePriceCancel}
-                  className="w-6 h-6 flex items-center justify-center bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500 hover:text-white transition-all"
+                  className="w-5 h-5 flex items-center justify-center bg-red-500/20 text-red-400 rounded"
                 >
                   ✕
                 </button>
               </div>
             ) : (
-              <p
-                className={`text-base sm:text-lg font-black text-white leading-tight flex items-center gap-1 ${isAdmin ? "cursor-pointer hover:text-[#00f2ff] transition-colors" : ""}`}
+              <div
+                className={`flex items-baseline gap-1 ${isAdmin ? "cursor-pointer group/price" : ""}`}
                 onClick={handlePriceClick}
-                title={isAdmin ? "Нажмите чтобы изменить цену" : undefined}
+                title={isAdmin ? "Нажмите для изменения цены (в USD)" : undefined}
               >
-                {formatPrice(Math.round(product.price * EXCHANGE_RATE))} <span className="text-[10px] sm:text-xs text-white/50">сум</span>
-                {isAdmin && <Pencil className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-opacity text-[#00f2ff]" />}
-              </p>
+                <span className="text-data text-[15px] font-bold text-white tracking-tight leading-none">
+                  {priceUZS}
+                </span>
+                <span className="text-[10px] font-mono text-white/40">UZS</span>
+                {isAdmin && <Pencil className="w-2.5 h-2.5 text-[#FF5A00] opacity-0 group-hover/price:opacity-100 ml-1" />}
+              </div>
             )}
 
-            <p className="text-[10px] sm:text-[11px] font-bold text-[#00f2ff]/70 mt-0.5">≈ ${product.price}</p>
+            <div className="text-data text-[10px] text-white/30 mt-0.5 leading-none">
+              ≈ ${product.price}
+            </div>
           </div>
 
+          {/* Add to cart */}
           <motion.button
-            whileTap={{ scale: 0.88 }}
-            whileHover={product.in_stock ? { scale: 1.05 } : {}}
+            whileTap={{ scale: 0.90 }}
             onClick={handleAdd}
             disabled={!product.in_stock}
             aria-label={`Добавить в корзину: ${product.name}`}
-            className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-all btn-premium shrink-0 ${
+            className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 shrink-0 border ${
               !product.in_stock
-                ? "bg-white/5 text-white/30 cursor-not-allowed"
+                ? "bg-white/[0.03] text-white/15 cursor-not-allowed border-white/[0.04]"
                 : added
-                  ? "bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.5)]"
-                  : "bg-[#00f2ff]/10 text-[#00f2ff] border border-[#00f2ff]/30 hover:bg-[#00f2ff] hover:text-black hover:shadow-[0_0_25px_rgba(0,242,255,0.4)]"
+                  ? "bg-[#22c55e] text-white border-transparent shadow-[0_0_12px_rgba(34,197,94,0.3)]"
+                  : "bg-[#14171E] text-white hover:bg-[#FF5A00] hover:text-white hover:border-[#FF5A00] border-white/[0.10] hover:shadow-[0_0_12px_rgba(255,90,0,0.25)]"
             }`}
           >
-            {added ? <Check className="w-4 h-4 sm:w-5 sm:h-5" /> : <Plus className="w-4 h-4 sm:w-5 sm:h-5" />}
+            <AnimatePresence mode="wait">
+              {added ? (
+                <motion.span
+                  key="check"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  exit={{ scale: 0 }}
+                >
+                  <Check className="w-4 h-4" />
+                </motion.span>
+              ) : (
+                <motion.span
+                  key="plus"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  exit={{ scale: 0 }}
+                >
+                  <Plus className="w-4 h-4" />
+                </motion.span>
+              )}
+            </AnimatePresence>
           </motion.button>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
