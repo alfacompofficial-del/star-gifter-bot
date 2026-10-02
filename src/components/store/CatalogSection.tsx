@@ -44,9 +44,19 @@ const CatalogSection = ({ products, isLoading, error, onAddToCart, onProductClic
   useEffect(() => {
     const el = sectionRef.current;
     if (!el) return;
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight + 150) {
+      el.classList.add("in-view");
+      return;
+    }
     const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) el.classList.add("in-view"); },
-      { threshold: 0.05 }
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.classList.add("in-view");
+          observer.disconnect();
+        }
+      },
+      { threshold: 0, rootMargin: "100px 0px" }
     );
     observer.observe(el);
     return () => observer.disconnect();
@@ -309,14 +319,26 @@ const CatalogSection = ({ products, isLoading, error, onAddToCart, onProductClic
 
   const hasCopiedProduct = isAdmin && typeof localStorage !== "undefined" && !!localStorage.getItem("copied_product");
 
-  // Staggered product grid animation
+  // Staggered product grid animation — only on initial page reveal, not on every search keystroke
+  const hasAnimatedRef = useRef(false);
+  useEffect(() => {
+    hasAnimatedRef.current = true;
+  }, []);
+
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+
   const gridVariants = {
     hidden: {},
-    visible: { transition: { staggerChildren: 0.04, delayChildren: 0.05 } },
+    visible: {
+      transition: {
+        staggerChildren: hasAnimatedRef.current || isMobile ? 0 : 0.03,
+        delayChildren: hasAnimatedRef.current || isMobile ? 0 : 0.04,
+      },
+    },
   };
   const cardVariants = {
-    hidden: { opacity: 0, y: 12 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] } },
+    hidden: hasAnimatedRef.current || isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1] } },
   };
 
   return (
@@ -523,7 +545,7 @@ const CatalogSection = ({ products, isLoading, error, onAddToCart, onProductClic
           </div>
         ) : (
           <motion.div
-            key={`${filter}-${search}`}
+            key="catalog-product-grid"
             variants={gridVariants}
             initial="hidden"
             animate="visible"

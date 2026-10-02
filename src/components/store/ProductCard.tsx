@@ -158,11 +158,11 @@ const ProductCard = ({
       onDrop={isAdmin ? onDrop : undefined}
       className={`group relative flex flex-col h-full
         bg-[#0f1117] rounded-xl border
-        transition-all duration-250 cursor-pointer overflow-hidden
+        transition-all duration-200 ease-out cursor-pointer overflow-hidden
         ${isDragging ? "opacity-30 scale-[0.98]" : ""}
         ${isDragOver
           ? "border-[#FF5A00] shadow-[0_0_0_1px_rgba(255,90,0,0.3)]"
-          : "border-white/[0.07] hover:border-white/[0.15] hover:shadow-[0_16px_48px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,90,0,0.12)] hover:-translate-y-[3px]"
+          : "border-white/[0.07] hover:border-white/[0.15] hover:shadow-[0_12px_36px_rgba(0,0,0,0.45),0_0_0_1px_rgba(255,90,0,0.1)] hover:-translate-y-[2px]"
         }`}
       style={{ willChange: "transform" }}
     >
@@ -196,7 +196,7 @@ const ProductCard = ({
           src={product.image}
           alt={product.name}
           className="max-w-full max-h-full object-contain relative z-10
-            transition-transform duration-400 group-hover:scale-[1.04]"
+            transition-transform duration-200 group-hover:scale-[1.02]"
           style={{ willChange: "transform" }}
           loading="lazy"
           onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }}

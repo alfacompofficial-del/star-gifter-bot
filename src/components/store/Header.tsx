@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ShoppingCart, Download } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,18 +11,50 @@ interface HeaderProps {
 
 const Header = ({ cartCount, onCartClick }: HeaderProps) => {
   const [scrolled, setScrolled] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
   const [prevCount, setPrevCount] = useState(cartCount);
   const [cartAnimating, setCartAnimating] = useState(false);
+  const [activeSection, setActiveSection] = useState("home");
   const location = useLocation();
   const isHome = location.pathname === "/";
   const { exchangeRate } = useExchangeRate();
+  const ticking = useRef(false);
 
   useEffect(() => {
-    const handle = () => setScrolled(window.scrollY > 20);
+    const handle = () => {
+      if (!ticking.current) {
+        requestAnimationFrame(() => {
+          const y = window.scrollY;
+          setScrolled(y > 20);
+          // progress 0→1 over first 200px of scroll
+          setScrollProgress(Math.min(y / 200, 1));
+          ticking.current = false;
+        });
+        ticking.current = true;
+      }
+    };
     handle();
     window.addEventListener("scroll", handle, { passive: true });
     return () => window.removeEventListener("scroll", handle);
   }, []);
+
+  // Track active section via IntersectionObserver
+  useEffect(() => {
+    if (!isHome) return;
+    const sections = ["home", "catalog", "features", "faq"];
+    const observers: IntersectionObserver[] = [];
+    sections.forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const obs = new IntersectionObserver(
+        ([entry]) => { if (entry.isIntersecting) setActiveSection(id); },
+        { rootMargin: "-40% 0px -55% 0px", threshold: 0 }
+      );
+      obs.observe(el);
+      observers.push(obs);
+    });
+    return () => observers.forEach((o) => o.disconnect());
+  }, [isHome]);
 
   // Animate cart badge on count change
   useEffect(() => {
@@ -54,16 +86,26 @@ const Header = ({ cartCount, onCartClick }: HeaderProps) => {
 
   return (
     <motion.header
-      initial={{ opacity: 0, y: -8 }}
+      initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
         scrolled
-          ? "py-2 panel-glass shadow-[0_1px_0_0_rgba(255,255,255,0.06)]"
-          : "py-3.5 bg-transparent border-b border-transparent"
+          ? "py-1.5 panel-glass shadow-[0_1px_0_0_rgba(255,255,255,0.05)]"
+          : "py-2.5 bg-transparent border-b border-transparent"
       }`}
     >
-      <div className="container px-4 sm:px-6 flex items-center justify-between gap-4">
+      {/* Scroll progress line */}
+      <motion.div
+        className="absolute bottom-0 left-0 h-[1.5px] bg-[#FF5A00] origin-left pointer-events-none"
+        style={{
+          scaleX: scrollProgress,
+          opacity: scrollProgress > 0.02 ? 0.7 : 0,
+        }}
+        transition={{ duration: 0 }}
+      />
+
+      <div className="w-full max-w-[1540px] mx-auto px-4 sm:px-8 xl:px-12 flex items-center justify-between gap-4">
         {/* ── Brand Logotype ───────────────────────────── */}
         <Link
           to="/"
@@ -82,35 +124,51 @@ const Header = ({ cartCount, onCartClick }: HeaderProps) => {
 
           {/* Wordmark */}
           <div className="flex flex-col leading-none">
-            <span className="text-[15px] font-bold tracking-tight text-white">
-              Alfa<span className="text-[#FF5A00]">Comp</span>
+            <span className="text-[14px] font-bold tracking-tight text-white">
+              Alfa<span className="text-[#FF5A00]">Comp</span><span className="text-white/40 font-normal">.uz</span>
             </span>
-            <span className="text-data text-[9px] text-white/30 tracking-[0.12em] uppercase mt-0.5 hidden sm:block">
-              Hardware Lab · Tashkent
+            <span className="text-data text-[8.5px] text-white/25 tracking-[0.1em] uppercase mt-0.5 hidden sm:block">
+              Tashkent · Hardware
             </span>
           </div>
         </Link>
 
         {/* ── Desktop Navigation ────────────────────── */}
-        <nav className="hidden md:flex items-center gap-0.5 bg-[#0f1117]/80 backdrop-blur-sm px-1.5 py-1 rounded-lg border border-white/[0.06]">
-          {navItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => scrollTo(item.id)}
-              className="text-[12.5px] font-medium text-white/55 hover:text-white px-3 py-1.5 rounded-md hover:bg-white/[0.05] transition-all duration-150 tracking-[-0.01em]"
-            >
-              {item.label}
-            </button>
-          ))}
+        <nav className="hidden md:flex items-center gap-0 bg-[#0c0e15]/90 backdrop-blur-sm px-1 py-1 rounded-md border border-white/[0.05]">
+          {navItems.map((item) => {
+            const isActive = isHome && activeSection === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => scrollTo(item.id)}
+                className={`nav-item relative text-[12px] font-medium px-3 py-1.5 rounded-sm
+                  transition-all duration-150 tracking-[-0.01em]
+                  ${isActive
+                    ? "text-white bg-white/[0.07]"
+                    : "text-white/48 hover:text-white/90 hover:bg-white/[0.05]"
+                  }`}
+              >
+                {item.label}
+                {/* Active underline indicator */}
+                {isActive && (
+                  <motion.div
+                    layoutId="nav-active"
+                    className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3 h-[2px] bg-[#FF5A00] rounded-full"
+                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                  />
+                )}
+              </button>
+            );
+          })}
         </nav>
 
         {/* ── Right Action Console ──────────────────── */}
         <div className="flex items-center gap-2 sm:gap-2.5">
           {/* Live currency rate */}
-          <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#0f1117] border border-white/[0.06] text-[11px]">
+          <div className="hidden lg:flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#0c0e15] border border-white/[0.05] text-[11px]">
             <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e] status-dot-pulse" />
-            <span className="text-data text-white/35">USD/UZS</span>
-            <span className="text-data font-medium text-white/80">{exchangeRate.toLocaleString()}</span>
+            <span className="text-data text-white/30">USD</span>
+            <span className="text-data font-semibold text-white/70">{exchangeRate.toLocaleString()}</span>
           </div>
 
           {/* Download app */}
@@ -127,7 +185,7 @@ const Header = ({ cartCount, onCartClick }: HeaderProps) => {
 
           {/* Cart button */}
           <motion.button
-            whileTap={{ scale: 0.95 }}
+            whileTap={{ scale: 0.93 }}
             onClick={onCartClick}
             aria-label={`Корзина, ${cartCount} товар${cartCount === 1 ? '' : cartCount >= 2 && cartCount <= 4 ? 'а' : 'ов'}`}
             className="relative flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12.5px] font-medium
@@ -144,7 +202,7 @@ const Header = ({ cartCount, onCartClick }: HeaderProps) => {
                   key={cartCount}
                   initial={{ scale: 0.6, opacity: 0 }}
                   animate={{
-                    scale: cartAnimating ? [1, 1.25, 1] : 1,
+                    scale: cartAnimating ? [1, 1.3, 1] : 1,
                     opacity: 1,
                   }}
                   transition={{ duration: 0.35, ease: "easeOut" }}

@@ -14,6 +14,7 @@ import CartModal from "@/components/store/CartModal";
 import AIChatWidget from "@/components/store/AIChatWidget";
 import MobileBottomNav from "@/components/store/MobileBottomNav";
 import ProductModal from "@/components/store/ProductModal";
+import HardwareIntro3D from "@/components/store/HardwareIntro3D";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useCart } from "@/hooks/useCart";
 import { useProducts } from "@/hooks/useProducts";
@@ -25,12 +26,18 @@ import type { Product } from "@/hooks/useProducts";
 import { database } from "../firebaseConfig";
 import { ref, increment, update } from "firebase/database";
 
-
 const Index = () => {
   const cart = useCart();
   const { data: products = [], isLoading, error } = useProducts();
   const isAdmin = useAdminAccess();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [showIntro, setShowIntro] = useState(() => {
+    try {
+      return sessionStorage.getItem("alfacomp_intro_viewed") !== "1";
+    } catch {
+      return false;
+    }
+  });
 
   // Реальная статистика (только если Firebase настроен)
   useEffect(() => {
@@ -95,6 +102,11 @@ const Index = () => {
           </Link>
         </div>
       )}
+      {/* 3D Hardware Reveal Intro (Only on first session entry or full reload) */}
+      {showIntro && (
+        <HardwareIntro3D onComplete={() => setShowIntro(false)} />
+      )}
+
       <Header cartCount={cart.count} onCartClick={() => cart.setIsOpen(true)} />
       <HeroSection />
 

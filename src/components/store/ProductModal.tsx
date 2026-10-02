@@ -360,7 +360,7 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 0.22 }}
+        transition={{ duration: 0.18 }}
         className="fixed inset-0 z-[200] bg-black/88 backdrop-blur-[10px]"
         onClick={onClose}
       />
@@ -368,25 +368,26 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
       {/* Modal Container */}
       <div className="fixed inset-0 z-[201] flex items-center justify-center p-3 sm:p-6 pointer-events-none">
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 18 }}
+          initial={{ opacity: 0, scale: 0.96, y: 16 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.96, y: 12 }}
-          transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+          exit={{ opacity: 0, scale: 0.97, y: 10 }}
+          transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
           className="surface-modal relative w-full max-w-4xl max-h-[92vh] overflow-y-auto pointer-events-auto"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Close button */}
           <motion.button
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.18, duration: 0.2 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.1, duration: 0.15 }}
+            whileTap={{ scale: 0.9 }}
             onClick={onClose}
             aria-label="Закрыть"
             className="absolute top-3.5 right-3.5 z-20 w-8 h-8 rounded-lg
               bg-[#181B22] border border-white/[0.09]
               hover:border-white/[0.2] hover:bg-[#20242E]
               flex items-center justify-center text-white/60 hover:text-white
-              transition-all duration-200"
+              transition-all duration-150"
           >
             <X className="w-4 h-4" />
           </motion.button>
@@ -399,9 +400,9 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
 
               {/* Status & admin row */}
               <motion.div
-                initial={{ opacity: 0, y: 8 }}
+                initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.12, duration: 0.3 }}
+                transition={{ delay: 0.06, duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
                 className="flex items-center justify-between mb-5"
               >
                 <span className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-mono font-semibold uppercase tracking-[0.08em] border ${
@@ -426,11 +427,11 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
                 )}
               </motion.div>
 
-              {/* Zoomable image */}
+              {/* Zoomable image — first to appear */}
               <motion.div
-                initial={{ opacity: 0, scale: 0.96 }}
+                initial={{ opacity: 0, scale: 0.97 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.16, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ delay: 0.0, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
                 ref={imgContainerRef}
                 className="relative aspect-square flex items-center justify-center p-4 cursor-zoom-in group select-none overflow-hidden"
                 onMouseMove={handleMouseMove}
@@ -478,12 +479,7 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
             </div>
 
             {/* ── RIGHT: Info & Actions ─────────────────── */}
-            <motion.div
-              initial={{ opacity: 0, x: 12 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.14, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="p-5 sm:p-7 flex flex-col gap-5"
-            >
+            <div className="p-5 sm:p-7 flex flex-col gap-5">
 
               {/* Admin Control Bar */}
               {isAdmin && (
@@ -511,7 +507,11 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
               )}
 
               {/* Title & Brand */}
-              <div>
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              >
                 <div
                   className={`text-label text-[#FF5A00] mb-2 ${isAdmin ? 'cursor-pointer hover:underline' : ''}`}
                   onClick={() => isAdmin && handleEditField('brand', product.brand || '')}
@@ -538,10 +538,15 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
                   Категория: {product.category || "—"}
                   {isAdmin && <Pencil className="w-2.5 h-2.5 inline-block ml-1 opacity-50" />}
                 </div>
-              </div>
+              </motion.div>
 
               {/* Price block */}
-              <div className="p-4 bg-[#0f1117] border border-white/[0.07] rounded-xl">
+              <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15, duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                className="p-4 bg-[#0f1117] border border-white/[0.07] rounded-xl"
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     {oldPriceUZS && (
@@ -626,12 +631,17 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
                     Ссылка скопирована в буфер обмена
                   </div>
                 )}
-              </div>
+              </motion.div>
 
               {/* CTAs */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
+                className="grid grid-cols-1 sm:grid-cols-2 gap-2.5"
+              >
                 <motion.button
-                  whileTap={{ scale: 0.97 }}
+                  whileTap={{ scale: 0.96 }}
                   onClick={handleAddToCart}
                   disabled={!product.in_stock}
                   className={`h-11 px-4 rounded-lg font-semibold text-[12.5px] uppercase tracking-wider
@@ -657,14 +667,14 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
                 </motion.button>
 
                 <motion.button
-                  whileTap={{ scale: 0.97 }}
+                  whileTap={{ scale: 0.96 }}
                   onClick={handleBuyNow}
                   className="btn-ghost h-11 px-4 rounded-lg font-semibold text-[12.5px] uppercase tracking-wider"
                 >
                   <Send className="w-3.5 h-3.5 text-[#FF5A00]" />
                   <span>Telegram</span>
                 </motion.button>
-              </div>
+              </motion.div>
 
               {/* Technical Specifications */}
               <div className="border-t border-white/[0.07] pt-4">
@@ -776,7 +786,7 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
                   )}
                 </div>
               </div>
-            </motion.div>
+            </div>
           </div>
         </motion.div>
       </div>

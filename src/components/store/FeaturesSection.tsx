@@ -47,9 +47,19 @@ const FeaturesSection = () => {
   useEffect(() => {
     const el = sectionRef.current;
     if (!el) return;
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight + 150) {
+      el.classList.add("in-view");
+      return;
+    }
     const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) el.classList.add("in-view"); },
-      { threshold: 0.05 }
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.classList.add("in-view");
+          observer.disconnect();
+        }
+      },
+      { threshold: 0, rootMargin: "80px 0px" }
     );
     observer.observe(el);
     return () => observer.disconnect();

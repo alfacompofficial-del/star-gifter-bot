@@ -46,6 +46,8 @@ export default defineConfig({
           "vendor-supabase": ["@supabase/supabase-js"],
           // Анимации и графики
           "vendor-ui": ["framer-motion", "recharts", "lucide-react"],
+          // 3D движок для Intro
+          "vendor-three": ["three"],
           // Формы и утилиты
           "vendor-utils": ["react-hook-form", "@hookform/resolvers", "zod", "date-fns", "clsx", "tailwind-merge"],
           // Query и прочее

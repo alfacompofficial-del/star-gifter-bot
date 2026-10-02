@@ -1,265 +1,568 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft, Trash2, Search, Upload, Check, X, Pencil,
   BarChart3, Package, Plus, Eye, Heart, Download,
   ToggleLeft, ToggleRight, RefreshCw, TrendingUp, Users,
-  Globe, AlertTriangle
+  Globe, AlertTriangle, Copy, SlidersHorizontal, LogOut,
+  Layers, ArrowUpDown, ChevronDown, Sparkles
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend, LineChart, Line
+} from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPrice } from "@/lib/constants";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
 import { broadcastProductsUpdate, clearProductsCache } from "@/lib/productsDb";
+import type { Product } from "@/hooks/useProducts";
+import ProductDrawerEditor from "@/components/admin/ProductDrawerEditor";
+import AdminLogin from "@/components/admin/AdminLogin";
 
 type VisitorRow = {
-  id: number; ip: string; country: string | null; country_code: string | null;
-  city: string | null; region: string | null; user_agent: string | null;
-  path: string | null; referrer: string | null; created_at: string;
+  id: number;
+  ip: string;
+  country: string | null;
+  country_code: string | null;
+  city: string | null;
+  region: string | null;
+  user_agent: string | null;
+  path: string | null;
+  referrer: string | null;
+  created_at: string;
 };
 
 const flagEmoji = (code?: string | null) => {
   if (!code || code.length !== 2) return "🌐";
   const cc = code.toUpperCase();
-  return String.fromCodePoint(...[...cc].map(c => 127397 + c.charCodeAt(0)));
+  return String.fromCodePoint(...[...cc].map((c) => 127397 + c.charCodeAt(0)));
 };
 
-const Admin = () => {
-  const [tab, setTab] = useState<"products" | "add" | "analytics" | "stats">("products");
-  const [visitors, setVisitors] = useState<VisitorRow[]>([]);
-  const [visitorsLoading, setVisitorsLoading] = useState(false);
-  const [visitorSearch, setVisitorSearch] = useState("");
+export const Admin = () => {
+  const navigate = useNavigate();
+
+  // ── Authentication State ──────────────────────────────────
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    try {
+      return sessionStorage.getItem("alfacomp_admin_auth") === "1";
+    } catch {
+      return false;
+    }
+  });
+
+  // ── Core Navigation Tabs ──────────────────────────────────
+  const [tab, setTab] = useState<"products" | "analytics" | "stats">("products");
+
+  // ── Product States ────────────────────────────────────────
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
-  const [products, setProducts] = useState<any[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [stockFilter, setStockFilter] = useState<"all" | "in_stock" | "out_of_stock">("all");
+  const [sortBy, setSortBy] = useState<"priority" | "price_asc" | "price_desc" | "views" | "likes" | "name">("priority");
+
+  // ── Inline Editing States ─────────────────────────────────
   const [editingPriceId, setEditingPriceId] = useState<number | null>(null);
   const [editingPriceValue, setEditingPriceValue] = useState<string>("");
   const [editingNameId, setEditingNameId] = useState<number | null>(null);
   const [editingNameValue, setEditingNameValue] = useState<string>("");
+
+  // ── Image Upload Ref ──────────────────────────────────────
   const [uploadingImageId, setUploadingImageId] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const currentUploadProductId = useRef<number | null>(null);
+
+  // ── Drag & Drop Reorder ───────────────────────────────────
   const [draggedId, setDraggedId] = useState<number | null>(null);
   const [dragOverId, setDragOverId] = useState<number | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const navigate = useNavigate();
-  const [selectedCategory, setSelectedCategory] = useState<string>("ИБП");
-  const [newProduct, setNewProduct] = useState({
-    name: "", image: "", price: "", old_price: "", category: "ИБП", brand: "", priority: "1"
-  });
+
+  // ── Drawer Editor State ───────────────────────────────────
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerProduct, setDrawerProduct] = useState<Product | null>(null);
+
+  // ── Exchange Rate State ───────────────────────────────────
   const { exchangeRate, isUpdating: rateUpdating, updateExchangeRate } = useExchangeRate();
   const [editingRate, setEditingRate] = useState(false);
   const [rateInputValue, setRateInputValue] = useState("");
 
-  const fetchProducts = async (showRefresh = false) => {
-    if (showRefresh) setIsRefreshing(true); else setLoading(true);
-    const { data, error } = await supabase.from("products").select("*")
-      .order("priority", { ascending: true }).order("id", { ascending: true });
-    if (!error) setProducts(data || []);
-    if (showRefresh) setIsRefreshing(false); else setLoading(false);
-  };
-  useEffect(() => { fetchProducts(); }, []);
+  // ── Visitor Telemetry ─────────────────────────────────────
+  const [visitors, setVisitors] = useState<VisitorRow[]>([]);
+  const [visitorsLoading, setVisitorsLoading] = useState(false);
+  const [visitorSearch, setVisitorSearch] = useState("");
 
-  const fetchVisitors = async () => {
+  // ── Fetch Products from Supabase ──────────────────────────
+  const fetchProducts = useCallback(async (showRefresh = false) => {
+    if (showRefresh) setIsRefreshing(true);
+    else setLoading(true);
+
+    const { data, error } = await supabase
+      .from("products")
+      .select("*")
+      .order("priority", { ascending: true })
+      .order("id", { ascending: true });
+
+    if (!error) {
+      setProducts((data as Product[]) || []);
+    } else {
+      toast.error("Ошибка загрузки данных из Supabase");
+    }
+
+    if (showRefresh) setIsRefreshing(false);
+    else setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchProducts();
+    }
+  }, [isAuthenticated, fetchProducts]);
+
+  // ── Fetch Visitors for Telemetry Tab ──────────────────────
+  const fetchVisitors = useCallback(async () => {
     setVisitorsLoading(true);
-    const { data, error } = await supabase.from("visitors" as any).select("*")
-      .order("created_at", { ascending: false }).limit(2000);
-    if (!error) setVisitors(((data as unknown) as VisitorRow[]) || []);
-    setVisitorsLoading(false);
-  };
-  useEffect(() => { if (tab === "stats") fetchVisitors(); }, [tab]);
+    const { data, error } = await supabase
+      .from("visitors" as any)
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(2000);
 
+    if (!error) {
+      setVisitors(((data as unknown) as VisitorRow[]) || []);
+    }
+    setVisitorsLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated && tab === "stats") {
+      fetchVisitors();
+    }
+  }, [isAuthenticated, tab, fetchVisitors]);
+
+  // ── Categories List ───────────────────────────────────────
+  const allCategories = useMemo(() => {
+    const defaultCats = ["ИБП", "Мониторы", "Сеть", "Комплектующие", "Моноблоки", "Аксессуары", "Колонки", "Кронштейны", "Deco", "Wi-Fi роутеры"];
+    const found = [...new Set(products.map((p) => p.category).filter(Boolean))];
+    return [...new Set([...defaultCats, ...found])];
+  }, [products]);
+
+  // ── Filtered & Sorted Products ────────────────────────────
+  const filteredProducts = useMemo(() => {
+    let list = [...products];
+
+    // Search query
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          (p.brand || "").toLowerCase().includes(q) ||
+          (p.category || "").toLowerCase().includes(q) ||
+          String(p.id).includes(q)
+      );
+    }
+
+    // Category filter
+    if (selectedCategory !== "all") {
+      list = list.filter((p) => p.category === selectedCategory);
+    }
+
+    // Stock availability filter
+    if (stockFilter === "in_stock") {
+      list = list.filter((p) => p.in_stock);
+    } else if (stockFilter === "out_of_stock") {
+      list = list.filter((p) => !p.in_stock);
+    }
+
+    // Sorting
+    list.sort((a, b) => {
+      if (sortBy === "priority") {
+        return (a.priority ?? 999) - (b.priority ?? 999);
+      }
+      if (sortBy === "price_asc") {
+        return a.price - b.price;
+      }
+      if (sortBy === "price_desc") {
+        return b.price - a.price;
+      }
+      if (sortBy === "views") {
+        return (b.views || 0) - (a.views || 0);
+      }
+      if (sortBy === "likes") {
+        return (b.likes || 0) - (a.likes || 0);
+      }
+      if (sortBy === "name") {
+        return a.name.localeCompare(b.name, "ru");
+      }
+      return 0;
+    });
+
+    return list;
+  }, [products, searchQuery, selectedCategory, stockFilter, sortBy]);
+
+  // ── Metrics & Analytics ───────────────────────────────────
+  const metrics = useMemo(() => {
+    const totalCount = products.length;
+    const inStockCount = products.filter((p) => p.in_stock).length;
+    const outOfStockCount = totalCount - inStockCount;
+    const categoryCounts: Record<string, number> = {};
+    products.forEach((p) => {
+      categoryCounts[p.category] = (categoryCounts[p.category] || 0) + 1;
+    });
+    const totalViews = products.reduce((acc, p) => acc + (p.views || 0), 0);
+    const totalLikes = products.reduce((acc, p) => acc + (p.likes || 0), 0);
+
+    const topByViews = [...products].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 8);
+    const topByLikes = [...products].sort((a, b) => (b.likes || 0) - (a.likes || 0)).slice(0, 8);
+
+    return {
+      totalCount,
+      inStockCount,
+      outOfStockCount,
+      categoryCounts,
+      categoriesCount: Object.keys(categoryCounts).length,
+      totalViews,
+      totalLikes,
+      topByViews,
+      topByLikes,
+    };
+  }, [products]);
+
+  // ── Visitor Statistics ────────────────────────────────────
   const visitorStats = useMemo(() => {
     const q = visitorSearch.trim().toLowerCase();
-    const filtered = q ? visitors.filter(v =>
-      v.ip.toLowerCase().includes(q) || (v.country || "").toLowerCase().includes(q) || (v.city || "").toLowerCase().includes(q)
-    ) : visitors;
-    const uniqueIps = new Set(visitors.map(v => v.ip)).size;
+    const filtered = q
+      ? visitors.filter(
+          (v) =>
+            v.ip.toLowerCase().includes(q) ||
+            (v.country || "").toLowerCase().includes(q) ||
+            (v.city || "").toLowerCase().includes(q)
+        )
+      : visitors;
+
+    const uniqueIps = new Set(visitors.map((v) => v.ip)).size;
     const countryCounts: Record<string, number> = {};
-    for (const v of visitors) { const k = v.country || "Неизвестно"; countryCounts[k] = (countryCounts[k] || 0) + 1; }
-    const topCountries = Object.entries(countryCounts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+    for (const v of visitors) {
+      const k = v.country || "Неизвестно";
+      countryCounts[k] = (countryCounts[k] || 0) + 1;
+    }
+    const topCountries = Object.entries(countryCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6);
     const today = new Date().toISOString().slice(0, 10);
-    const todayCount = visitors.filter(v => v.created_at.startsWith(today)).length;
+    const todayCount = visitors.filter((v) => v.created_at.startsWith(today)).length;
+
     return { filtered, uniqueIps, topCountries, todayCount };
   }, [visitors, visitorSearch]);
 
-  const analyticsData = useMemo(() => {
-    const topByViews = [...products].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 10);
-    const topByLikes = [...products].sort((a, b) => (b.likes || 0) - (a.likes || 0)).slice(0, 10);
-    const inStockCount = products.filter(p => p.in_stock).length;
-    const outOfStockCount = products.filter(p => !p.in_stock).length;
-    const categoryCounts: Record<string, number> = {};
-    for (const p of products) { categoryCounts[p.category] = (categoryCounts[p.category] || 0) + 1; }
-    const totalViews = products.reduce((s, p) => s + (p.views || 0), 0);
-    const totalLikes = products.reduce((s, p) => s + (p.likes || 0), 0);
-    return { topByViews, topByLikes, inStockCount, outOfStockCount, categoryCounts, totalViews, totalLikes };
-  }, [products]);
-  const handleAddProduct = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newProduct.name || !newProduct.price) return toast.error("Заполните цену в долларах!");
-    setLoading(true);
-    const productData = {
-      name: newProduct.name, category: selectedCategory, price: parseFloat(newProduct.price),
-      old_price: newProduct.old_price ? parseFloat(newProduct.old_price) : null,
-      image: newProduct.image || "https://via.placeholder.com/300",
-      brand: newProduct.brand || "AlfaComp", priority: parseInt(newProduct.priority || "999"), in_stock: true
-    };
-    const { error } = await supabase.from("products").insert([productData]);
-    if (!error) {
-      toast.success("Товар добавлен!");
-      setNewProduct({ name: "", image: "", price: "", old_price: "", category: "ИБП", brand: "", priority: "1" });
-      fetchProducts(); setTab("products");
-      broadcastProductsUpdate();
-    } else toast.error("Ошибка базы данных");
-    setLoading(false);
-  };
-
-  const handleDeleteProduct = async (id: number) => {
-    if (!window.confirm("Удалить?")) return;
-    const { error } = await supabase.from("products").delete().eq("id", id);
-    if (!error) {
+  // ── Product CRUD Handlers ─────────────────────────────────
+  const handleSaveDrawerProduct = async (productData: Partial<Product>, isNew: boolean): Promise<boolean> => {
+    try {
+      if (isNew) {
+        const { error } = await supabase.from("products").insert([productData as any]);
+        if (error) throw error;
+        toast.success("Товар успешно создан!");
+      } else if (drawerProduct) {
+        const { error } = await supabase.from("products").update(productData as any).eq("id", drawerProduct.id);
+        if (error) throw error;
+        toast.success("Товар успешно обновлен!");
+      }
       fetchProducts();
       broadcastProductsUpdate();
+      return true;
+    } catch (err: any) {
+      toast.error(`Ошибка: ${err.message || "Не удалось сохранить"}`);
+      return false;
     }
   };
 
-  const startEditPrice = (p: any) => { setEditingPriceId(p.id); setEditingPriceValue(String(p.price)); };
-  const cancelEditPrice = () => { setEditingPriceId(null); setEditingPriceValue(""); };
-  const saveEditPrice = async (id: number) => {
-    const val = parseFloat(editingPriceValue);
-    if (isNaN(val) || val <= 0) return toast.error("Введите корректную цену");
-    const { error } = await supabase.from("products").update({ price: val }).eq("id", id);
-    if (!error) { toast.success("Цена обновлена!"); setProducts(prev => prev.map(p => p.id === id ? { ...p, price: val } : p)); cancelEditPrice(); broadcastProductsUpdate(); }
-    else toast.error("Ошибка сохранения");
+  const handleDeleteProduct = async (id: number, name: string) => {
+    if (!window.confirm(`Удалить товар «${name}» (#${id})?`)) return;
+    try {
+      const { error } = await supabase.from("products").delete().eq("id", id);
+      if (error) throw error;
+      toast.success("Товар удален");
+      setProducts((prev) => prev.filter((p) => p.id !== id));
+      broadcastProductsUpdate();
+    } catch {
+      toast.error("Ошибка при удалении товара");
+    }
   };
 
-  const startEditName = (p: any) => { setEditingNameId(p.id); setEditingNameValue(p.name); };
-  const cancelEditName = () => { setEditingNameId(null); setEditingNameValue(""); };
-  const saveEditName = async (id: number) => {
-    const val = editingNameValue.trim();
-    if (!val) return toast.error("Название не может быть пустым");
-    const { error } = await supabase.from("products").update({ name: val }).eq("id", id);
-    if (!error) { toast.success("Название обновлено!"); setProducts(prev => prev.map(p => p.id === id ? { ...p, name: val } : p)); cancelEditName(); broadcastProductsUpdate(); }
-    else toast.error("Ошибка сохранения");
+  const handleDuplicateProduct = async (p: Product) => {
+    try {
+      const duplicateData = {
+        name: `${p.name} (Копия)`,
+        category: p.category,
+        brand: p.brand || "AlfaComp",
+        price: p.price,
+        old_price: p.old_price,
+        image: p.image,
+        in_stock: p.in_stock,
+        priority: (p.priority ?? 999) + 1,
+        specs: p.specs,
+      };
+      const { error } = await supabase.from("products").insert([duplicateData as any]);
+      if (error) throw error;
+      toast.success(`Товар продублирован: ${duplicateData.name}`);
+      fetchProducts();
+      broadcastProductsUpdate();
+    } catch {
+      toast.error("Не удалось продублировать товар");
+    }
   };
 
   const handleToggleStock = async (id: number, current: boolean) => {
-    const { error } = await supabase.from("products").update({ in_stock: !current }).eq("id", id);
-    if (!error) { toast.success(!current ? "Товар в наличии!" : "Снято с продажи"); setProducts(prev => prev.map(p => p.id === id ? { ...p, in_stock: !current } : p)); broadcastProductsUpdate(); }
-    else toast.error("Ошибка обновления");
+    try {
+      const { error } = await supabase.from("products").update({ in_stock: !current }).eq("id", id);
+      if (error) throw error;
+      toast.success(!current ? "Товар переведен в наличие!" : "Товар снят с продажи");
+      setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, in_stock: !current } : p)));
+      broadcastProductsUpdate();
+    } catch {
+      toast.error("Ошибка переключения статуса наличия");
+    }
   };
 
-  const handleImageClick = (productId: number) => { currentUploadProductId.current = productId; fileInputRef.current?.click(); };
+  // ── Inline Price & Name Editing ───────────────────────────
+  const startEditPrice = (p: Product) => {
+    setEditingPriceId(p.id);
+    setEditingPriceValue(String(p.price));
+  };
+  const cancelEditPrice = () => {
+    setEditingPriceId(null);
+    setEditingPriceValue("");
+  };
+  const saveEditPrice = async (id: number) => {
+    const val = parseFloat(editingPriceValue);
+    if (isNaN(val) || val <= 0) {
+      toast.error("Введите корректную цену");
+      return;
+    }
+    const { error } = await supabase.from("products").update({ price: val }).eq("id", id);
+    if (!error) {
+      toast.success("Цена обновлена!");
+      setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, price: val } : p)));
+      cancelEditPrice();
+      broadcastProductsUpdate();
+    } else {
+      toast.error("Ошибка сохранения цены");
+    }
+  };
+
+  const startEditName = (p: Product) => {
+    setEditingNameId(p.id);
+    setEditingNameValue(p.name);
+  };
+  const cancelEditName = () => {
+    setEditingNameId(null);
+    setEditingNameValue("");
+  };
+  const saveEditName = async (id: number) => {
+    const val = editingNameValue.trim();
+    if (!val) {
+      toast.error("Название не может быть пустым");
+      return;
+    }
+    const { error } = await supabase.from("products").update({ name: val }).eq("id", id);
+    if (!error) {
+      toast.success("Название обновлено!");
+      setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, name: val } : p)));
+      cancelEditName();
+      broadcastProductsUpdate();
+    } else {
+      toast.error("Ошибка сохранения названия");
+    }
+  };
+
+  // ── Image Upload Handling ─────────────────────────────────
+  const handleImageClick = (productId: number) => {
+    currentUploadProductId.current = productId;
+    fileInputRef.current?.click();
+  };
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]; const productId = currentUploadProductId.current;
-    if (!file || !productId) return; e.target.value = "";
-    if (!file.type.startsWith("image/")) return toast.error("Выберите файл изображения");
-    if (file.size > 5 * 1024 * 1024) return toast.error("Файл слишком большой (макс. 5MB)");
+    const file = e.target.files?.[0];
+    const productId = currentUploadProductId.current;
+    if (!file || !productId) return;
+    e.target.value = "";
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Выберите файл изображения");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Файл слишком большой (макс. 5MB)");
+      return;
+    }
+
     setUploadingImageId(productId);
     try {
       const reader = new FileReader();
       reader.onload = async (ev) => {
         const dataUrl = ev.target?.result as string;
         const { error } = await supabase.from("products").update({ image: dataUrl }).eq("id", productId);
-        if (!error) { toast.success("Фото обновлено!"); setProducts(prev => prev.map(p => p.id === productId ? { ...p, image: dataUrl } : p)); broadcastProductsUpdate(); }
-        else toast.error("Ошибка загрузки фото");
-        setUploadingImageId(null); currentUploadProductId.current = null;
+        if (!error) {
+          toast.success("Фото обновлено!");
+          setProducts((prev) => prev.map((p) => (p.id === productId ? { ...p, image: dataUrl } : p)));
+          broadcastProductsUpdate();
+        } else {
+          toast.error("Ошибка загрузки фото в базу");
+        }
+        setUploadingImageId(null);
+        currentUploadProductId.current = null;
       };
       reader.readAsDataURL(file);
-    } catch { toast.error("Ошибка при обработке файла"); setUploadingImageId(null); }
+    } catch {
+      toast.error("Ошибка при обработке файла");
+      setUploadingImageId(null);
+    }
   };
 
-  const filteredProducts = useMemo(() => products.filter(p =>
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) || (p.brand || "").toLowerCase().includes(searchQuery.toLowerCase())
-  ), [products, searchQuery]);
-
-  const handleDragStart = (e: React.DragEvent, id: number) => { setDraggedId(id); e.dataTransfer.effectAllowed = "move"; };
-  const handleDragOver = (e: React.DragEvent, id: number) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; if (id !== draggedId) setDragOverId(id); };
+  // ── Drag & Drop Priority Sorting ──────────────────────────
+  const handleDragStart = (e: React.DragEvent, id: number) => {
+    setDraggedId(id);
+    e.dataTransfer.effectAllowed = "move";
+  };
+  const handleDragOver = (e: React.DragEvent, id: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (id !== draggedId) setDragOverId(id);
+  };
   const handleDrop = async (e: React.DragEvent, targetId: number) => {
     e.preventDefault();
-    if (!draggedId || draggedId === targetId) { setDraggedId(null); setDragOverId(null); return; }
+    if (!draggedId || draggedId === targetId) {
+      setDraggedId(null);
+      setDragOverId(null);
+      return;
+    }
     const list = [...products];
-    const fromIdx = list.findIndex(p => p.id === draggedId); const toIdx = list.findIndex(p => p.id === targetId);
+    const fromIdx = list.findIndex((p) => p.id === draggedId);
+    const toIdx = list.findIndex((p) => p.id === targetId);
     if (fromIdx === -1 || toIdx === -1) return;
-    const reordered = [...list]; const [moved] = reordered.splice(fromIdx, 1); reordered.splice(toIdx, 0, moved);
+
+    const reordered = [...list];
+    const [moved] = reordered.splice(fromIdx, 1);
+    reordered.splice(toIdx, 0, moved);
+
     const updates = reordered.map((p, idx) => ({ id: p.id, priority: idx + 1 }));
     setProducts(reordered.map((p, idx) => ({ ...p, priority: idx + 1 })));
-    setDraggedId(null); setDragOverId(null);
+    setDraggedId(null);
+    setDragOverId(null);
+
     try {
-      await Promise.all(updates.map(({ id, priority }) => supabase.from("products").update({ priority }).eq("id", id)));
-      toast.success("Порядок товаров сохранён!");
+      await Promise.all(
+        updates.map(({ id, priority }) => supabase.from("products").update({ priority }).eq("id", id))
+      );
+      toast.success("Порядок товаров сохранен!");
       broadcastProductsUpdate();
-    } catch { toast.error("Ошибка при сохранении порядка"); fetchProducts(); }
+    } catch {
+      toast.error("Ошибка при сохранении порядка");
+      fetchProducts();
+    }
   };
-  const handleDragEnd = () => { setDraggedId(null); setDragOverId(null); };
+  const handleDragEnd = () => {
+    setDraggedId(null);
+    setDragOverId(null);
+  };
 
+  // ── CSV Export ────────────────────────────────────────────
   const handleExportCSV = () => {
-    const headers = ["ID", "Название", "Бренд", "Категория", "Цена ($)", "Цена (сум)", "В наличии", "Приоритет", "Просмотры", "Лайки"];
-    const rows = products.map(p => [p.id, `"${p.name.replace(/"/g, '""')}"`, `"${(p.brand || "").replace(/"/g, '""')}"`,
-    `"${p.category}"`, p.price, Math.round(p.price * exchangeRate), p.in_stock ? "Да" : "Нет", p.priority || "", p.views || 0, p.likes || 0]);
-    const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const headers = [
+      "ID", "Название", "Бренд", "Категория", "Цена ($)", "Цена (сум)", "В наличии", "Приоритет", "Просмотры", "Лайки"
+    ];
+    const rows = products.map((p) => [
+      p.id,
+      `"${p.name.replace(/"/g, '""')}"`,
+      `"${(p.brand || "").replace(/"/g, '""')}"`,
+      `"${p.category}"`,
+      p.price,
+      Math.round(p.price * exchangeRate),
+      p.in_stock ? "Да" : "Нет",
+      p.priority || "",
+      p.views || 0,
+      p.likes || 0,
+    ]);
+    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob); const a = document.createElement("a");
-    a.href = url; a.download = `alfacomp_${new Date().toISOString().slice(0, 10)}.csv`; a.click();
-    URL.revokeObjectURL(url); toast.success("CSV экспортирован!");
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `alfacomp_inventory_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("CSV экспортирован!");
   };
 
-  const MiniBarChart = ({ items, valueKey, label }: { items: any[]; valueKey: string; label: string }) => {
-    const max = Math.max(...items.map(i => i[valueKey] || 0), 1);
-    return (
-      <div className="space-y-3">
-        {items.slice(0, 8).map((item, idx) => {
-          const val = item[valueKey] || 0; const pct = (val / max) * 100;
-          return (
-            <div key={item.id || idx}>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-semibold text-white/70 truncate max-w-[65%]" title={item.name}>{idx + 1}. {item.name}</span>
-                <span className="text-xs font-mono font-bold text-[#FF5A00]">{val} {label}</span>
-              </div>
-              <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                <div className="h-full bg-[#FF5A00] rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    );
+  // ── Logout ────────────────────────────────────────────────
+  const handleLogout = () => {
+    try {
+      sessionStorage.removeItem("alfacomp_admin_auth");
+    } catch {}
+    setIsAuthenticated(false);
+    toast.success("Сессия оператора завершена");
   };
+
+  // ── If Not Authenticated: Render Sleek Admin Login ────────
+  if (!isAuthenticated) {
+    return (
+      <AdminLogin
+        onSuccess={() => setIsAuthenticated(true)}
+        onExit={() => navigate("/")}
+      />
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-[#090A0D] text-white font-sans">
+    <div className="min-h-screen bg-[#08090d] text-white font-sans select-none antialiased">
+      {/* Hidden file input for quick image change */}
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-      <header className="border-b border-white/[0.08] h-16 flex items-center px-4 sm:px-8 justify-between sticky top-0 bg-[#0E1015]/90 backdrop-blur-xl z-50">
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate("/")} className="w-8 h-8 bg-[#181B22] rounded-lg flex items-center justify-center border border-white/10 hover:border-white/20 transition-all">
-            <ArrowLeft className="w-4 h-4" />
+
+      {/* ── TOP TELEMETRY BAR ──────────────────────────────── */}
+      <header className="border-b border-white/[0.08] h-16 flex items-center px-4 sm:px-8 justify-between sticky top-0 bg-[#0c0e14]/92 backdrop-blur-xl z-50">
+        <div className="flex items-center gap-3.5">
+          <button
+            onClick={() => navigate("/")}
+            className="w-8 h-8 bg-[#141720] rounded-lg flex items-center justify-center border border-white/10 hover:border-white/20 transition-all text-white/70 hover:text-white group"
+            title="Вернуться на главную витрину"
+          >
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
           </button>
           <div>
-            <h1 className="font-bold tracking-tight text-xs uppercase flex items-center gap-1.5">
-              <span>ALFACOMP</span> <span className="text-[#FF5A00] font-mono">// STORE MANAGER</span>
+            <h1 className="font-extrabold tracking-tight text-xs uppercase flex items-center gap-2">
+              <span className="text-white">ALFACOMP</span>
+              <span className="text-[#FF5A00] font-mono text-[11px]">// CONTROL CENTER</span>
             </h1>
-            <p className="text-[10px] font-mono text-white/40">Панель управления витриной</p>
+            <div className="flex items-center gap-2 text-[10px] font-mono text-white/40 mt-0.5">
+              <span className="flex items-center gap-1 text-emerald-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                ONLINE
+              </span>
+              <span>·</span>
+              <span>SUPABASE SYNCED</span>
+            </div>
           </div>
         </div>
-        <div className="flex items-center gap-4 sm:gap-6">
-          {/* Exchange Rate Editor */}
+
+        {/* Right Tools & Telemetry */}
+        <div className="flex items-center gap-3 sm:gap-6">
+          {/* USD Rate Widget */}
           <div className="hidden sm:block">
             {editingRate ? (
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">1$ =</span>
+              <div className="flex items-center gap-1.5 bg-[#141720] px-2 py-1 rounded-lg border border-[#FF5A00]/50">
+                <span className="text-[10px] font-mono text-white/50">1$ =</span>
                 <input
                   type="number"
                   value={rateInputValue}
-                  onChange={e => setRateInputValue(e.target.value)}
-                  onKeyDown={async e => {
+                  onChange={(e) => setRateInputValue(e.target.value)}
+                  onKeyDown={async (e) => {
                     if (e.key === "Enter") {
                       const val = parseInt(rateInputValue);
                       if (!isNaN(val) && val > 0) {
                         const ok = await updateExchangeRate(val);
-                        if (ok) toast.success(`Курс обновлён: 1$ = ${val.toLocaleString()} UZS`);
+                        if (ok) toast.success(`Курс обновлен: 1$ = ${val.toLocaleString()} UZS`);
                         else toast.error("Ошибка сохранения курса");
-                      } else {
-                        toast.error("Введите корректный курс");
                       }
                       setEditingRate(false);
                     } else if (e.key === "Escape") {
@@ -267,190 +570,477 @@ const Admin = () => {
                     }
                   }}
                   autoFocus
-                  className="w-24 bg-white/10 border border-primary/60 rounded-xl px-2 py-1 text-sm font-black text-primary outline-none focus:border-primary text-right"
+                  className="w-20 bg-transparent text-xs font-mono font-bold text-[#FF5A00] outline-none text-right"
                 />
                 <button
                   onClick={async () => {
                     const val = parseInt(rateInputValue);
                     if (!isNaN(val) && val > 0) {
                       const ok = await updateExchangeRate(val);
-                      if (ok) toast.success(`Курс обновлён: 1$ = ${val.toLocaleString()} UZS`);
-                      else toast.error("Ошибка сохранения курса");
-                    } else {
-                      toast.error("Введите корректный курс");
+                      if (ok) toast.success(`Курс обновлен: 1$ = ${val.toLocaleString()} UZS`);
                     }
                     setEditingRate(false);
                   }}
-                  disabled={rateUpdating}
-                  className="w-7 h-7 flex items-center justify-center bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500 hover:text-white transition-all"
+                  className="text-emerald-400 hover:text-emerald-300"
                 >
                   <Check className="w-3.5 h-3.5" />
                 </button>
-                <button
-                  onClick={() => setEditingRate(false)}
-                  className="w-7 h-7 flex items-center justify-center bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500 hover:text-white transition-all"
-                >
+                <button onClick={() => setEditingRate(false)} className="text-red-400 hover:text-red-300">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
             ) : (
               <button
-                onClick={() => { setRateInputValue(String(exchangeRate)); setEditingRate(true); }}
-                className="text-right group hover:opacity-80 transition-opacity"
-                title="Нажмите чтобы изменить курс USD"
+                onClick={() => {
+                  setRateInputValue(String(exchangeRate));
+                  setEditingRate(true);
+                }}
+                className="text-right group hover:opacity-85 transition-opacity px-2.5 py-1 rounded-lg hover:bg-white/[0.03] border border-transparent hover:border-white/5"
+                title="Нажмите чтобы изменить базовый курс USD/UZS"
               >
-                <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-0.5 flex items-center gap-1">
-                  Курс USD <Pencil className="w-2.5 h-2.5 opacity-0 group-hover:opacity-60 transition-opacity" />
+                <div className="text-[9.5px] font-mono text-white/40 uppercase tracking-wider flex items-center justify-end gap-1">
+                  КУРС USD <Pencil className="w-2.5 h-2.5 opacity-0 group-hover:opacity-60 transition-opacity" />
                 </div>
-                <div className="text-sm font-bold text-primary">1$ = {exchangeRate.toLocaleString()} UZS</div>
+                <div className="text-xs font-mono font-bold text-[#FF5A00]">
+                  1$ = {exchangeRate.toLocaleString()} UZS
+                </div>
               </button>
             )}
           </div>
-          <div className="text-right">
-            <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-0.5">Товаров</div>
-            <div className="text-sm font-bold">{products.length}</div>
-          </div>
-          <button onClick={() => fetchProducts(true)} className="w-8 h-8 bg-[#181B22] rounded-lg flex items-center justify-center border border-white/10 hover:border-white/20 transition-all" title="Обновить">
+
+          {/* Quick Refresh */}
+          <button
+            onClick={() => fetchProducts(true)}
+            className="w-8 h-8 bg-[#141720] rounded-lg flex items-center justify-center border border-white/10 hover:border-white/20 transition-all text-white/70 hover:text-white"
+            title="Обновить базу данных"
+          >
             <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-[#FF5A00]" : ""}`} />
           </button>
-          <button onClick={handleExportCSV} className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-[#181B22] border border-white/10 rounded-lg text-xs font-mono uppercase tracking-wider hover:border-white/20 transition-all">
+
+          {/* CSV Export */}
+          <button
+            onClick={handleExportCSV}
+            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-[#141720] border border-white/10 rounded-lg text-xs font-mono uppercase tracking-wider hover:border-white/25 transition-all text-white/80 hover:text-white"
+          >
             <Download className="w-3.5 h-3.5 text-[#FF5A00]" /> CSV
           </button>
+
+          {/* Cache Flush */}
           <button
             onClick={async () => {
               await clearProductsCache();
-              toast.success("Кэш IndexedDB очищен!");
+              toast.success("Локальный кэш IndexedDB очищен!");
               fetchProducts(true);
             }}
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-[#181B22] border border-white/10 rounded-lg text-xs font-mono uppercase tracking-wider hover:border-red-500/30 hover:text-red-400 transition-all"
-            title="Очистить локальный кэш IndexedDB"
+            className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-[#141720] border border-white/10 rounded-lg text-xs font-mono uppercase tracking-wider hover:border-red-500/30 hover:text-red-400 transition-all text-white/50"
+            title="Очистить локальный кэш витрины"
           >
-            <Trash2 className="w-3.5 h-3.5 text-white/40" /> Кэш
+            <Trash2 className="w-3.5 h-3.5" /> Кэш
+          </button>
+
+          {/* Logout */}
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 rounded-lg text-xs font-mono uppercase tracking-wider transition-all"
+            title="Завершить сессию оператора"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Выход</span>
           </button>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
-          {(["products", "add", "analytics", "stats"] as const).map(t => (
-            <button key={t} onClick={() => setTab(t)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-xs tracking-wider uppercase transition-all border whitespace-nowrap flex-shrink-0 ${tab === t ? "bg-[#FF5A00] text-white border-[#FF5A00]" : "bg-[#14171E] text-white/60 border-white/[0.08] hover:text-white"}`}>
-              {t === "products" && <Package className="w-3.5 h-3.5" />}
-              {t === "add" && <Plus className="w-3.5 h-3.5" />}
-              {t === "analytics" && <BarChart3 className="w-3.5 h-3.5" />}
-              {t === "stats" && <Users className="w-3.5 h-3.5" />}
-              {t === "products" ? "База товаров" : t === "add" ? "Добавить" : t === "analytics" ? "Аналитика" : "Статистика IP"}
+      {/* ── MAIN DASHBOARD VIEW ────────────────────────────── */}
+      <main className="max-w-[1540px] mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+        {/* Navigation Sub-Tabs */}
+        <div className="flex items-center justify-between gap-4 border-b border-white/[0.08] pb-3 overflow-x-auto">
+          <div className="flex items-center gap-2">
+            {[
+              { id: "products", label: "Товары & Каталог", icon: Package },
+              { id: "analytics", label: "Аналитика Витрины", icon: BarChart3 },
+              { id: "stats", label: "IP-Телеметрия & Посетители", icon: Users },
+            ].map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => setTab(id as any)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-xs tracking-wider uppercase transition-all border whitespace-nowrap ${
+                  tab === id
+                    ? "bg-[#FF5A00] text-white border-[#FF5A00] shadow-md shadow-[#FF5A00]/20"
+                    : "bg-[#11141c] text-white/60 border-white/[0.07] hover:text-white hover:border-white/15"
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span>{label}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Quick Add Product Button */}
+          {tab === "products" && (
+            <button
+              onClick={() => {
+                setDrawerProduct(null);
+                setDrawerOpen(true);
+              }}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#FF5A00] hover:bg-[#FF6A15] text-white text-xs font-bold uppercase tracking-wider transition-all shadow-lg shadow-[#FF5A00]/20 shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Добавить товар</span>
             </button>
-          ))}
+          )}
         </div>
 
-        {/* PRODUCTS TAB */}
+        {/* ── TAB 1: PRODUCTS INVENTORY ──────────────────────── */}
         {tab === "products" && (
-          <div className="space-y-6">
-            <div className="flex flex-wrap gap-3 text-xs text-white/40 font-bold px-2">
-              <span className="flex items-center gap-2"><Upload className="w-3.5 h-3.5 text-primary/70" />Фото — загрузить</span>
-              <span className="flex items-center gap-2"><Pencil className="w-3.5 h-3.5 text-blue-400/70" />Цена/Название — изменить</span>
-              <span className="flex items-center gap-2">⠿ Строка — порядок</span>
-              <span className="flex items-center gap-2"><ToggleRight className="w-3.5 h-3.5 text-emerald-400/70" />Переключатель — наличие</span>
+          <div className="space-y-5">
+            {/* Summary Metrics Row */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+              <div className="bg-[#0f1219] border border-white/[0.08] rounded-xl p-4 sm:p-5">
+                <div className="text-[10px] font-mono uppercase text-white/40 tracking-wider">Всего в базе</div>
+                <div className="text-2xl sm:text-3xl font-mono font-extrabold text-white mt-1">
+                  {metrics.totalCount}
+                </div>
+              </div>
+
+              <div
+                onClick={() => setStockFilter(stockFilter === "in_stock" ? "all" : "in_stock")}
+                className={`bg-[#0f1219] border rounded-xl p-4 sm:p-5 cursor-pointer transition-all ${
+                  stockFilter === "in_stock" ? "border-emerald-500/60 bg-emerald-500/[0.04]" : "border-white/[0.08] hover:border-white/20"
+                }`}
+              >
+                <div className="text-[10px] font-mono uppercase text-emerald-400/80 tracking-wider flex items-center justify-between">
+                  <span>В наличии</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                </div>
+                <div className="text-2xl sm:text-3xl font-mono font-extrabold text-emerald-400 mt-1">
+                  {metrics.inStockCount}
+                </div>
+              </div>
+
+              <div
+                onClick={() => setStockFilter(stockFilter === "out_of_stock" ? "all" : "out_of_stock")}
+                className={`bg-[#0f1219] border rounded-xl p-4 sm:p-5 cursor-pointer transition-all ${
+                  stockFilter === "out_of_stock" ? "border-yellow-500/60 bg-yellow-500/[0.04]" : "border-white/[0.08] hover:border-white/20"
+                }`}
+              >
+                <div className="text-[10px] font-mono uppercase text-yellow-400/80 tracking-wider flex items-center justify-between">
+                  <span>Снято с продажи</span>
+                  {metrics.outOfStockCount > 0 && <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />}
+                </div>
+                <div className="text-2xl sm:text-3xl font-mono font-extrabold text-yellow-400 mt-1">
+                  {metrics.outOfStockCount}
+                </div>
+              </div>
+
+              <div className="bg-[#0f1219] border border-white/[0.08] rounded-xl p-4 sm:p-5">
+                <div className="text-[10px] font-mono uppercase text-white/40 tracking-wider">Категорий</div>
+                <div className="text-2xl sm:text-3xl font-mono font-extrabold text-[#FF5A00] mt-1">
+                  {metrics.categoriesCount}
+                </div>
+              </div>
             </div>
-            <div className="relative">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
-              <input placeholder="Поиск по товарам..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                className="w-full bg-[#111317] border border-white/[0.08] rounded-lg pl-10 pr-4 py-2.5 outline-none focus:border-[#FF5A00] text-xs sm:text-sm text-white transition-all" />
+
+            {/* Filter & Search Control Panel */}
+            <div className="bg-[#0f1219] rounded-xl border border-white/[0.08] p-4 space-y-3.5">
+              <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+                {/* Search Bar */}
+                <div className="relative flex-1">
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                  <input
+                    placeholder="Поиск по названию, бренду, категории или ID..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-[#141722] border border-white/10 rounded-lg pl-10 pr-4 py-2.5 outline-none focus:border-[#FF5A00] text-xs sm:text-sm text-white transition-all font-sans"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Sorting Dropdown */}
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-mono text-white/40 uppercase whitespace-nowrap">Сортировка:</span>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as any)}
+                    className="bg-[#141722] border border-white/10 rounded-lg px-3 py-2 text-xs font-medium text-white outline-none focus:border-[#FF5A00] cursor-pointer"
+                  >
+                    <option value="priority">По приоритету каталога</option>
+                    <option value="price_asc">Цена (сначала дешевле)</option>
+                    <option value="price_desc">Цена (сначала дороже)</option>
+                    <option value="views">По просмотрам</option>
+                    <option value="likes">По лайкам</option>
+                    <option value="name">По алфавиту</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Category Pills Bar */}
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1">
+                <button
+                  onClick={() => setSelectedCategory("all")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-mono uppercase tracking-wider transition-all border ${
+                    selectedCategory === "all"
+                      ? "bg-white/10 text-white border-white/30"
+                      : "bg-[#141722] text-white/50 border-white/5 hover:text-white"
+                  }`}
+                >
+                  Все ({products.length})
+                </button>
+                {allCategories.map((c) => {
+                  const count = metrics.categoryCounts[c] || 0;
+                  return (
+                    <button
+                      key={c}
+                      onClick={() => setSelectedCategory(c)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-mono uppercase tracking-wider transition-all border whitespace-nowrap ${
+                        selectedCategory === c
+                          ? "bg-[#FF5A00]/20 text-[#FF5A00] border-[#FF5A00]/50"
+                          : "bg-[#141722] text-white/50 border-white/5 hover:text-white"
+                      }`}
+                    >
+                      {c} ({count})
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <div className="bg-[#111317] rounded-xl border border-white/[0.08] overflow-hidden shadow-xl">
-              <table className="w-full text-left">
+
+            {/* Products Table */}
+            <div className="bg-[#0f1219] rounded-xl border border-white/[0.08] overflow-hidden shadow-2xl">
+              <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-white/[0.02] text-[10px] uppercase font-black tracking-[0.2em] text-muted-foreground border-b border-white/5">
-                    <th className="p-5 sm:p-6">Товар</th>
-                    <th className="p-5 sm:p-6">Наличие</th>
-                    <th className="p-5 sm:p-6 text-right">Цена USD</th>
-                    <th className="p-5 sm:p-6 text-right">Цена СУМ</th>
-                    <th className="p-5 sm:p-6 text-center hidden lg:table-cell">Стат.</th>
-                    <th className="p-5 sm:p-6"></th>
+                  <tr className="bg-white/[0.02] text-[10px] uppercase font-mono tracking-[0.16em] text-white/40 border-b border-white/[0.06]">
+                    <th className="p-4 sm:p-5 w-10 text-center">#</th>
+                    <th className="p-4 sm:p-5">Товар</th>
+                    <th className="p-4 sm:p-5 hidden md:table-cell">Категория</th>
+                    <th className="p-4 sm:p-5">Наличие</th>
+                    <th className="p-4 sm:p-5 text-right">Цена ($ / UZS)</th>
+                    <th className="p-4 sm:p-5 text-center hidden lg:table-cell">Метрики</th>
+                    <th className="p-4 sm:p-5 text-right">Действия</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/5">
-                  {loading && <tr><td colSpan={6} className="p-10 text-center text-white/40">Загрузка…</td></tr>}
-                  {filteredProducts.map(p => (
-                    <tr key={p.id} draggable
+                <tbody className="divide-y divide-white/[0.04]">
+                  {loading && (
+                    <tr>
+                      <td colSpan={7} className="p-12 text-center text-white/40 font-mono text-xs">
+                        Синхронизация с Supabase...
+                      </td>
+                    </tr>
+                  )}
+                  {!loading && filteredProducts.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="p-12 text-center text-white/40 font-mono text-xs">
+                        По вашему запросу ничего не найдено
+                      </td>
+                    </tr>
+                  )}
+                  {filteredProducts.map((p) => (
+                    <tr
+                      key={p.id}
+                      draggable
                       onDragStart={(e) => handleDragStart(e, p.id)}
                       onDragOver={(e) => handleDragOver(e, p.id)}
                       onDrop={(e) => handleDrop(e, p.id)}
                       onDragEnd={handleDragEnd}
-                      className={`transition-all group cursor-grab active:cursor-grabbing ${draggedId === p.id ? "opacity-40 scale-[0.99]" : dragOverId === p.id ? "bg-primary/10 border-l-2 border-primary" : "hover:bg-white/[0.015]"}`}>
-                      <td className="p-5 sm:p-6">
-                        <div className="flex items-center gap-4">
-                          <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-white/10 cursor-pointer group/img flex-shrink-0"
-                            onClick={() => handleImageClick(p.id)} title="Нажмите чтобы изменить фото">
+                      className={`transition-all group cursor-grab active:cursor-grabbing hover:bg-white/[0.02] ${
+                        draggedId === p.id ? "opacity-35 scale-[0.99]" : dragOverId === p.id ? "bg-[#FF5A00]/10 border-l-2 border-[#FF5A00]" : ""
+                      }`}
+                    >
+                      {/* Priority drag index */}
+                      <td className="p-4 sm:p-5 text-center font-mono text-xs text-white/30 group-hover:text-white/70">
+                        {p.priority ?? "—"}
+                      </td>
+
+                      {/* Product Thumbnail & Name */}
+                      <td className="p-4 sm:p-5">
+                        <div className="flex items-center gap-3.5">
+                          {/* Image Box */}
+                          <div
+                            onClick={() => handleImageClick(p.id)}
+                            className="relative w-12 h-12 rounded-lg overflow-hidden border border-white/10 bg-[#090b10] cursor-pointer group/img shrink-0"
+                            title="Нажмите чтобы заменить фото"
+                          >
                             {uploadingImageId === p.id ? (
                               <div className="w-full h-full flex items-center justify-center bg-black/80">
-                                <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                <div className="w-4 h-4 border-2 border-[#FF5A00] border-t-transparent rounded-full animate-spin" />
                               </div>
                             ) : (
                               <>
-                                <img src={p.image} className="w-full h-full object-cover transition-all group-hover/img:brightness-50"
-                                  onError={(e) => { (e.target as HTMLImageElement).src = "https://via.placeholder.com/48"; }} />
+                                <img
+                                  src={p.image}
+                                  alt={p.name}
+                                  className="w-full h-full object-cover transition-all group-hover/img:brightness-50"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src = "https://via.placeholder.com/48?text=HW";
+                                  }}
+                                />
                                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity">
                                   <Upload className="w-4 h-4 text-white" />
                                 </div>
                               </>
                             )}
                           </div>
+
+                          {/* Name & ID */}
                           <div className="min-w-0">
                             {editingNameId === p.id ? (
-                              <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
-                                <input type="text" value={editingNameValue} onChange={e => setEditingNameValue(e.target.value)}
-                                  onKeyDown={e => { if (e.key === "Enter") saveEditName(p.id); if (e.key === "Escape") cancelEditName(); }}
-                                  autoFocus className="w-40 bg-white/10 border border-primary/50 rounded-lg px-2 py-1 text-sm font-bold text-white outline-none focus:border-primary" />
-                                <button onClick={() => saveEditName(p.id)} className="w-7 h-7 flex items-center justify-center bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500 hover:text-white transition-all"><Check className="w-3 h-3" /></button>
-                                <button onClick={cancelEditName} className="w-7 h-7 flex items-center justify-center bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500 hover:text-white transition-all"><X className="w-3 h-3" /></button>
+                              <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                                <input
+                                  type="text"
+                                  value={editingNameValue}
+                                  onChange={(e) => setEditingNameValue(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") saveEditName(p.id);
+                                    if (e.key === "Escape") cancelEditName();
+                                  }}
+                                  autoFocus
+                                  className="w-48 bg-white/10 border border-[#FF5A00]/70 rounded px-2 py-1 text-xs font-bold text-white outline-none"
+                                />
+                                <button
+                                  onClick={() => saveEditName(p.id)}
+                                  className="p-1 rounded bg-green-500/20 text-green-400 hover:bg-green-500 hover:text-white"
+                                >
+                                  <Check className="w-3 h-3" />
+                                </button>
+                                <button
+                                  onClick={cancelEditName}
+                                  className="p-1 rounded bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
                               </div>
                             ) : (
-                              <div className="font-bold text-white text-sm truncate max-w-[180px] cursor-pointer hover:text-[#FF5A00] transition-colors group/name flex items-center gap-1"
-                                onClick={() => startEditName(p)} title="Нажмите чтобы изменить название">
-                                {p.name}<Pencil className="w-3 h-3 opacity-0 group-hover/name:opacity-50 transition-opacity flex-shrink-0" />
+                              <div
+                                onClick={() => startEditName(p)}
+                                className="font-bold text-white text-xs sm:text-sm truncate max-w-[220px] sm:max-w-[320px] cursor-pointer hover:text-[#FF5A00] transition-colors flex items-center gap-1.5 group/title"
+                                title="Нажмите для быстрого изменения названия"
+                              >
+                                <span>{p.name}</span>
+                                <Pencil className="w-2.5 h-2.5 opacity-0 group-hover/title:opacity-60 transition-opacity text-white/50" />
                               </div>
                             )}
-                            <div className="text-[10px] font-mono font-bold text-primary/70 uppercase mt-0.5">#{p.priority} · {p.brand}</div>
+
+                            <div className="text-[10px] font-mono text-white/40 mt-0.5 flex items-center gap-2">
+                              <span>ID #{p.id}</span>
+                              <span>·</span>
+                              <span className="text-[#FF5A00]/80 uppercase">{p.brand || "AlfaComp"}</span>
+                            </div>
                           </div>
                         </div>
                       </td>
-                      <td className="p-5 sm:p-6">
-                        <button onClick={() => handleToggleStock(p.id, p.in_stock)}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-mono font-bold uppercase tracking-wider border transition-all ${p.in_stock ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20" : "bg-red-500/10 text-red-400 border-red-500/20 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/20"}`}
-                          title={p.in_stock ? "Снять с продажи" : "Добавить в наличие"}>
+
+                      {/* Category */}
+                      <td className="p-4 sm:p-5 hidden md:table-cell">
+                        <span className="px-2.5 py-1 rounded bg-white/[0.04] border border-white/5 text-[11px] font-mono text-white/70">
+                          {p.category}
+                        </span>
+                      </td>
+
+                      {/* Stock Switch */}
+                      <td className="p-4 sm:p-5">
+                        <button
+                          onClick={() => handleToggleStock(p.id, p.in_stock)}
+                          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider border transition-all ${
+                            p.in_stock
+                              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20"
+                              : "bg-red-500/10 text-red-400 border-red-500/20 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/20"
+                          }`}
+                          title={p.in_stock ? "Нажмите чтобы снять с продажи" : "Нажмите чтобы включить в наличие"}
+                        >
                           {p.in_stock ? <ToggleRight className="w-3.5 h-3.5" /> : <ToggleLeft className="w-3.5 h-3.5" />}
-                          {p.in_stock ? "В наличии" : "Нет"}
+                          <span>{p.in_stock ? "В наличии" : "Снят"}</span>
                         </button>
                       </td>
-                      <td className="p-5 sm:p-6 text-right">
+
+                      {/* Price USD & UZS */}
+                      <td className="p-4 sm:p-5 text-right font-mono">
                         {editingPriceId === p.id ? (
-                          <div className="flex items-center justify-end gap-2">
-                            <span className="text-[#FF5A00] font-mono font-bold">$</span>
-                            <input type="number" value={editingPriceValue} onChange={e => setEditingPriceValue(e.target.value)}
-                              onKeyDown={e => { if (e.key === "Enter") saveEditPrice(p.id); if (e.key === "Escape") cancelEditPrice(); }}
-                              autoFocus className="w-24 bg-white/10 border border-primary/50 rounded-lg px-3 py-1.5 text-right font-mono font-bold text-base text-white outline-none focus:border-primary" />
-                            <button onClick={() => saveEditPrice(p.id)} className="w-7 h-7 flex items-center justify-center bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500 hover:text-white transition-all"><Check className="w-3.5 h-3.5" /></button>
-                            <button onClick={cancelEditPrice} className="w-7 h-7 flex items-center justify-center bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500 hover:text-white transition-all"><X className="w-3.5 h-3.5" /></button>
+                          <div className="flex items-center justify-end gap-1.5">
+                            <span className="text-white/40">$</span>
+                            <input
+                              type="number"
+                              value={editingPriceValue}
+                              onChange={(e) => setEditingPriceValue(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") saveEditPrice(p.id);
+                                if (e.key === "Escape") cancelEditPrice();
+                              }}
+                              autoFocus
+                              className="w-20 bg-white/10 border border-[#FF5A00]/70 rounded px-2 py-1 text-xs font-mono font-bold text-white text-right outline-none"
+                            />
+                            <button
+                              onClick={() => saveEditPrice(p.id)}
+                              className="p-1 rounded bg-green-500/20 text-green-400"
+                            >
+                              <Check className="w-3 h-3" />
+                            </button>
+                            <button onClick={cancelEditPrice} className="p-1 rounded bg-red-500/20 text-red-400">
+                              <X className="w-3 h-3" />
+                            </button>
                           </div>
                         ) : (
-                          <button onClick={() => startEditPrice(p)} className="font-mono font-bold text-base text-white hover:text-primary transition-colors group/price flex items-center gap-1.5 ml-auto" title="Нажмите чтобы изменить цену">
-                            ${p.price}<Pencil className="w-3 h-3 opacity-0 group-hover/price:opacity-60 transition-opacity" />
-                          </button>
+                          <div>
+                            <button
+                              onClick={() => startEditPrice(p)}
+                              className="font-bold text-sm text-white hover:text-[#FF5A00] transition-colors flex items-center gap-1 ml-auto group/price"
+                              title="Нажмите чтобы изменить цену"
+                            >
+                              <span>${p.price}</span>
+                              <Pencil className="w-2.5 h-2.5 opacity-0 group-hover/price:opacity-50 text-white/50" />
+                            </button>
+                            <div className="text-[10px] text-white/40 mt-0.5">
+                              {formatPrice(Math.round(p.price * exchangeRate))} сум
+                            </div>
+                          </div>
                         )}
                       </td>
-                      <td className="p-5 sm:p-6 text-right font-mono text-xs text-white/50">{formatPrice(Math.round(p.price * exchangeRate))} сум</td>
-                      <td className="p-5 sm:p-6 text-center hidden lg:table-cell">
-                        <div className="flex items-center justify-center gap-3 text-xs font-mono text-white/40">
-                          <span className="flex items-center gap-1"><Eye className="w-3 h-3 text-white/40" /> {p.views || 0}</span>
-                          <span className="flex items-center gap-1"><Heart className="w-3 h-3 text-rose-400/60" /> {p.likes || 0}</span>
+
+                      {/* Telemetry (Views / Likes) */}
+                      <td className="p-4 sm:p-5 text-center hidden lg:table-cell">
+                        <div className="flex items-center justify-center gap-3 text-[11px] font-mono text-white/40">
+                          <span className="flex items-center gap-1" title="Просмотры">
+                            <Eye className="w-3 h-3 text-white/40" /> {p.views || 0}
+                          </span>
+                          <span className="flex items-center gap-1" title="Лайки">
+                            <Heart className="w-3 h-3 text-rose-400/70" /> {p.likes || 0}
+                          </span>
                         </div>
                       </td>
-                      <td className="p-5 sm:p-6 text-right">
-                        <button onClick={() => handleDeleteProduct(p.id)} className="w-10 h-10 flex items-center justify-center bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all opacity-0 group-hover:opacity-100">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+
+                      {/* Row Actions */}
+                      <td className="p-4 sm:p-5 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => {
+                              setDrawerProduct(p);
+                              setDrawerOpen(true);
+                            }}
+                            className="p-1.5 rounded-lg bg-white/[0.04] border border-white/5 hover:border-white/20 text-white/70 hover:text-white transition-all"
+                            title="Открыть редактор товара"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDuplicateProduct(p)}
+                            className="p-1.5 rounded-lg bg-white/[0.04] border border-white/5 hover:border-white/20 text-white/70 hover:text-white transition-all"
+                            title="Дублировать товар"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteProduct(p.id, p.name)}
+                            className="p-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-all"
+                            title="Удалить товар"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -460,180 +1050,282 @@ const Admin = () => {
           </div>
         )}
 
-        {/* ADD TAB */}
-        {tab === "add" && (
-          <div className="max-w-xl mx-auto bg-[#111317] p-6 sm:p-8 rounded-xl border border-white/[0.08]">
-            <h2 className="text-lg font-bold mb-6 uppercase text-white flex items-center gap-2">
-              <Plus className="w-4 h-4 text-[#FF5A00]" /> Добавление товара
-            </h2>
-            <form onSubmit={handleAddProduct} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-mono uppercase text-white/50">Название товара</label>
-                <input placeholder="Например: APC Smart-UPS 1500VA" value={newProduct.name} onChange={e => setNewProduct({ ...newProduct, name: e.target.value })}
-                  className="w-full bg-[#0A0B0E] border border-white/10 rounded-lg p-3 outline-none focus:border-[#FF5A00] text-sm font-medium transition-all" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-mono uppercase text-white/50">Цена $ (USD)</label>
-                  <input type="number" placeholder="72" value={newProduct.price} onChange={e => setNewProduct({ ...newProduct, price: e.target.value })}
-                    className="w-full bg-[#0A0B0E] border border-white/10 rounded-lg p-3 outline-none focus:border-[#FF5A00] font-mono font-bold text-lg text-[#FF5A00] transition-all" />
-                  {newProduct.price && <p className="text-[10px] font-mono text-white/40">≈ {formatPrice(Math.round(parseFloat(newProduct.price || "0") * exchangeRate))} сум</p>}
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-mono uppercase text-white/50">Старая цена $</label>
-                  <input type="number" placeholder="85" value={newProduct.old_price} onChange={e => setNewProduct({ ...newProduct, old_price: e.target.value })}
-                    className="w-full bg-[#0A0B0E] border border-white/10 rounded-lg p-3 outline-none focus:border-red-500 font-mono text-red-400 transition-all" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-mono uppercase text-white/50">Категория</label>
-                  <select value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)}
-                    className="w-full bg-[#0A0B0E] border border-white/10 rounded-lg p-3 outline-none focus:border-[#FF5A00] text-xs font-semibold appearance-none transition-all">
-                    {["ИБП", "Мониторы", "Сеть", "Аксессуары", "Комплектующие", "Колонки", "Моноблоки", "Кронштейны", "Deco"].map(c => (
-                      <option key={c} value={c} className="bg-[#0A0B0E]">{c}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-mono uppercase text-white/50">Позиция в списке</label>
-                  <input type="number" placeholder="999" value={newProduct.priority} onChange={e => setNewProduct({ ...newProduct, priority: e.target.value })}
-                    className="w-full bg-[#0A0B0E] border border-white/10 rounded-lg p-3 outline-none focus:border-[#FF5A00] font-mono text-sm transition-all" />
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-mono uppercase text-white/50">Бренд</label>
-                <input placeholder="APC, ION, TP-Link..." value={newProduct.brand} onChange={e => setNewProduct({ ...newProduct, brand: e.target.value })}
-                  className="w-full bg-[#0A0B0E] border border-white/10 rounded-lg p-3 outline-none focus:border-[#FF5A00] text-sm transition-all" />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-mono uppercase text-white/50">URL Фото (необязательно)</label>
-                <input placeholder="https://..." value={newProduct.image} onChange={e => setNewProduct({ ...newProduct, image: e.target.value })}
-                  className="w-full bg-[#0A0B0E] border border-white/10 rounded-lg p-3 outline-none focus:border-[#FF5A00] text-sm transition-all" />
-              </div>
-              <button disabled={loading} className="w-full bg-[#FF5A00] hover:bg-[#FF6A15] text-white font-bold py-3.5 rounded-lg uppercase tracking-wider text-xs transition-all disabled:opacity-50">
-                {loading ? "Сохранение..." : "Добавить в каталог"}
-              </button>
-            </form>
-          </div>
-        )}
+        {/* ── TAB 2: ANALYTICS ──────────────────────────────── */}
+        {tab === "analytics" && (() => {
+          // Chart color palette
+          const CHART_COLORS = ["#FF5A00", "#FF8C42", "#3B82F6", "#10B981", "#F59E0B", "#8B5CF6", "#EC4899", "#06B6D4", "#84CC16", "#F97316"];
 
-        {/* ANALYTICS TAB */}
-        {tab === "analytics" && (
+          // Category bar chart data
+          const categoryChartData = Object.entries(metrics.categoryCounts)
+            .sort((a, b) => b[1] - a[1])
+            .map(([name, value]) => ({ name, value }));
+
+          // Pie chart data (stock status)
+          const stockPieData = [
+            { name: "В наличии", value: metrics.inStockCount },
+            { name: "Нет в наличии", value: metrics.outOfStockCount },
+          ].filter(d => d.value > 0);
+
+          // Top views bar chart
+          const viewsChartData = metrics.topByViews.slice(0, 6).map(p => ({
+            name: p.name.length > 16 ? p.name.slice(0, 14) + "…" : p.name,
+            views: p.views || 0,
+            likes: p.likes || 0,
+          }));
+
+          const CustomTooltipStyle = { backgroundColor: "#0f1219", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, fontSize: 11, fontFamily: "monospace" };
+
+          return (
           <div className="space-y-6">
+            {/* KPI Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: "Всего товаров", value: products.length, color: "text-white" },
-                { label: "В наличии", value: analyticsData.inStockCount, color: "text-[#10B981]" },
-                { label: "Просмотры (всего)", value: analyticsData.totalViews, color: "text-[#FF5A00]" },
-                { label: "Лайки (всего)", value: analyticsData.totalLikes, color: "text-red-400" },
-              ].map(({ label, value, color }) => (
-                <div key={label} className="bg-[#111317] border border-white/[0.08] rounded-xl p-5">
-                  <div className={`text-2xl font-mono font-bold ${color}`}>{value}</div>
+                { label: "Всего товаров", value: metrics.totalCount, color: "text-white", bg: "border-white/10" },
+                { label: "В наличии", value: metrics.inStockCount, color: "text-emerald-400", bg: "border-emerald-500/20" },
+                { label: "Просмотры (всего)", value: metrics.totalViews.toLocaleString(), color: "text-[#FF5A00]", bg: "border-[#FF5A00]/20" },
+                { label: "Лайки (всего)", value: metrics.totalLikes.toLocaleString(), color: "text-rose-400", bg: "border-rose-500/20" },
+              ].map(({ label, value, color, bg }) => (
+                <div key={label} className={`bg-[#0f1219] border ${bg} rounded-xl p-5 relative overflow-hidden`}>
+                  <div className="absolute inset-0 opacity-[0.03] bg-gradient-to-br from-white to-transparent" />
+                  <div className={`text-2xl sm:text-3xl font-mono font-bold ${color}`}>{value}</div>
                   <div className="text-[10px] font-mono uppercase text-white/40 tracking-wider mt-1">{label}</div>
                 </div>
               ))}
             </div>
-            {analyticsData.outOfStockCount > 0 && (
-              <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-3.5 flex items-center gap-3">
-                <AlertTriangle className="w-4 h-4 text-yellow-400 flex-shrink-0" />
-                <p className="text-xs font-semibold text-yellow-400">{analyticsData.outOfStockCount} товаров не в наличии. Обновите статус во вкладке «База товаров».</p>
+
+            {metrics.outOfStockCount > 0 && (
+              <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-4 flex items-center gap-3">
+                <AlertTriangle className="w-4 h-4 text-yellow-400 shrink-0" />
+                <p className="text-xs font-medium text-yellow-400">
+                  {metrics.outOfStockCount} товаров сейчас отмечены как «Снято с продажи».
+                </p>
               </div>
             )}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-              <div className="bg-[#111317] border border-white/[0.08] rounded-xl p-6">
-                <div className="flex items-center gap-2.5 mb-5">
-                  <TrendingUp className="w-4 h-4 text-[#FF5A00]" />
-                  <h3 className="font-mono uppercase tracking-wider text-xs text-white/70 font-semibold">Топ по просмотрам</h3>
+
+            {/* Main Charts Row */}
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+              {/* Category Bar Chart */}
+              <div className="bg-[#0f1219] border border-white/[0.08] rounded-xl p-6 lg:col-span-3">
+                <div className="flex items-center gap-2 mb-5">
+                  <BarChart3 className="w-4 h-4 text-[#FF5A00]" />
+                  <h3 className="font-mono uppercase tracking-wider text-xs text-white/80 font-bold">Товары по категориям</h3>
                 </div>
-                {analyticsData.topByViews.every(p => !p.views)
-                  ? <p className="text-xs font-mono text-white/30 text-center py-8">Данные появятся после посещений</p>
-                  : <MiniBarChart items={analyticsData.topByViews} valueKey="views" label="просм." />}
+                {categoryChartData.length === 0 ? (
+                  <p className="text-xs font-mono text-white/30 py-10 text-center">Нет данных</p>
+                ) : (
+                  <ResponsiveContainer width="100%" height={220}>
+                    <BarChart data={categoryChartData} margin={{ top: 0, right: 0, left: -20, bottom: 40 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                      <XAxis
+                        dataKey="name"
+                        tick={{ fill: "rgba(255,255,255,0.45)", fontSize: 10, fontFamily: "monospace" }}
+                        angle={-35}
+                        textAnchor="end"
+                        interval={0}
+                      />
+                      <YAxis tick={{ fill: "rgba(255,255,255,0.35)", fontSize: 10, fontFamily: "monospace" }} allowDecimals={false} />
+                      <Tooltip
+                        contentStyle={CustomTooltipStyle}
+                        labelStyle={{ color: "rgba(255,255,255,0.7)" }}
+                        itemStyle={{ color: "#FF5A00" }}
+                        cursor={{ fill: "rgba(255,90,0,0.06)" }}
+                      />
+                      <Bar dataKey="value" name="Товаров" radius={[4, 4, 0, 0]}>
+                        {categoryChartData.map((_, i) => (
+                          <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
               </div>
-              <div className="bg-[#111317] border border-white/[0.08] rounded-xl p-6">
-                <div className="flex items-center gap-2.5 mb-5">
-                  <Heart className="w-4 h-4 text-red-400" />
-                  <h3 className="font-mono uppercase tracking-wider text-xs text-white/70 font-semibold">Топ по лайкам</h3>
+
+              {/* Stock Pie Chart */}
+              <div className="bg-[#0f1219] border border-white/[0.08] rounded-xl p-6 lg:col-span-2">
+                <div className="flex items-center gap-2 mb-5">
+                  <Package className="w-4 h-4 text-emerald-400" />
+                  <h3 className="font-mono uppercase tracking-wider text-xs text-white/80 font-bold">Наличие товаров</h3>
                 </div>
-                {analyticsData.topByLikes.every(p => !p.likes)
-                  ? <p className="text-xs font-mono text-white/30 text-center py-8">Данные появятся после активности</p>
-                  : <MiniBarChart items={analyticsData.topByLikes} valueKey="likes" label="лайков" />}
+                {stockPieData.length === 0 ? (
+                  <p className="text-xs font-mono text-white/30 py-10 text-center">Нет данных</p>
+                ) : (
+                  <ResponsiveContainer width="100%" height={220}>
+                    <PieChart>
+                      <Pie
+                        data={stockPieData}
+                        cx="50%"
+                        cy="45%"
+                        innerRadius={55}
+                        outerRadius={80}
+                        paddingAngle={3}
+                        dataKey="value"
+                        stroke="none"
+                      >
+                        <Cell fill="#10B981" />
+                        <Cell fill="#F59E0B" />
+                      </Pie>
+                      <Tooltip contentStyle={CustomTooltipStyle} itemStyle={{ color: "rgba(255,255,255,0.8)" }} />
+                      <Legend
+                        iconType="circle"
+                        iconSize={8}
+                        wrapperStyle={{ fontSize: 10, fontFamily: "monospace", color: "rgba(255,255,255,0.5)", paddingTop: 8 }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </div>
-            <div className="bg-[#111317] border border-white/[0.08] rounded-xl p-6">
-              <h3 className="font-mono uppercase tracking-wider text-xs text-white/70 font-semibold mb-4">Товаров по категориям</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                {Object.entries(analyticsData.categoryCounts).map(([cat, count]) => (
-                  <div key={cat} className="bg-[#0A0B0E] border border-white/[0.06] rounded-lg p-3">
-                    <div className="text-xl font-mono font-bold text-[#FF5A00]">{count as number}</div>
-                    <div className="text-xs text-white/50 mt-0.5">{cat}</div>
-                  </div>
-                ))}
+
+            {/* Views & Likes Bar Chart */}
+            <div className="bg-[#0f1219] border border-white/[0.08] rounded-xl p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <TrendingUp className="w-4 h-4 text-[#FF5A00]" />
+                <h3 className="font-mono uppercase tracking-wider text-xs text-white/80 font-bold">Топ-6 товаров: просмотры & лайки</h3>
               </div>
+              {viewsChartData.length === 0 ? (
+                <p className="text-xs font-mono text-white/30 py-10 text-center">Нет данных</p>
+              ) : (
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={viewsChartData} margin={{ top: 0, right: 10, left: -20, bottom: 40 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                    <XAxis
+                      dataKey="name"
+                      tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 9, fontFamily: "monospace" }}
+                      angle={-30}
+                      textAnchor="end"
+                      interval={0}
+                    />
+                    <YAxis tick={{ fill: "rgba(255,255,255,0.35)", fontSize: 10, fontFamily: "monospace" }} allowDecimals={false} />
+                    <Tooltip
+                      contentStyle={CustomTooltipStyle}
+                      labelStyle={{ color: "rgba(255,255,255,0.7)" }}
+                      cursor={{ fill: "rgba(255,255,255,0.03)" }}
+                    />
+                    <Legend
+                      iconType="circle"
+                      iconSize={8}
+                      wrapperStyle={{ fontSize: 10, fontFamily: "monospace", color: "rgba(255,255,255,0.5)", paddingTop: 8 }}
+                    />
+                    <Bar dataKey="views" name="Просмотры" fill="#FF5A00" radius={[3, 3, 0, 0]} />
+                    <Bar dataKey="likes" name="Лайки" fill="#F43F5E" radius={[3, 3, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </div>
-            <div className="flex justify-end">
-              <button onClick={handleExportCSV} className="flex items-center gap-2 px-4 py-2.5 bg-[#181B22] text-white border border-white/10 rounded-lg font-mono text-xs uppercase tracking-wider hover:border-white/20 transition-all">
-                <Download className="w-3.5 h-3.5 text-[#FF5A00]" /> Экспортировать в CSV
-              </button>
+
+            {/* Category Cards Grid */}
+            <div className="bg-[#0f1219] border border-white/[0.08] rounded-xl p-6">
+              <h3 className="font-mono uppercase tracking-wider text-xs text-white/80 font-bold mb-4">
+                Распределение оборудования по категориям
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                {Object.entries(metrics.categoryCounts)
+                  .sort((a, b) => b[1] - a[1])
+                  .map(([cat, count], i) => (
+                    <div
+                      key={cat}
+                      className="bg-[#141722] border border-white/[0.06] rounded-lg p-3"
+                      style={{ borderTopColor: CHART_COLORS[i % CHART_COLORS.length], borderTopWidth: 2 }}
+                    >
+                      <div className="text-xl font-mono font-extrabold" style={{ color: CHART_COLORS[i % CHART_COLORS.length] }}>{count}</div>
+                      <div className="text-xs text-white/50 mt-0.5 truncate">{cat}</div>
+                    </div>
+                  ))}
+              </div>
             </div>
           </div>
-        )}
+          );
+        })()}
 
-        {/* STATS TAB */}
+        {/* ── TAB 3: IP TELEMETRY & VISITORS ────────────────── */}
         {tab === "stats" && (
           <div className="space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-[#111317] border border-white/[0.08] rounded-xl p-5">
-                <div className="text-[10px] font-mono uppercase text-white/40 tracking-wider mb-1 flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 text-[#FF5A00]" />Всего визитов</div>
+              <div className="bg-[#0f1219] border border-white/[0.08] rounded-xl p-5">
+                <div className="text-[10px] font-mono uppercase text-white/40 tracking-wider mb-1 flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5 text-[#FF5A00]" /> Всего визитов
+                </div>
                 <div className="text-2xl font-mono font-bold text-white">{visitors.length}</div>
               </div>
-              <div className="bg-[#111317] border border-white/[0.08] rounded-xl p-5">
+
+              <div className="bg-[#0f1219] border border-white/[0.08] rounded-xl p-5">
                 <div className="text-[10px] font-mono uppercase text-white/40 tracking-wider mb-1">Уникальных IP</div>
                 <div className="text-2xl font-mono font-bold text-white">{visitorStats.uniqueIps}</div>
               </div>
-              <div className="bg-[#111317] border border-white/[0.08] rounded-xl p-5">
+
+              <div className="bg-[#0f1219] border border-white/[0.08] rounded-xl p-5">
                 <div className="text-[10px] font-mono uppercase text-white/40 tracking-wider mb-1">Сегодня</div>
-                <div className="text-2xl font-mono font-bold text-[#10B981]">{visitorStats.todayCount}</div>
+                <div className="text-2xl font-mono font-bold text-emerald-400">{visitorStats.todayCount}</div>
               </div>
-              <div className="bg-[#111317] border border-white/[0.08] rounded-xl p-5">
-                <div className="text-[10px] font-mono uppercase text-white/40 tracking-wider mb-1">Топ стран</div>
-                <div className="flex flex-wrap gap-1.5 mt-1">
+
+              <div className="bg-[#0f1219] border border-white/[0.08] rounded-xl p-5">
+                <div className="text-[10px] font-mono uppercase text-white/40 tracking-wider mb-1">Топ локаций</div>
+                <div className="flex flex-wrap gap-1 mt-1">
                   {visitorStats.topCountries.length === 0 && <span className="text-white/40 text-xs">—</span>}
                   {visitorStats.topCountries.map(([name, count]) => (
-                    <span key={name} className="text-xs font-mono bg-white/5 border border-white/10 rounded px-2 py-0.5">{name} · <span className="text-[#FF5A00]">{count}</span></span>
+                    <span key={name} className="text-[11px] font-mono bg-white/5 border border-white/10 rounded px-1.5 py-0.5">
+                      {name} · <span className="text-[#FF5A00]">{count}</span>
+                    </span>
                   ))}
                 </div>
               </div>
             </div>
+
+            {/* Visitors Search & Table */}
             <div className="relative">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
-              <input placeholder="Поиск по IP, стране, городу..." value={visitorSearch} onChange={e => setVisitorSearch(e.target.value)}
-                className="w-full bg-[#111317] border border-white/[0.08] rounded-lg pl-10 pr-4 py-2.5 outline-none focus:border-[#FF5A00] text-xs sm:text-sm text-white transition-all font-mono" />
+              <input
+                placeholder="Поиск по IP, стране, городу..."
+                value={visitorSearch}
+                onChange={(e) => setVisitorSearch(e.target.value)}
+                className="w-full bg-[#0f1219] border border-white/[0.08] rounded-lg pl-10 pr-4 py-2.5 outline-none focus:border-[#FF5A00] text-xs sm:text-sm text-white transition-all font-mono"
+              />
             </div>
-            <div className="bg-[#111317] rounded-xl border border-white/[0.08] overflow-hidden shadow-xl">
+
+            <div className="bg-[#0f1219] rounded-xl border border-white/[0.08] overflow-hidden shadow-xl">
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-white/[0.02] text-[10px] uppercase font-mono tracking-wider text-white/40 border-b border-white/[0.06]">
-                    <th className="p-4 sm:p-5">IP</th>
-                    <th className="p-4 sm:p-5">Страна / Город</th>
-                    <th className="p-4 sm:p-5 hidden sm:table-cell">Страница</th>
-                    <th className="p-4 sm:p-5 hidden md:table-cell">Устройство</th>
-                    <th className="p-4 sm:p-5 text-right">Когда</th>
+                    <th className="p-4 sm:p-5">IP Адрес</th>
+                    <th className="p-4 sm:p-5">Страна / Регион</th>
+                    <th className="p-4 sm:p-5 hidden sm:table-cell">Путь</th>
+                    <th className="p-4 sm:p-5 hidden md:table-cell">User Agent</th>
+                    <th className="p-4 sm:p-5 text-right">Время</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/[0.06]">
-                  {visitorsLoading && <tr><td colSpan={5} className="p-10 text-center text-white/40">Загрузка…</td></tr>}
-                  {!visitorsLoading && visitorStats.filtered.length === 0 && <tr><td colSpan={5} className="p-10 text-center text-white/40">Пока нет данных</td></tr>}
-                  {visitorStats.filtered.map(v => (
-                    <tr key={v.id} className="hover:bg-white/[0.02]">
+                <tbody className="divide-y divide-white/[0.04]">
+                  {visitorsLoading && (
+                    <tr>
+                      <td colSpan={5} className="p-10 text-center text-white/40 font-mono text-xs">
+                        Загрузка телеметрии...
+                      </td>
+                    </tr>
+                  )}
+                  {!visitorsLoading && visitorStats.filtered.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="p-10 text-center text-white/40 font-mono text-xs">
+                        Нет зарегистрированных посещений
+                      </td>
+                    </tr>
+                  )}
+                  {visitorStats.filtered.map((v) => (
+                    <tr key={v.id} className="hover:bg-white/[0.02] transition-colors">
                       <td className="p-4 sm:p-5 font-mono text-xs font-bold text-[#FF5A00]">{v.ip}</td>
                       <td className="p-4 sm:p-5 text-xs">
-                        <div className="font-semibold text-white">{flagEmoji(v.country_code)} {v.country || "Неизвестно"}</div>
-                        <div className="text-white/40 text-[11px] mt-0.5">{[v.city, v.region].filter(Boolean).join(", ") || "—"}</div>
+                        <div className="font-semibold text-white">
+                          {flagEmoji(v.country_code)} {v.country || "Неизвестно"}
+                        </div>
+                        <div className="text-white/40 text-[11px] mt-0.5 font-mono">
+                          {[v.city, v.region].filter(Boolean).join(", ") || "—"}
+                        </div>
                       </td>
                       <td className="p-4 sm:p-5 text-xs text-white/60 font-mono hidden sm:table-cell">{v.path || "/"}</td>
-                      <td className="p-4 sm:p-5 text-xs text-white/40 max-w-[240px] truncate hidden md:table-cell" title={v.user_agent || ""}>{v.user_agent || "—"}</td>
-                      <td className="p-4 sm:p-5 text-right text-xs font-mono text-white/40 whitespace-nowrap">{new Date(v.created_at).toLocaleString("ru-RU")}</td>
+                      <td className="p-4 sm:p-5 text-xs text-white/40 max-w-[240px] truncate hidden md:table-cell font-mono" title={v.user_agent || ""}>
+                        {v.user_agent || "—"}
+                      </td>
+                      <td className="p-4 sm:p-5 text-right text-xs font-mono text-white/40 whitespace-nowrap">
+                        {new Date(v.created_at).toLocaleString("ru-RU")}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -642,6 +1334,16 @@ const Admin = () => {
           </div>
         )}
       </main>
+
+      {/* ── PRODUCT SIDE DRAWER INSPECTOR ──────────────────── */}
+      <ProductDrawerEditor
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        product={drawerProduct}
+        categories={allCategories}
+        exchangeRate={exchangeRate}
+        onSave={handleSaveDrawerProduct}
+      />
     </div>
   );
 };
