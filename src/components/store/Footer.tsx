@@ -1,4 +1,5 @@
 import { useRef, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Send, MapPin, Phone, Clock, Mail, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import { CONTACTS } from "@/lib/constants";
@@ -138,23 +139,23 @@ const Footer = () => {
             <h3 className="text-label text-white/30 mb-4">Навигация</h3>
             <ul className="space-y-2">
               {[
-                { id: "home", label: "Главная" },
-                { id: "catalog", label: "Каталог продукции" },
-                { id: "features", label: "Условия и гарантия" },
-                { id: "faq", label: "Вопросы и ответы" },
+                { to: "/", label: "Главная" },
+                { to: "/about", label: "О компании" },
+                { to: "/delivery", label: "Доставка и оплата" },
+                { to: "/warranty", label: "Гарантия и возврат" },
+                { to: "/contacts", label: "Контакты" },
+                { to: "/guides", label: "База знаний и гайды" },
               ].map((l) => (
-                <li key={l.id}>
-                  <button
-                    onClick={() => document.getElementById(l.id)?.scrollIntoView({ behavior: "smooth" })}
-                    className="text-[12.5px] text-white/48 hover:text-white transition-colors font-medium
-                      relative group"
+                <li key={l.to}>
+                  <Link
+                    to={l.to}
+                    className="text-[12.5px] text-white/48 hover:text-white transition-colors font-medium relative group inline-block"
                   >
                     <span className="relative">
                       {l.label}
-                      <span className="absolute bottom-0 left-0 w-0 h-px bg-[#FF5A00]/60
-                        group-hover:w-full transition-all duration-200" />
+                      <span className="absolute bottom-0 left-0 w-0 h-px bg-[#FF5A00]/60 group-hover:w-full transition-all duration-200" />
                     </span>
-                  </button>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -171,24 +172,24 @@ const Footer = () => {
             <h3 className="text-label text-white/30 mb-4">Категории</h3>
             <ul className="space-y-2">
               {[
-                "ИБП Ion",
-                "Мониторы 144–320 Гц",
-                "Сетевое оборудование",
-                "Комплектующие ПК",
-                "Моноблоки",
-                "Аксессуары",
+                { to: "/category/ups", label: "ИБП Ion" },
+                { to: "/category/monitors", label: "Мониторы 144–360 Гц" },
+                { to: "/category/components", label: "Комплектующие ПК" },
+                { to: "/category/networking", label: "Сетевое оборудование" },
+                { to: "/category/wifi-routers", label: "Wi-Fi роутеры" },
+                { to: "/category/all-in-one", label: "Моноблоки" },
+                { to: "/category/accessories", label: "Аксессуары" },
               ].map((c) => (
-                <li
-                  key={c}
-                  onClick={() => document.getElementById("catalog")?.scrollIntoView({ behavior: "smooth" })}
-                  className="text-[12.5px] text-white/48 hover:text-white transition-colors cursor-pointer font-medium
-                    relative group"
-                >
-                  <span className="relative">
-                    {c}
-                    <span className="absolute bottom-0 left-0 w-0 h-px bg-[#FF5A00]/60
-                      group-hover:w-full transition-all duration-200" />
-                  </span>
+                <li key={c.to}>
+                  <Link
+                    to={c.to}
+                    className="text-[12.5px] text-white/48 hover:text-white transition-colors font-medium relative group inline-block"
+                  >
+                    <span className="relative">
+                      {c.label}
+                      <span className="absolute bottom-0 left-0 w-0 h-px bg-[#FF5A00]/60 group-hover:w-full transition-all duration-200" />
+                    </span>
+                  </Link>
                 </li>
               ))}
             </ul>

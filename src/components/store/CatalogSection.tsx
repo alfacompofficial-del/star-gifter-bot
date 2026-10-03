@@ -1,9 +1,11 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
-import { RotateCcw, Search, Plus, Trash2, X, AlertCircle, LayoutGrid } from "lucide-react";
+import { Link } from "react-router-dom";
+import { RotateCcw, Search, Plus, Trash2, X, AlertCircle, LayoutGrid, ChevronRight } from "lucide-react";
 import ProductCard from "./ProductCard";
 import type { Product } from "@/hooks/useProducts";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { getCategoryUrl, getCategorySlug, CATEGORY_SEO_DATA } from "@/lib/slugify";
 
 interface CatalogSectionProps {
   products: Product[];
@@ -12,6 +14,8 @@ interface CatalogSectionProps {
   onAddToCart: (product: Product) => void;
   onProductClick?: (product: Product) => void;
   isAdmin?: boolean;
+  activeCategory?: string;
+  onCategoryChange?: (category: string) => void;
 }
 
 const CATEGORY_ORDER = [
@@ -27,10 +31,30 @@ const CATEGORY_ORDER = [
   "Wi-Fi роутеры"
 ];
 
-const CatalogSection = ({ products, isLoading, error, onAddToCart, onProductClick, isAdmin }: CatalogSectionProps) => {
-  const [filter, setFilter] = useState("all");
+const CatalogSection = ({
+  products,
+  isLoading,
+  error,
+  onAddToCart,
+  onProductClick,
+  isAdmin,
+  activeCategory,
+  onCategoryChange,
+}: CatalogSectionProps) => {
+  const [filter, setFilter] = useState(activeCategory || "all");
   const [search, setSearch] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (activeCategory !== undefined) {
+      setFilter(activeCategory);
+    }
+  }, [activeCategory]);
+
+  const handleCategorySelect = (cat: string) => {
+    setFilter(cat);
+    onCategoryChange?.(cat);
+  };
 
   // Admin: drag & drop state
   const [draggedId, setDraggedId] = useState<number | null>(null);
@@ -83,6 +107,9 @@ const CatalogSection = ({ products, isLoading, error, onAddToCart, onProductClic
     });
     return ["all", ...cats];
   }, [sourceProducts]);
+
+  const activeCatSlug = filter !== "all" ? getCategorySlug(filter) : null;
+  const categorySeo = activeCatSlug ? CATEGORY_SEO_DATA[activeCatSlug] : null;
 
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { all: sourceProducts.length };
@@ -413,10 +440,17 @@ const CatalogSection = ({ products, isLoading, error, onAddToCart, onProductClic
               {categories.map((cat) => {
                 const isActive = filter === cat;
                 const count = categoryCounts[cat] || 0;
+                const categoryUrl = cat === "all" ? "/" : getCategoryUrl(cat);
                 return (
-                  <button
+                  <Link
                     key={cat}
-                    onClick={() => setFilter(cat)}
+                    to={categoryUrl}
+                    onClick={(e) => {
+                      if (!e.metaKey && !e.ctrlKey && !e.shiftKey) {
+                        e.preventDefault();
+                        handleCategorySelect(cat);
+                      }
+                    }}
                     className={`cat-pill ${isActive ? "cat-pill-active" : "cat-pill-inactive"}`}
                   >
                     <span>{cat === "all" ? "Все" : cat}</span>
@@ -431,7 +465,7 @@ const CatalogSection = ({ products, isLoading, error, onAddToCart, onProductClic
                     {/* Admin delete */}
                     {isAdmin && cat === filter && cat !== "all" && (
                       <span
-                        onClick={(e) => { e.stopPropagation(); handleDeleteCategory(cat); }}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteCategory(cat); }}
                         className="ml-0.5 w-4 h-4 flex items-center justify-center rounded text-white/60
                           hover:bg-black/40 hover:text-red-400 transition-colors"
                         title="Удалить категорию"
@@ -439,7 +473,7 @@ const CatalogSection = ({ products, isLoading, error, onAddToCart, onProductClic
                         <Trash2 className="w-3 h-3" />
                       </span>
                     )}
-                  </button>
+                  </Link>
                 );
               })}
 
@@ -493,6 +527,30 @@ const CatalogSection = ({ products, isLoading, error, onAddToCart, onProductClic
             </div>
           )}
         </div>
+
+        {/* Category Heading & SEO Breadcrumbs */}
+        {filter !== "all" && (
+          <div className="mb-6 p-4 rounded-xl bg-[#0f1117]/80 border border-white/[0.06] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div>
+              <nav aria-label="Хлебные крошки" className="flex items-center gap-1.5 text-xs text-white/50 mb-1">
+                <Link to="/" onClick={() => handleCategorySelect("all")} className="hover:text-white transition-colors">
+                  Главная
+                </Link>
+                <ChevronRight className="w-3 h-3 text-white/25" />
+                <span className="text-[#FF5A00] font-medium">{filter}</span>
+              </nav>
+              <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                {categorySeo?.h1 || `${filter} в Ташкенте`}
+              </h2>
+            </div>
+            <button
+              onClick={() => handleCategorySelect("all")}
+              className="text-xs text-white/45 hover:text-white flex items-center gap-1 transition-colors shrink-0"
+            >
+              <X className="w-3.5 h-3.5" /> Показать все товары
+            </button>
+          </div>
+        )}
 
         {/* ── Product Grid States ─────────────────────── */}
         {isLoading ? (
@@ -568,6 +626,23 @@ const CatalogSection = ({ products, isLoading, error, onAddToCart, onProductClic
               </motion.div>
             ))}
           </motion.div>
+        )}
+
+        {/* SEO Category Guide Block */}
+        {filter !== "all" && categorySeo && (
+          <div className="mt-12 p-6 rounded-2xl bg-[#0f1117] border border-white/[0.06] text-white/70 text-xs sm:text-sm leading-relaxed space-y-3">
+            <h3 className="text-sm sm:text-base font-bold text-white">
+              Купить {filter.toLowerCase()} в Ташкенте — интернет-магазин AlfaComp
+            </h3>
+            <p className="text-white/60 leading-relaxed">
+              {categorySeo.seoDescription}
+            </p>
+            <div className="flex flex-wrap gap-4 pt-2 text-[11px] text-white/45 border-t border-white/[0.05]">
+              <span>✓ Экспресс-доставка по Ташкенту за 24 часа</span>
+              <span>✓ Официальная гарантия сервисного центра</span>
+              <span>✓ Оплата Click / Payme / Наличные / Перечисление</span>
+            </div>
+          </div>
         )}
       </div>
     </section>

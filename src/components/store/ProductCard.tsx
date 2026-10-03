@@ -1,5 +1,6 @@
 import { Plus, Check, Star, Heart, Share2, Pencil, Eye } from "lucide-react";
 import { useState, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatPrice } from "@/lib/constants";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
@@ -64,9 +65,11 @@ const ProductCard = ({
     setLiked(newLikes.includes(product.id));
   }, [product.id]);
 
+  const productUrl = getProductUrl(product);
+
   const handleShare = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
-    const url = `${window.location.origin}${window.location.pathname}${getProductUrl(product.id, product.category).replace("/#", "#")}`;
+    const url = `${window.location.origin}${productUrl}`;
     const shareData = {
       title: product.name,
       text: `${product.name} — ${formatPrice(Math.round(product.price * exchangeRate))} сум`,
@@ -87,7 +90,7 @@ const ProductCard = ({
         setTimeout(() => setCopied(false), 2000);
       } catch { /* silent */ }
     }
-  }, [product, exchangeRate]);
+  }, [product, exchangeRate, productUrl]);
 
   const handleCardClick = () => {
     if (editingPrice) return;
@@ -297,7 +300,18 @@ const ProductCard = ({
           {/* Product name */}
           <h3 className="text-[13px] font-semibold text-white leading-snug line-clamp-2
             group-hover:text-[#FF5A00] transition-colors duration-200 tracking-[-0.01em]">
-            {product.name}
+            <Link
+              to={productUrl}
+              onClick={(e) => {
+                if (!e.metaKey && !e.ctrlKey && !e.shiftKey) {
+                  e.preventDefault();
+                  handleCardClick();
+                }
+              }}
+              className="hover:underline focus:outline-none"
+            >
+              {product.name}
+            </Link>
           </h3>
         </div>
 

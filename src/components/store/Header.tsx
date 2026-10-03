@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { ShoppingCart, Download } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
 
@@ -16,6 +16,7 @@ const Header = ({ cartCount, onCartClick }: HeaderProps) => {
   const [cartAnimating, setCartAnimating] = useState(false);
   const [activeSection, setActiveSection] = useState("home");
   const location = useLocation();
+  const navigate = useNavigate();
   const isHome = location.pathname === "/";
   const { exchangeRate } = useExchangeRate();
   const ticking = useRef(false);
@@ -68,7 +69,7 @@ const Header = ({ cartCount, onCartClick }: HeaderProps) => {
 
   const scrollTo = (id: string) => {
     if (!isHome) {
-      window.location.hash = "#/";
+      navigate("/");
       setTimeout(() => {
         document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
       }, 300);
@@ -119,7 +120,11 @@ const Header = ({ cartCount, onCartClick }: HeaderProps) => {
             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
               style={{ background: "radial-gradient(circle at 50% 120%, rgba(255,90,0,0.2), transparent 70%)" }}
             />
-            <span className="text-[#FF5A00] font-black font-mono text-sm relative z-10">α</span>
+            <img
+              src="/logo.png"
+              alt="AlfaComp"
+              className="relative z-10 w-6 h-6 object-contain"
+            />
           </div>
 
           {/* Wordmark */}

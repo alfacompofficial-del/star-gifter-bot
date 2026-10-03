@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Helmet } from "react-helmet-async";
+import { Link } from "react-router-dom";
 import {
   X, Heart, Share2, ShoppingCart, Send, ZoomIn, CheckCircle,
-  Check, Pencil, Plus, Trash2, Eye, ArrowUpRight, Package
+  Check, Pencil, Plus, Trash2, Eye, ArrowUpRight, Package, ChevronRight
 } from "lucide-react";
 import { formatPrice } from "@/lib/constants";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
-import { getProductUrl } from "@/lib/slugify";
+import { getProductUrl, getCategoryUrl } from "@/lib/slugify";
 import type { Product } from "@/hooks/useProducts";
 import { toast } from "sonner";
 
@@ -109,7 +111,7 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
 
   const handleShare = useCallback(async () => {
     if (!product) return;
-    const url = window.location.origin + window.location.pathname + getProductUrl(product.id, product.category).replace("/#", "#");
+    const url = `${window.location.origin}${getProductUrl(product)}`;
     try {
       if (navigator.share) {
         await navigator.share({ title: product.name, text: `${product.name} — ${formatPrice(Math.round(product.price * exchangeRate))} сум`, url });
@@ -353,8 +355,82 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
 
   const dynamicSpecEntries = Object.entries(mergedSpecs);
 
+  const productSlug = product ? getProductUrl(product) : "";
+  const canonicalUrl = `https://alfacomp.uz${productSlug}`;
+  const numericPriceUZS = product ? Math.round(product.price * exchangeRate) : 0;
+  const seoTitle = product ? `${product.name} — купить в Ташкенте по цене ${priceUZS} сум | AlfaComp` : "";
+  const seoDescription = product ? `Купить ${product.name} в Ташкенте с официальной гарантией. Цена: ${priceUZS} сум (~$${product.price}). Бренд: ${product.brand || 'AlfaComp'}. ${product.in_stock ? 'В наличии на складе.' : 'Доступно под заказ.'} Доставка по Ташкенту за 1 день.` : "";
+
+  const productJsonLd = product ? {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    image: [product.image],
+    description: seoDescription,
+    sku: `ALFA-${product.id}`,
+    mpn: `ALFA-${product.id}`,
+    brand: {
+      "@type": "Brand",
+      name: product.brand || "AlfaComp",
+    },
+    offers: {
+      "@type": "Offer",
+      url: canonicalUrl,
+      priceCurrency: "UZS",
+      price: numericPriceUZS,
+      priceValidUntil: "2026-12-31",
+      availability: product.in_stock ? "https://schema.org/InStock" : "https://schema.org/PreOrder",
+      itemCondition: "https://schema.org/NewCondition",
+      seller: {
+        "@type": "Organization",
+        name: "AlfaComp",
+        url: "https://alfacomp.uz",
+      },
+    },
+  } : null;
+
+  const breadcrumbsJsonLd = product ? {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Главная",
+        item: "https://alfacomp.uz/",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: product.category || "Каталог",
+        item: `https://alfacomp.uz${getCategoryUrl(product.category)}`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: product.name,
+        item: canonicalUrl,
+      },
+    ],
+  } : null;
+
   return (
     <>
+      {product && (
+        <Helmet>
+          <title>{seoTitle}</title>
+          <meta name="description" content={seoDescription} />
+          <link rel="canonical" href={canonicalUrl} />
+          <meta property="og:title" content={`${product.name} — купить в Ташкенте | AlfaComp`} />
+          <meta property="og:description" content={seoDescription} />
+          <meta property="og:image" content={product.image} />
+          <meta property="og:url" content={canonicalUrl} />
+          <meta property="og:type" content="product" />
+          <script type="application/ld+json">{JSON.stringify(productJsonLd)}</script>
+          <script type="application/ld+json">{JSON.stringify(breadcrumbsJsonLd)}</script>
+        </Helmet>
+      )}
+
       {/* Backdrop */}
       <motion.div
         initial={{ opacity: 0 }}
@@ -512,6 +588,23 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
               >
+                {/* SEO Breadcrumbs */}
+                <nav aria-label="Хлебные крошки" className="flex items-center gap-1.5 text-[11px] text-white/50 mb-3 flex-wrap">
+                  <Link to="/" onClick={onClose} className="hover:text-white transition-colors">
+                    Главная
+                  </Link>
+                  <ChevronRight className="w-3 h-3 text-white/20" />
+                  <Link
+                    to={getCategoryUrl(product.category)}
+                    onClick={onClose}
+                    className="hover:text-white transition-colors text-white/70"
+                  >
+                    {product.category || "Каталог"}
+                  </Link>
+                  <ChevronRight className="w-3 h-3 text-white/20" />
+                  <span className="text-[#FF5A00] truncate max-w-[180px] sm:max-w-[260px] font-medium">{product.name}</span>
+                </nav>
+
                 <div
                   className={`text-label text-[#FF5A00] mb-2 ${isAdmin ? 'cursor-pointer hover:underline' : ''}`}
                   onClick={() => isAdmin && handleEditField('brand', product.brand || '')}
