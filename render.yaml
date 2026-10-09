@@ -1,0 +1,13 @@
+services:
+  - type: static
+    name: alfacomp-store
+    buildCommand: npm ci --no-audit && NODE_OPTIONS="--max-old-space-size=4096" npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: NODE_ENV
+        value: production
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
