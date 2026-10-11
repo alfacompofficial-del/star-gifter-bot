@@ -72,7 +72,7 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
       if (isAdmin) return;
       try {
         const { supabase } = await import("@/integrations/supabase/client");
-        await supabase.from("products").update({ views: (product.views || 0) + 1 }).eq("id", product.id);
+        await supabase.from("products").update({ views: (product.views || 0) + 1 } as never).eq("id", product.id);
       } catch {}
     };
     incrementView();
@@ -104,7 +104,7 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
     try {
       const newGlobalLikes = Math.max(0, (product.likes || 0) + (isLiking ? 1 : -1));
       const { supabase } = await import("@/integrations/supabase/client");
-      await supabase.from("products").update({ likes: newGlobalLikes }).eq("id", product.id);
+      await supabase.from("products").update({ likes: newGlobalLikes } as never).eq("id", product.id);
       product.likes = newGlobalLikes;
     } catch {}
   }, [product]);
@@ -187,7 +187,7 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
     if (newValue !== null && newValue.trim() !== "" && newValue !== currentValue) {
       try {
         const { supabase } = await import("@/integrations/supabase/client");
-        const { error } = await supabase.from("products").update({ [field]: newValue.trim() }).eq("id", product.id);
+        const { error } = await supabase.from("products").update({ [field]: newValue.trim() } as never).eq("id", product.id);
         if (!error) {
           toast.success("Обновлено!");
           (product as any)[field] = newValue.trim();
@@ -208,7 +208,7 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
     if (!window.confirm("Создать дубликат товара в текущей категории прямо сейчас?")) return;
     try {
       const { supabase } = await import("@/integrations/supabase/client");
-      const { id, created_at, ...productData } = product;
+      const { id, created_at, views, likes, ...productData } = product;
       const { data, error } = await supabase.from("products").insert({
         ...productData,
         name: `${product.name} (Копия)`
