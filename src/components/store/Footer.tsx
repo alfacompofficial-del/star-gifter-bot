@@ -62,15 +62,19 @@ const Footer = () => {
             viewport={{ once: true, amount: 0.2 }}
             variants={columnVariants}
           >
-            <div className="flex items-center gap-2.5 mb-4">
+            <div
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              className="flex items-center gap-2.5 mb-4 cursor-pointer group select-none"
+              title="Наверх"
+            >
               <motion.div
-                className="w-8 h-8 rounded-lg bg-[#14171E] border border-white/[0.09] flex items-center justify-center"
-                whileHover={{ borderColor: "rgba(255,90,0,0.5)", scale: 1.05 }}
+                className="w-8 h-8 rounded-lg bg-[#14171E] border border-white/[0.09] group-hover:border-[#FF5A00]/50 flex items-center justify-center transition-colors"
+                whileHover={{ scale: 1.05 }}
                 transition={{ duration: 0.2 }}
               >
                 <span className="text-[#FF5A00] font-black font-mono text-sm">α</span>
               </motion.div>
-              <span className="text-[16px] font-bold tracking-tight text-white">
+              <span className="text-[16px] font-bold tracking-tight text-white group-hover:text-white transition-colors">
                 Alfa<span className="text-[#FF5A00]">Comp</span>
               </span>
             </div>

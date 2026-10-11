@@ -469,30 +469,58 @@ export const Admin = () => {
 
   // ── CSV Export ────────────────────────────────────────────
   const handleExportCSV = () => {
+    if (!products || products.length === 0) {
+      toast.error("Товары для экспорта не найдены");
+      return;
+    }
     const headers = [
-      "ID", "Название", "Бренд", "Категория", "Цена ($)", "Цена (сум)", "В наличии", "Приоритет", "Просмотры", "Лайки"
+      "ID",
+      "Название",
+      "Бренд",
+      "Категория",
+      "Цена ($)",
+      "Старая цена ($)",
+      "Цена (сум)",
+      "В наличии",
+      "Приоритет",
+      "Просмотры",
+      "Лайки",
+      "Ссылка на фото",
+      "Характеристики",
     ];
+    const escapeCsv = (val: any) => `"${String(val ?? "").replace(/"/g, '""')}"`;
     const rows = products.map((p) => [
       p.id,
-      `"${p.name.replace(/"/g, '""')}"`,
-      `"${(p.brand || "").replace(/"/g, '""')}"`,
-      `"${p.category}"`,
+      escapeCsv(p.name),
+      escapeCsv(p.brand || ""),
+      escapeCsv(p.category || ""),
       p.price,
+      p.old_price ?? "",
       Math.round(p.price * exchangeRate),
       p.in_stock ? "Да" : "Нет",
-      p.priority || "",
+      p.priority ?? "",
       p.views || 0,
       p.likes || 0,
+      escapeCsv(p.image || ""),
+      escapeCsv(
+        p.specs
+          ? Object.entries(p.specs)
+              .map(([k, v]) => `${k}: ${v}`)
+              .join("; ")
+          : ""
+      ),
     ]);
-    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\r\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `alfacomp_inventory_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `alfacomp_products_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    toast.success("CSV экспортирован!");
+    toast.success(`Скачано ${products.length} товаров в виде CSV!`);
   };
 
   // ── Logout ────────────────────────────────────────────────
@@ -530,7 +558,11 @@ export const Admin = () => {
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
           </button>
           <div>
-            <h1 className="font-extrabold tracking-tight text-xs uppercase flex items-center gap-2">
+            <h1
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              className="font-extrabold tracking-tight text-xs uppercase flex items-center gap-2 cursor-pointer select-none"
+              title="Наверх"
+            >
               <span className="text-white">ALFACOMP</span>
               <span className="text-[#FF5A00] font-mono text-[11px]">// CONTROL CENTER</span>
             </h1>
@@ -620,9 +652,12 @@ export const Admin = () => {
           {/* CSV Export */}
           <button
             onClick={handleExportCSV}
-            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-[#141720] border border-white/10 rounded-lg text-xs font-mono uppercase tracking-wider hover:border-white/25 transition-all text-white/80 hover:text-white"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-[#141720] border border-white/10 hover:border-[#FF5A00]/40 rounded-lg text-xs font-mono uppercase tracking-wider transition-all text-white/80 hover:text-white"
+            title="Скачать все товары из сайта в виде CSV"
           >
-            <Download className="w-3.5 h-3.5 text-[#FF5A00]" /> CSV
+            <Download className="w-3.5 h-3.5 text-[#FF5A00]" />
+            <span className="hidden sm:inline">Скачать CSV</span>
+            <span className="sm:hidden">CSV</span>
           </button>
 
           {/* Cache Flush */}
@@ -675,18 +710,30 @@ export const Admin = () => {
             ))}
           </div>
 
-          {/* Quick Add Product Button */}
+          {/* Product Actions */}
           {tab === "products" && (
-            <button
-              onClick={() => {
-                setDrawerProduct(null);
-                setDrawerOpen(true);
-              }}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#FF5A00] hover:bg-[#FF6A15] text-white text-xs font-bold uppercase tracking-wider transition-all shadow-lg shadow-[#FF5A00]/20 shrink-0"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Добавить товар</span>
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={handleExportCSV}
+                className="flex items-center gap-2 px-3 sm:px-3.5 py-2 rounded-lg bg-[#141722] hover:bg-[#1b1f2e] border border-white/10 hover:border-[#FF5A00]/40 text-white text-xs font-bold uppercase tracking-wider transition-all shadow-md active:scale-95"
+                title="Скачать все товары из сайта в виде CSV файла"
+              >
+                <Download className="w-4 h-4 text-[#FF5A00]" />
+                <span className="hidden sm:inline">Скачать товары</span>
+                <span>(CSV)</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setDrawerProduct(null);
+                  setDrawerOpen(true);
+                }}
+                className="flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-lg bg-[#FF5A00] hover:bg-[#FF6A15] text-white text-xs font-bold uppercase tracking-wider transition-all shadow-lg shadow-[#FF5A00]/20"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Добавить товар</span>
+              </button>
+            </div>
           )}
         </div>
 

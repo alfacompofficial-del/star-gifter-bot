@@ -3,6 +3,7 @@ import { ShoppingCart, Download } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
+import AndroidAppBanner from "@/components/store/AndroidAppBanner";
 
 interface HeaderProps {
   cartCount: number;
@@ -78,6 +79,15 @@ const Header = ({ cartCount, onCartClick }: HeaderProps) => {
     }
   };
 
+  const handleLogoClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (isHome) {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
+  };
+
   const navItems = [
     { label: "Главная", id: "home" },
     { label: "Каталог", id: "catalog" },
@@ -92,10 +102,13 @@ const Header = ({ cartCount, onCartClick }: HeaderProps) => {
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
         scrolled
-          ? "py-1.5 panel-glass shadow-[0_1px_0_0_rgba(255,255,255,0.05)]"
-          : "py-2.5 bg-transparent border-b border-transparent"
+          ? "panel-glass shadow-[0_1px_0_0_rgba(255,255,255,0.05)]"
+          : "bg-[#08090d]/80 backdrop-blur-md border-b border-transparent"
       }`}
     >
+      {/* Android App Download Banner */}
+      <AndroidAppBanner />
+
       {/* Scroll progress line */}
       <motion.div
         className="absolute bottom-0 left-0 h-[1.5px] bg-[#FF5A00] origin-left pointer-events-none"
@@ -106,12 +119,15 @@ const Header = ({ cartCount, onCartClick }: HeaderProps) => {
         transition={{ duration: 0 }}
       />
 
-      <div className="w-full max-w-[1540px] mx-auto px-4 sm:px-8 xl:px-12 flex items-center justify-between gap-4">
+      <div className={`w-full max-w-[1540px] mx-auto px-4 sm:px-8 xl:px-12 flex items-center justify-between gap-4 transition-all duration-300 ${
+        scrolled ? "py-1.5" : "py-2.5"
+      }`}>
         {/* ── Brand Logotype ───────────────────────────── */}
         <Link
           to="/"
-          className="flex items-center gap-2.5 group shrink-0 select-none"
-          aria-label="AlfaComp — на главную"
+          onClick={handleLogoClick}
+          className="flex items-center gap-2.5 group shrink-0 select-none cursor-pointer"
+          aria-label="AlfaComp — на главную и наверх"
         >
           {/* Logo mark */}
           <div className="relative w-8 h-8 rounded-lg flex items-center justify-center shrink-0 overflow-hidden
