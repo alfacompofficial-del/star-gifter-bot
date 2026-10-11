@@ -96,18 +96,20 @@ const Header = ({ cartCount, onCartClick }: HeaderProps) => {
   ];
 
   return (
-    <motion.header
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
-        scrolled
-          ? "panel-glass shadow-[0_1px_0_0_rgba(255,255,255,0.05)]"
-          : "bg-[#08090d]/80 backdrop-blur-md border-b border-transparent"
-      }`}
-    >
-      {/* Android App Download Banner */}
-      <AndroidAppBanner />
+    <>
+      {/* Android App Download Banner — fixed above the header */}
+      <div className="fixed top-0 left-0 w-full z-[60]">
+        <AndroidAppBanner />
+      </div>
+
+      <header
+        className={`fixed left-0 w-full z-50 transition-all duration-300 ${
+          scrolled
+            ? "panel-glass shadow-[0_1px_0_0_rgba(255,255,255,0.05)]"
+            : "bg-[#08090d]/80 backdrop-blur-md border-b border-transparent"
+        }`}
+        style={{ top: 0 }}
+      >
 
       {/* Scroll progress line */}
       <motion.div
@@ -245,7 +247,8 @@ const Header = ({ cartCount, onCartClick }: HeaderProps) => {
           </motion.button>
         </div>
       </div>
-    </motion.header>
+    </header>
+    </>
   );
 };
 
