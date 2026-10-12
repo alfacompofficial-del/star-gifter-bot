@@ -55,7 +55,7 @@ const FavoritesModal = ({ isOpen, onClose, items, products, onRemove, onClear, o
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-semibold text-white truncate">{product.name}</p>
                     <p className="text-xs font-mono font-bold text-white mt-0.5">
-                      {formatPrice(Math.round(product.price * exchangeRate))} сум
+                      {formatPrice(product.price)} сум
                     </p>
                     <div className="flex items-center gap-2 mt-2">
                       <button

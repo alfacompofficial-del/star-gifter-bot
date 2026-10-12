@@ -34,9 +34,11 @@
     <!-- SITEMAP -->
     <link rel="sitemap" type="application/xml" href="https://alfacomp.uz/sitemap.xml" />
 
-    <!-- PRECONNECT — ускорение загрузки внешних ресурсов -->
+    <!-- PRECONNECT & PRELOAD — ускорение загрузки шрифтов и LCP -->
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'" />
 
     <!-- OPEN GRAPH -->
     <meta property="og:title" content="Купить компьютер и мониторы в Ташкенте | AlfaComp.uz" />
@@ -57,23 +59,35 @@
     <meta name="twitter:description" content="Игровые ПК, мониторы 2K/4K/OLED и комплектующие в Ташкенте. Гарантия и доставка по Узбекистану." />
     <meta name="twitter:image" content="https://alfacomp.uz/banner.jpg" />
 
-    <!-- STORE SCHEMA — дополнено sameAs, aggregateRating, priceValidUntil, availability -->
+    <!-- STORE SCHEMA — дополнено sameAs, aggregateRating, geo, priceRange, availability -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "Store",
+      "@type": "ComputerStore",
       "name": "AlfaComp",
       "alternateName": ["AlfaComp.uz", "АльфаКомп", "Alfa Comp"],
       "url": "https://alfacomp.uz/",
       "logo": "https://alfacomp.uz/logo.png",
       "image": "https://alfacomp.uz/banner.jpg",
-      "description": "Купить монитор, видеокарту и комплектующие в Ташкенте. MSI, ASUS, Dell, BenQ, LG, Samsung мониторы 2K/4K/OLED. RTX 5070, ИБП Ion, Wi-Fi роутеры. Официальная гарантия, доставка по Узбекистану.",
-      "slogan": "Лучшие мониторы и комплектующие в Ташкенте",
+      "description": "Купить игровой компьютер, монитор, видеокарту и комплектующие в Ташкенте. MSI, ASUS, Dell, BenQ, LG, Samsung мониторы 2K/4K/OLED. RTX 5070, ИБП Ion, Wi-Fi роутеры. Официальная гарантия до 3 лет, доставка по Узбекистану.",
+      "slogan": "Премиальные компьютеры, мониторы и комплектующие в Ташкенте",
       "address": {
         "@type": "PostalAddress",
         "addressLocality": "Ташкент",
         "addressRegion": "Ташкент",
         "addressCountry": "UZ"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 41.311081,
+        "longitude": 69.240562
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.9",
+        "reviewCount": "148",
+        "bestRating": "5",
+        "worstRating": "1"
       },
       "areaServed": "UZ",
       "currenciesAccepted": "UZS, USD",

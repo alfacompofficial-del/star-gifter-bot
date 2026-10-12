@@ -13,8 +13,8 @@ interface HardwareIntro3DProps {
  * 0.0–0.5s: Тёмный экран → появление оборудования
  * 0.5–1.3s: Медленный camera movement + оранжевый свет по железу
  * 1.3–1.8s: Световая линия проходит через сцену
- * 1.8–2.2s: AlfaComp логотип появляется
- * 2.2s →  : Плавный кинематографичный переход в сайт
+ * 1.3–3.1s: AlfaComp.uz логотип — виден ~1.8 секунды
+ * 3.1–3.5s: Плавный кинематографичный переход в сайт
  */
 export const HardwareIntro3D: React.FC<HardwareIntro3DProps> = ({ onComplete }) => {
   // Current time in seconds (0.0 -> 2.5)
@@ -55,13 +55,13 @@ export const HardwareIntro3D: React.FC<HardwareIntro3DProps> = ({ onComplete }) 
       const elapsedSec = (now - startMs) / 1000;
       setTime(elapsedSec);
 
-      // At 2.2s trigger smooth transition to the website
-      if (elapsedSec >= 2.2 && !isExiting) {
+      // At 3.1s trigger smooth transition to the website
+      if (elapsedSec >= 3.1 && !isExiting) {
         setIsExiting(true);
       }
 
-      // Finish sequence at 2.55s
-      if (elapsedSec >= 2.55) {
+      // Finish sequence at 3.5s
+      if (elapsedSec >= 3.5) {
         handleFinish();
       } else {
         rafId = requestAnimationFrame(tick);
@@ -220,7 +220,7 @@ export const HardwareIntro3D: React.FC<HardwareIntro3DProps> = ({ onComplete }) 
               {/* ──────────────────────────────────────────────────────────
                   1.8–2.2s: ALFACOMP ПОЯВЛЯЕТСЯ
                  ────────────────────────────────────────────────────────── */}
-              {time >= 1.75 && (
+              {time >= 1.3 && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.92, filter: "blur(8px)" }}
                   animate={{
@@ -290,7 +290,7 @@ export const HardwareIntro3D: React.FC<HardwareIntro3DProps> = ({ onComplete }) 
             <div className="w-36 sm:w-48 h-[2px] bg-white/10 rounded-full overflow-hidden">
               <div
                 className="h-full bg-[#FF5A00] shadow-[0_0_10px_#FF5A00] transition-all duration-75"
-                style={{ width: `${Math.min((time / 2.2) * 100, 100)}%` }}
+                style={{ width: `${Math.min((time / 3.5) * 100, 100)}%` }}
               />
             </div>
           </div>

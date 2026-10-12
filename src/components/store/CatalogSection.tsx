@@ -6,6 +6,7 @@ import type { Product } from "@/hooks/useProducts";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { getCategoryUrl, getCategorySlug, CATEGORY_SEO_DATA } from "@/lib/slugify";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CatalogSectionProps {
   products: Product[];
@@ -203,7 +204,6 @@ const CatalogSection = ({
     setDragOverId(null);
 
     try {
-      const { supabase } = await import("@/integrations/supabase/client");
       await Promise.all(
         withNewPriorities.map(({ id, priority }) =>
           supabase.from("products").update({ priority }).eq("id", id)
@@ -223,7 +223,6 @@ const CatalogSection = ({
   const handleAddProduct = async () => {
     if (!isAdmin) return;
     try {
-      const { supabase } = await import("@/integrations/supabase/client");
       const { data, error } = await supabase.from("products").insert({
         name: "Новый товар",
         brand: "Бренд",
@@ -251,7 +250,6 @@ const CatalogSection = ({
     if (!catName || !catName.trim()) return;
 
     try {
-      const { supabase } = await import("@/integrations/supabase/client");
       const { data, error } = await supabase.from("products").insert({
         name: "Пример товара",
         brand: "Бренд",
@@ -278,7 +276,6 @@ const CatalogSection = ({
     if (!window.confirm(`Удалить вкладку "${categoryName}" и ВСЕ товары в ней безвозвратно?`)) return;
 
     try {
-      const { supabase } = await import("@/integrations/supabase/client");
       const { error } = await supabase.from("products").delete().eq("category", categoryName);
       if (error) throw error;
       toast.success(`Вкладка "${categoryName}" удалена!`);
@@ -302,7 +299,6 @@ const CatalogSection = ({
           e.preventDefault();
           const targetCategory = filter === "all" ? copiedProd.category : filter;
           if (!window.confirm(`Вставить скопированный товар "${copiedProd.name}" во вкладку "${targetCategory}"?`)) return;
-          const { supabase } = await import("@/integrations/supabase/client");
           const { id, created_at, likes, views, ...productData } = copiedProd;
           const { error } = await supabase.from("products").insert({
             ...productData,
@@ -329,7 +325,6 @@ const CatalogSection = ({
       const copiedProd = JSON.parse(copiedStr);
       const targetCategory = filter === "all" ? copiedProd.category : filter;
       if (!window.confirm(`Вставить скопированный товар "${copiedProd.name}" во вкладку "${targetCategory}"?`)) return;
-      const { supabase } = await import("@/integrations/supabase/client");
       const { id, created_at, likes, views, ...productData } = copiedProd;
       const { error } = await supabase.from("products").insert({
         ...productData,

@@ -3,13 +3,25 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { lazy, Suspense } from "react";
 import Index from "./pages/Index";
-import Admin from "./pages/Admin";
-import Download from "./pages/Download";
 import NotFound from "./pages/NotFound";
-import InfoPage from "./pages/InfoPage";
-import GuidesPage from "./pages/GuidesPage";
 import { useAdminAccess } from "./hooks/useAdminAccess";
+
+// Lazy loaded secondary pages to optimize initial bundle and Core Web Vitals
+const Admin = lazy(() => import("./pages/Admin"));
+const Download = lazy(() => import("./pages/Download"));
+const InfoPage = lazy(() => import("./pages/InfoPage"));
+const GuidesPage = lazy(() => import("./pages/GuidesPage"));
+
+const PageFallback = () => (
+  <div className="min-h-screen bg-[#08090c] flex items-center justify-center">
+    <div className="flex flex-col items-center gap-3">
+      <div className="w-8 h-8 rounded-full border-2 border-white/10 border-t-[#ff5a00] animate-spin" />
+      <span className="font-mono text-xs text-white/40 uppercase tracking-widest">AlfaComp</span>
+    </div>
+  </div>
+);
 
 const queryClient = new QueryClient();
 
@@ -24,7 +36,11 @@ const AdminGate = () => {
     );
   }
   if (!allowed) return <Navigate to="/" replace />;
-  return <Admin />;
+  return (
+    <Suspense fallback={<PageFallback />}>
+      <Admin />
+    </Suspense>
+  );
 };
 
 const App = () => (
@@ -57,22 +73,22 @@ const App = () => (
           <Route path="/computers" element={<Index />} />
 
           {/* Informational SEO pages */}
-          <Route path="/about" element={<InfoPage type="about" />} />
-          <Route path="/delivery" element={<InfoPage type="delivery" />} />
-          <Route path="/warranty" element={<InfoPage type="warranty" />} />
-          <Route path="/contacts" element={<InfoPage type="contacts" />} />
+          <Route path="/about" element={<Suspense fallback={<PageFallback />}><InfoPage type="about" /></Suspense>} />
+          <Route path="/delivery" element={<Suspense fallback={<PageFallback />}><InfoPage type="delivery" /></Suspense>} />
+          <Route path="/warranty" element={<Suspense fallback={<PageFallback />}><InfoPage type="warranty" /></Suspense>} />
+          <Route path="/contacts" element={<Suspense fallback={<PageFallback />}><InfoPage type="contacts" /></Suspense>} />
 
           {/* SEO Content & Guides */}
-          <Route path="/guides" element={<GuidesPage />} />
-          <Route path="/blog" element={<GuidesPage />} />
-          <Route path="/articles" element={<GuidesPage />} />
+          <Route path="/guides" element={<Suspense fallback={<PageFallback />}><GuidesPage /></Suspense>} />
+          <Route path="/blog" element={<Suspense fallback={<PageFallback />}><GuidesPage /></Suspense>} />
+          <Route path="/articles" element={<Suspense fallback={<PageFallback />}><GuidesPage /></Suspense>} />
 
           {/* Legacy fallback route */}
           <Route path="/products/:category/:id" element={<Index />} />
 
           {/* Admin & Utility */}
           <Route path="/admin" element={<AdminGate />} />
-          <Route path="/download" element={<Download />} />
+          <Route path="/download" element={<Suspense fallback={<PageFallback />}><Download /></Suspense>} />
 
           {/* 404 */}
           <Route path="*" element={<NotFound />} />

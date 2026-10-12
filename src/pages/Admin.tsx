@@ -478,9 +478,9 @@ export const Admin = () => {
       "Название",
       "Бренд",
       "Категория",
-      "Цена ($)",
-      "Старая цена ($)",
       "Цена (сум)",
+      "Старая цена (сум)",
+      "Цена (≈$USD)",
       "В наличии",
       "Приоритет",
       "Просмотры",
@@ -496,7 +496,7 @@ export const Admin = () => {
       escapeCsv(p.category || ""),
       p.price,
       p.old_price ?? "",
-      Math.round(p.price * exchangeRate),
+      exchangeRate > 0 ? Math.round(p.price / exchangeRate) : "",
       p.in_stock ? "Да" : "Нет",
       p.priority ?? "",
       p.views || 0,
@@ -1042,7 +1042,7 @@ export const Admin = () => {
                               <Pencil className="w-2.5 h-2.5 opacity-0 group-hover/price:opacity-50 text-white/50" />
                             </button>
                             <div className="text-[10px] text-white/40 mt-0.5">
-                              {formatPrice(Math.round(p.price * exchangeRate))} сум
+                              {formatPrice(p.price)} сум {exchangeRate > 0 ? `(≈$${Math.round(p.price / exchangeRate)})` : ""}
                             </div>
                           </div>
                         )}

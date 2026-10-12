@@ -20,6 +20,8 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useCart } from "@/hooks/useCart";
 import { useProducts } from "@/hooks/useProducts";
 import { useAdminAccess } from "@/hooks/useAdminAccess";
+import { useExchangeRate } from "@/hooks/useExchangeRate";
+import { formatPrice } from "@/lib/constants";
 import {
   findProductBySlug,
   getProductUrl,
@@ -38,6 +40,7 @@ import { ref, increment, update } from "firebase/database";
 const Index = () => {
   const cart = useCart();
   const { data: products = [], isLoading, error } = useProducts();
+  const { exchangeRate } = useExchangeRate();
   const isAdmin = useAdminAccess();
   const { slug, categorySlug } = useParams<{ slug?: string; categorySlug?: string }>();
   const navigate = useNavigate();
@@ -192,9 +195,120 @@ const Index = () => {
       }
     : null;
 
+  // Catalog ItemList schema for Google Shopping & rich snippets
+  const catalogItemListJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: categorySeo ? `${categorySeo.name} в Ташкенте` : "Каталог ПК и электроники AlfaComp",
+    numberOfItems: Math.min(products.length, 24),
+    itemListElement: products.slice(0, 24).map((p, idx) => ({
+      "@type": "ListItem",
+      position: idx + 1,
+      name: p.name,
+      url: `https://alfacomp.uz${getProductUrl(p)}`,
+      image: p.image,
+    })),
+  };
+
+  // product.price is already in UZS
+  const productJsonLd = selectedProduct
+    ? {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        name: selectedProduct.name,
+        image: [selectedProduct.image],
+        description: `Купить ${selectedProduct.name} в Ташкенте по цене ${formatPrice(
+          selectedProduct.price
+        )} сум с официальной гарантией и доставкой по Узбекистану в интернет-магазине AlfaComp.`,
+        sku: `ALFA-${selectedProduct.id}`,
+        mpn: `ALFA-PROD-${selectedProduct.id}`,
+        brand: {
+          "@type": "Brand",
+          name: selectedProduct.brand || "AlfaComp",
+        },
+        category: selectedProduct.category,
+        offers: {
+          "@type": "Offer",
+          url: `https://alfacomp.uz${getProductUrl(selectedProduct)}`,
+          priceCurrency: "UZS",
+          price: selectedProduct.price,
+          priceValidUntil: "2026-12-31",
+          availability: selectedProduct.in_stock
+            ? "https://schema.org/InStock"
+            : "https://schema.org/PreOrder",
+          itemCondition: "https://schema.org/NewCondition",
+          seller: {
+            "@type": "Store",
+            name: "AlfaComp",
+            url: "https://alfacomp.uz/",
+          },
+        },
+      }
+    : null;
+
+  const productBreadcrumbsJsonLd = selectedProduct
+    ? {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Главная",
+            item: "https://alfacomp.uz/",
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: selectedProduct.category,
+            item: `https://alfacomp.uz${getCategoryUrl(selectedProduct.category)}`,
+          },
+          {
+            "@type": "ListItem",
+            position: 3,
+            name: selectedProduct.name,
+            item: `https://alfacomp.uz${getProductUrl(selectedProduct)}`,
+          },
+        ],
+      }
+    : null;
+
   return (
     <div className="min-h-screen bg-background text-foreground pb-[62px] md:pb-0">
-      {/* Category SEO Helmet (when a category route is active and modal is not overriding) */}
+      {/* ── 1. Specific Product SEO Helmet (when modal or direct product route is open) ── */}
+      {selectedProduct && (
+        <Helmet>
+          <title>{`${selectedProduct.name} — купить в Ташкенте по цене ${formatPrice(
+            selectedProduct.price
+          )} сум | AlfaComp`}</title>
+          <meta
+            name="description"
+            content={`Купить ${selectedProduct.name} в Ташкенте с гарантией и быстрой доставкой по Узбекистану в AlfaComp. Цена: ${formatPrice(
+              selectedProduct.price
+            )} сум${exchangeRate > 0 ? ` (≈$${Math.round(selectedProduct.price / exchangeRate)})` : ""}.`}
+          />
+          <link rel="canonical" href={`https://alfacomp.uz${getProductUrl(selectedProduct)}`} />
+          <meta
+            property="og:title"
+            content={`${selectedProduct.name} — купить в Ташкенте | AlfaComp`}
+          />
+          <meta
+            property="og:description"
+            content={`Оригинальный ${selectedProduct.name} в наличии и под заказ с гарантией. Доставка по Ташкенту и всему Узбекистану.`}
+          />
+          <meta property="og:image" content={selectedProduct.image} />
+          <meta property="og:url" content={`https://alfacomp.uz${getProductUrl(selectedProduct)}`} />
+          <meta property="og:type" content="product" />
+          <meta property="product:price:amount" content={String(selectedProduct.price)} />
+          <meta property="product:price:currency" content="USD" />
+          <meta name="twitter:title" content={`${selectedProduct.name} — AlfaComp`} />
+          <meta name="twitter:image" content={selectedProduct.image} />
+          <script type="application/ld+json">{JSON.stringify(productJsonLd)}</script>
+          <script type="application/ld+json">{JSON.stringify(productBreadcrumbsJsonLd)}</script>
+        </Helmet>
+      )}
+
+      {/* ── 2. Category SEO Helmet ── */}
       {!selectedProduct && categorySeo && (
         <Helmet>
           <title>{categorySeo.metaTitle}</title>
@@ -205,10 +319,11 @@ const Index = () => {
           <meta property="og:url" content={`https://alfacomp.uz${getCategoryUrl(categorySeo.slug)}`} />
           <meta property="og:type" content="website" />
           <script type="application/ld+json">{JSON.stringify(categoryBreadcrumbsJsonLd)}</script>
+          <script type="application/ld+json">{JSON.stringify(catalogItemListJsonLd)}</script>
         </Helmet>
       )}
 
-      {/* Default Home Page SEO Helmet */}
+      {/* ── 3. Default Home Page SEO Helmet ── */}
       {!selectedProduct && !categorySeo && (
         <Helmet>
           <title>Купить компьютер и монитор в Ташкенте — Магазин ПК AlfaComp.uz</title>
@@ -225,6 +340,7 @@ const Index = () => {
           <meta property="og:url" content="https://alfacomp.uz/" />
           <meta property="og:type" content="website" />
           <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
+          <script type="application/ld+json">{JSON.stringify(catalogItemListJsonLd)}</script>
         </Helmet>
       )}
 

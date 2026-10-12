@@ -10,6 +10,7 @@ import { formatPrice } from "@/lib/constants";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
 import { getProductUrl, getCategoryUrl } from "@/lib/slugify";
 import type { Product } from "@/hooks/useProducts";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 interface ProductModalProps {
@@ -71,7 +72,6 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
     const incrementView = async () => {
       if (isAdmin) return;
       try {
-        const { supabase } = await import("@/integrations/supabase/client");
         await supabase.from("products").update({ views: (product.views || 0) + 1 } as never).eq("id", product.id);
       } catch {}
     };
@@ -103,7 +103,6 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
     setLiked(isLiking);
     try {
       const newGlobalLikes = Math.max(0, (product.likes || 0) + (isLiking ? 1 : -1));
-      const { supabase } = await import("@/integrations/supabase/client");
       await supabase.from("products").update({ likes: newGlobalLikes } as never).eq("id", product.id);
       product.likes = newGlobalLikes;
     } catch {}
@@ -139,7 +138,7 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
   const handleBuyNow = () => {
     if (!product) return;
     const text = encodeURIComponent(
-      `Заказ из каталога AlfaComp:\nТовар: ${product.name}\nБренд: ${product.brand || "—"}\nЦена: ${formatPrice(Math.round(product.price * exchangeRate))} сум (~$${product.price})\nСтатус: ${product.in_stock ? "В наличии" : "Под заказ"}`
+      `Заказ из каталога AlfaComp:\nТовар: ${product.name}\nБренд: ${product.brand || "—"}\nЦена: ${formatPrice(product.price)} сум (≈$${exchangeRate > 0 ? Math.round(product.price / exchangeRate) : ""})\nСтатус: ${product.in_stock ? "В наличии" : "Под заказ"}`
     );
     window.open(`https://t.me/ALIBABO777?text=${text}`, "_blank");
   };
@@ -165,7 +164,6 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
     if (isNaN(val) || val <= 0) { toast.error("Введите корректную цену"); return; }
     setSavingPrice(true);
     try {
-      const { supabase } = await import("@/integrations/supabase/client");
       const { error } = await supabase.from("products").update({ price: val }).eq("id", product.id);
       if (!error) {
         toast.success("Цена обновлена!");
@@ -186,7 +184,6 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
     const newValue = window.prompt(`Изменить ${field}:`, currentValue);
     if (newValue !== null && newValue.trim() !== "" && newValue !== currentValue) {
       try {
-        const { supabase } = await import("@/integrations/supabase/client");
         const { error } = await supabase.from("products").update({ [field]: newValue.trim() } as never).eq("id", product.id);
         if (!error) {
           toast.success("Обновлено!");
@@ -207,7 +204,6 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
     toast.success(`Товар "${product.name}" скопирован в буфер для вставки.`);
     if (!window.confirm("Создать дубликат товара в текущей категории прямо сейчас?")) return;
     try {
-      const { supabase } = await import("@/integrations/supabase/client");
       const { id, created_at, views, likes, ...productData } = product;
       const { data, error } = await supabase.from("products").insert({
         ...productData,
@@ -229,7 +225,6 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
     if (!product) return false;
     setSavingSpec(true);
     try {
-      const { supabase } = await import("@/integrations/supabase/client");
       const { error } = await supabase.from("products").update({ specs: newSpecs } as any).eq("id", product.id);
       if (!error) {
         setSpecs(newSpecs);
@@ -283,7 +278,6 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
   const handleToggleStock = async () => {
     if (!isAdmin || !product) return;
     try {
-      const { supabase } = await import("@/integrations/supabase/client");
       const { error } = await supabase.from("products").update({ in_stock: !product.in_stock }).eq("id", product.id);
       if (!error) {
         product.in_stock = !product.in_stock;
@@ -299,8 +293,10 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
 
   if (!product) return null;
 
-  const priceUZS = formatPrice(Math.round(product.price * exchangeRate));
-  const oldPriceUZS = product.old_price ? formatPrice(Math.round(product.old_price * exchangeRate)) : null;
+  // product.price is already in UZS. USD reference = price / exchangeRate.
+  const priceUZS = formatPrice(product.price);
+  const oldPriceUZS = product.old_price ? formatPrice(product.old_price) : null;
+  const priceUSDRef = exchangeRate > 0 ? Math.round(product.price / exchangeRate) : null;
   const discount = product.old_price && product.price < product.old_price
     ? Math.round((1 - product.price / product.old_price) * 100)
     : null;
@@ -357,9 +353,9 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
 
   const productSlug = product ? getProductUrl(product) : "";
   const canonicalUrl = `https://alfacomp.uz${productSlug}`;
-  const numericPriceUZS = product ? Math.round(product.price * exchangeRate) : 0;
+  const numericPriceUZS = product.price;
   const seoTitle = product ? `${product.name} — купить в Ташкенте по цене ${priceUZS} сум | AlfaComp` : "";
-  const seoDescription = product ? `Купить ${product.name} в Ташкенте с официальной гарантией. Цена: ${priceUZS} сум (~$${product.price}). Бренд: ${product.brand || 'AlfaComp'}. ${product.in_stock ? 'В наличии на складе.' : 'Доступно под заказ.'} Доставка по Ташкенту за 1 день.` : "";
+  const seoDescription = product ? `Купить ${product.name} в Ташкенте с официальной гарантией. Цена: ${priceUZS} сум${priceUSDRef ? ` (≈$${priceUSDRef})` : ""}. Бренд: ${product.brand || 'AlfaComp'}. ${product.in_stock ? 'В наличии на складе.' : 'Доступно под заказ.'} Доставка по Ташкенту за 1 день.` : "";
 
   const productJsonLd = product ? {
     "@context": "https://schema.org",
@@ -691,7 +687,7 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
                     )}
 
                     <div className="text-data text-[11px] text-white/35 mt-1">
-                      ≈ ${product.price}
+                      {priceUSDRef ? `≈ $${priceUSDRef}` : ""}
                       <span className="text-white/20 ml-1.5">· 1$ = {exchangeRate.toLocaleString()} UZS</span>
                     </div>
                   </div>

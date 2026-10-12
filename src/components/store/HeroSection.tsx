@@ -152,9 +152,14 @@ const HeroSection = () => {
           >
             <img
               src={heroPcImage}
-              alt="Игровые ПК и оборудование AlfaComp.uz"
+              alt="Игровые ПК, мониторы и комплектующие AlfaComp в Ташкенте"
               className="hero-img"
               loading="eager"
+              // @ts-expect-error React 18 fetchPriority support
+              fetchpriority="high"
+              decoding="async"
+              width={760}
+              height={600}
               draggable={false}
             />
 

@@ -25,11 +25,14 @@ const CartModal = ({
 }: CartModalProps) => {
   const { exchangeRate } = useExchangeRate();
 
+  // item.price is already in UZS (product.price from DB is UZS)
   const checkoutMessage = items
-    .map((i) => `${i.name} x${i.quantity} — ${formatPrice(Math.round(i.price * i.quantity * exchangeRate))} сум`)
+    .map((i) => `${i.name} x${i.quantity} — ${formatPrice(i.price * i.quantity)} сум`)
     .join("\n");
 
-  const totalUZS = Math.round(total * exchangeRate);
+  // total is sum of UZS prices (from useCart)
+  const totalUZS = total;
+  const totalUSDRef = exchangeRate > 0 ? Math.round(totalUZS / exchangeRate) : null;
 
   return (
     <AnimatePresence>
@@ -100,7 +103,8 @@ const CartModal = ({
               ) : (
                 <AnimatePresence initial={false}>
                   {items.map((item) => {
-                    const itemTotalUZS = Math.round(item.price * item.quantity * exchangeRate);
+                    // item.price is already in UZS
+                    const itemTotalUZS = item.price * item.quantity;
                     return (
                       <motion.div
                         key={item.id}
@@ -134,7 +138,7 @@ const CartModal = ({
                             </span>
                             <span className="text-data text-[10px] text-white/35">UZS</span>
                             <span className="text-data text-[10px] text-white/25 ml-1">
-                              (${item.price * item.quantity})
+                              {exchangeRate > 0 ? `(≈$${Math.round(itemTotalUZS / exchangeRate)})` : ""}
                             </span>
                           </div>
 
@@ -196,7 +200,7 @@ const CartModal = ({
                         {formatPrice(totalUZS)}
                         <span className="text-data text-[11px] text-white/40 font-normal ml-1">UZS</span>
                       </div>
-                      <div className="text-data text-[11px] text-[#FF5A00] mt-0.5">≈ ${total}</div>
+                      <div className="text-data text-[11px] text-[#FF5A00] mt-0.5">{totalUSDRef ? `≈ $${totalUSDRef}` : ""}</div>
                     </div>
                   </div>
                 </div>
@@ -215,7 +219,7 @@ const CartModal = ({
                     href={`${CONTACTS.TELEGRAM}?text=${encodeURIComponent(
                       "Здравствуйте! Хочу оформить заказ в AlfaComp:\n\n" +
                       checkoutMessage +
-                      "\n\nИтого: " + formatPrice(totalUZS) + " сум (~$" + total + ")"
+                      "\n\nИтого: " + formatPrice(totalUZS) + " сум" + (totalUSDRef ? " (≈$" + totalUSDRef + ")" : "")
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"
