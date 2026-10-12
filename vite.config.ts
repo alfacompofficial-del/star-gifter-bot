@@ -16,11 +16,10 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
-    // Одна копия React в бандле
     dedupe: ["react", "react-dom"],
   },
   build: {
-    chunkSizeWarningLimit: 800,
+    chunkSizeWarningLimit: 1000,
     sourcemap: false,
     minify: "esbuild",
     cssCodeSplit: true,
@@ -29,7 +28,7 @@ export default defineConfig({
         manualChunks: (id) => {
           if (!id.includes("node_modules")) return;
 
-          // Cross-platform: использую includes без слешей (работает на Win и Linux)
+          // Только библиотеки БЕЗ зависимости от React — безопасно изолировать
           if (id.includes("three")) {
             return "vendor-three";
           }
@@ -39,28 +38,10 @@ export default defineConfig({
           if (id.includes("@supabase")) {
             return "vendor-supabase";
           }
-          if (id.includes("framer-motion")) {
-            return "vendor-motion";
-          }
-          if (
-            id.includes("react-router-dom") ||
-            id.includes("react-router") ||
-            id.includes("@remix-run")
-          ) {
-            return "vendor-router";
-          }
-          if (id.includes("recharts") || id.includes("d3-")) {
-            return "vendor-charts";
-          }
-          if (id.includes("@radix-ui")) {
-            return "vendor-radix";
-          }
-          if (id.includes("lucide-react")) {
-            return "vendor-icons";
-          }
-          if (id.includes("react") || id.includes("react-dom")) {
-            return "vendor-react";
-          }
+
+          // ВСЕ React-зависимые библиотеки (recharts, framer-motion, radix, router,
+          // lucide, react-hook-form и т.д.) — НЕ разделяем вручную.
+          // Rollup сам расставит их в правильном порядке без circular TDZ ошибок.
         },
       },
     },
