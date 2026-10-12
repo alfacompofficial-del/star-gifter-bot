@@ -46,6 +46,8 @@ export const HardwareIntro3D: React.FC<HardwareIntro3DProps> = ({ onComplete }) 
   }, [handleFinish]);
 
   // Master timeline controller running with requestAnimationFrame
+  // IMPORTANT: deps array has NO state vars that change during animation
+  // to prevent the RAF loop from restarting mid-sequence.
   useEffect(() => {
     const startMs = performance.now();
     let rafId: number;
@@ -54,11 +56,6 @@ export const HardwareIntro3D: React.FC<HardwareIntro3DProps> = ({ onComplete }) 
       if (finishedRef.current) return;
       const elapsedSec = (now - startMs) / 1000;
       setTime(elapsedSec);
-
-      // At 3.1s trigger smooth transition to the website
-      if (elapsedSec >= 3.1 && !isExiting) {
-        setIsExiting(true);
-      }
 
       // Finish sequence at 3.5s
       if (elapsedSec >= 3.5) {
@@ -70,7 +67,7 @@ export const HardwareIntro3D: React.FC<HardwareIntro3DProps> = ({ onComplete }) 
 
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [handleFinish, isExiting]);
+  }, [handleFinish]); // ← только handleFinish (стабильный useCallback)
 
   return (
     <AnimatePresence>
@@ -78,7 +75,7 @@ export const HardwareIntro3D: React.FC<HardwareIntro3DProps> = ({ onComplete }) 
         <motion.div
           key="cinematic-intro"
           initial={{ opacity: 1 }}
-          animate={{ opacity: isExiting ? 0 : 1 }}
+          animate={{ opacity: isExiting || time >= 3.1 ? 0 : 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
           className="fixed inset-0 z-[99999] bg-[#030407] select-none overflow-hidden cursor-pointer"
