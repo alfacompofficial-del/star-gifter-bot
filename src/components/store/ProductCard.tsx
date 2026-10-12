@@ -2,7 +2,7 @@ import { Plus, Check, Star, Heart, Share2, Pencil, Eye, ShieldCheck, Zap } from 
 import { useState, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { formatPrice } from "@/lib/constants";
+import { resolveProductPrices } from "@/lib/constants";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
 import { getProductUrl } from "@/lib/slugify";
 import type { Product } from "@/hooks/useProducts";
@@ -106,7 +106,7 @@ const ProductCard = ({
       const url = `${window.location.origin}${productUrl}`;
       const shareData = {
         title: product.name,
-        text: `${product.name} — ${formatPrice(product.price)} сум в AlfaComp`,
+        text: `${product.name} — ${resolveProductPrices(product.price, exchangeRate || 14000).formattedUZS} сум в AlfaComp`,
         url,
       };
       try {
@@ -179,10 +179,11 @@ const ProductCard = ({
     }
   };
 
-  // product.price is in UZS (sum). USD reference is product.price / exchangeRate
-  const priceUZS = formatPrice(product.price);
-  const oldPriceUZS = product.old_price ? formatPrice(product.old_price) : null;
-  const priceUSDRef = exchangeRate > 0 ? Math.round(product.price / exchangeRate) : null;
+  // Resolve prices: DB may store USD (e.g. 33) or UZS (e.g. 394350) — resolveProductPrices handles both
+  const { formattedUZS: priceUZS, priceUSD: priceUSDRef } = resolveProductPrices(product.price, exchangeRate || 14000);
+  const oldPriceUZS = product.old_price
+    ? resolveProductPrices(product.old_price, exchangeRate || 14000).formattedUZS
+    : null;
   const discount =
     product.old_price && product.price < product.old_price
       ? Math.round((1 - product.price / product.old_price) * 100)
@@ -439,7 +440,7 @@ const ProductCard = ({
 
             <div className="flex items-center gap-2 mt-1">
               <span className="font-mono text-[11px] text-white/40 leading-none">
-                {priceUSDRef ? `≈ $${priceUSDRef}` : ""}
+                {priceUSDRef > 0 ? `≈ $${priceUSDRef}` : ""}
               </span>
             </div>
           </div>

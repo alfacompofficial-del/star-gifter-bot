@@ -1,5 +1,5 @@
 import { X, Trash2, Heart, ShoppingCart } from "lucide-react";
-import { formatPrice } from "@/lib/constants";
+import { resolveProductPrices } from "@/lib/constants";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
 import type { Product } from "@/hooks/useProducts";
 
@@ -55,12 +55,10 @@ const FavoritesModal = ({ isOpen, onClose, items, products, onRemove, onClear, o
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-semibold text-white truncate">{product.name}</p>
                     <p className="text-xs font-mono font-bold text-white mt-0.5">
-                      {formatPrice(product.price)} сум
-                      {exchangeRate > 0 && (
-                        <span className="text-white/40 font-normal ml-1.5">
-                          ≈ ${Math.round(product.price / exchangeRate)}
-                        </span>
-                      )}
+                      {resolveProductPrices(product.price, exchangeRate || 14000).formattedUZS} сум
+                      <span className="text-white/40 font-normal ml-1.5">
+                        ≈ ${resolveProductPrices(product.price, exchangeRate || 14000).priceUSD}
+                      </span>
                     </p>
                     <div className="flex items-center gap-2 mt-2">
                       <button

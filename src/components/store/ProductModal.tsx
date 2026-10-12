@@ -6,7 +6,7 @@ import {
   X, Heart, Share2, ShoppingCart, Send, ZoomIn, CheckCircle,
   Check, Pencil, Plus, Trash2, Eye, ArrowUpRight, Package, ChevronRight
 } from "lucide-react";
-import { formatPrice } from "@/lib/constants";
+import { resolveProductPrices } from "@/lib/constants";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
 import { getProductUrl, getCategoryUrl } from "@/lib/slugify";
 import type { Product } from "@/hooks/useProducts";
@@ -113,7 +113,7 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
     const url = `${window.location.origin}${getProductUrl(product)}`;
     try {
       if (navigator.share) {
-        await navigator.share({ title: product.name, text: `${product.name} — ${formatPrice(product.price)} сум`, url });
+        await navigator.share({ title: product.name, text: `${product.name} — ${resolveProductPrices(product.price, exchangeRate || 14000).formattedUZS} сум`, url });
       } else {
         await navigator.clipboard.writeText(url);
         setCopied(true);
@@ -137,9 +137,10 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
 
   const handleBuyNow = () => {
     if (!product) return;
-    const usdText = exchangeRate > 0 ? ` (~$${Math.round(product.price / exchangeRate)})` : "";
+    const { formattedUZS, priceUSD } = resolveProductPrices(product.price, exchangeRate || 14000);
+    const usdText = priceUSD > 0 ? ` (~$${priceUSD})` : "";
     const text = encodeURIComponent(
-      `Заказ из каталога AlfaComp:\nТовар: ${product.name}\nБренд: ${product.brand || "—"}\nЦена: ${formatPrice(product.price)} сум${usdText}\nСтатус: ${product.in_stock ? "В наличии" : "Под заказ"}`
+      `Заказ из каталога AlfaComp:\nТовар: ${product.name}\nБренд: ${product.brand || "—"}\nЦена: ${formattedUZS} сум${usdText}\nСтатус: ${product.in_stock ? "В наличии" : "Под заказ"}`
     );
     window.open(`https://t.me/ALIBABO777?text=${text}`, "_blank");
   };
@@ -294,10 +295,11 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
 
   if (!product) return null;
 
-  // product.price is already in UZS. USD reference = price / exchangeRate.
-  const priceUZS = formatPrice(product.price);
-  const oldPriceUZS = product.old_price ? formatPrice(product.old_price) : null;
-  const priceUSDRef = exchangeRate > 0 ? Math.round(product.price / exchangeRate) : null;
+  // Resolve prices: DB may store USD (e.g. 33) or UZS (e.g. 394350) — resolveProductPrices handles both
+  const { formattedUZS: priceUZS, priceUSD: priceUSDRef } = resolveProductPrices(product.price, exchangeRate || 14000);
+  const oldPriceUZS = product.old_price
+    ? resolveProductPrices(product.old_price, exchangeRate || 14000).formattedUZS
+    : null;
   const discount = product.old_price && product.price < product.old_price
     ? Math.round((1 - product.price / product.old_price) * 100)
     : null;
