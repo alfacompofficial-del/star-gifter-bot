@@ -16,8 +16,6 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
-    // Гарантирует, что в бандле будет одна копия React
-    dedupe: ["react", "react-dom"],
   },
   build: {
     chunkSizeWarningLimit: 800,
@@ -27,23 +25,39 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          if (!id.includes("node_modules")) return;
-
-          // Только библиотеки, которые НЕ зависят от React
-          if (id.includes("/node_modules/three/")) {
-            return "vendor-three";
+          if (id.includes("node_modules")) {
+            if (id.includes("three")) {
+              return "vendor-three";
+            }
+            if (id.includes("recharts")) {
+              return "vendor-recharts";
+            }
+            if (id.includes("firebase")) {
+              return "vendor-firebase";
+            }
+            if (id.includes("@supabase")) {
+              return "vendor-supabase";
+            }
+            if (id.includes("framer-motion")) {
+              return "vendor-motion";
+            }
+            if (id.includes("@radix-ui")) {
+              return "vendor-radix";
+            }
+            if (id.includes("lucide-react")) {
+              return "vendor-icons";
+            }
+            if (id.includes("react-router-dom") || id.includes("react-router")) {
+              return "vendor-router";
+            }
+            if (id.includes("react") || id.includes("react-dom") || id.includes("react-helmet-async")) {
+              return "vendor-react-core";
+            }
+            return "vendor-libs";
           }
-          if (id.includes("/node_modules/firebase/") || id.includes("/node_modules/@firebase/")) {
-            return "vendor-firebase";
-          }
-          if (id.includes("/node_modules/@supabase/")) {
-            return "vendor-supabase";
-          }
-
-          // Всё остальное (React, router, radix, motion, recharts, icons и т.д.)
-          // оставляем Vite/Rollup: он сам расставит зависимости без циклов
         },
       },
     },
   },
 });
+это vite.config.ts
