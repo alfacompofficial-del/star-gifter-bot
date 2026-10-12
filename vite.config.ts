@@ -16,7 +16,7 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
-    // Гарантирует, что в бандле будет одна копия React
+    // Одна копия React в бандле
     dedupe: ["react", "react-dom"],
   },
   build: {
@@ -29,19 +29,38 @@ export default defineConfig({
         manualChunks: (id) => {
           if (!id.includes("node_modules")) return;
 
-          // Только библиотеки, которые НЕ зависят от React
-          if (id.includes("/node_modules/three/")) {
+          // Cross-platform: использую includes без слешей (работает на Win и Linux)
+          if (id.includes("three")) {
             return "vendor-three";
           }
-          if (id.includes("/node_modules/firebase/") || id.includes("/node_modules/@firebase/")) {
+          if (id.includes("firebase") || id.includes("@firebase")) {
             return "vendor-firebase";
           }
-          if (id.includes("/node_modules/@supabase/")) {
+          if (id.includes("@supabase")) {
             return "vendor-supabase";
           }
-
-          // Всё остальное (React, router, radix, motion, recharts, icons и т.д.)
-          // оставляем Vite/Rollup: он сам расставит зависимости без циклов
+          if (id.includes("framer-motion")) {
+            return "vendor-motion";
+          }
+          if (
+            id.includes("react-router-dom") ||
+            id.includes("react-router") ||
+            id.includes("@remix-run")
+          ) {
+            return "vendor-router";
+          }
+          if (id.includes("recharts") || id.includes("d3-")) {
+            return "vendor-charts";
+          }
+          if (id.includes("@radix-ui")) {
+            return "vendor-radix";
+          }
+          if (id.includes("lucide-react")) {
+            return "vendor-icons";
+          }
+          if (id.includes("react") || id.includes("react-dom")) {
+            return "vendor-react";
+          }
         },
       },
     },
