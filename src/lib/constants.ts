@@ -54,3 +54,38 @@ export const convertToUZS = (priceUSD: number, rate = EXCHANGE_RATE) => {
 export const convertToUSD = (priceUZS: number, rate = EXCHANGE_RATE) => {
   return Math.round(priceUZS / rate);
 };
+
+/**
+ * Universal price resolver.
+ * Handles both USD (e.g. 33, 46, 105, 6500) and UZS (e.g. 394350, 549700, 1254750) inputs seamlessly.
+ */
+export const resolveProductPrices = (
+  rawPrice: number | null | undefined,
+  exchangeRate: number = DEFAULT_EXCHANGE_RATE
+): { priceUZS: number; priceUSD: number; formattedUZS: string } => {
+  const price = typeof rawPrice === "number" && !isNaN(rawPrice) && rawPrice > 0 ? rawPrice : 0;
+  const rate = exchangeRate > 0 ? exchangeRate : DEFAULT_EXCHANGE_RATE;
+
+  if (price === 0) {
+    return { priceUZS: 0, priceUSD: 0, formattedUZS: "0" };
+  }
+
+  let priceUZS: number;
+  let priceUSD: number;
+
+  if (price < 15000) {
+    // Stored in USD ($)
+    priceUSD = Math.round(price);
+    priceUZS = Math.round(price * rate);
+  } else {
+    // Stored in UZS (сум)
+    priceUZS = Math.round(price);
+    priceUSD = Math.round(price / rate);
+  }
+
+  return {
+    priceUZS,
+    priceUSD,
+    formattedUZS: formatPrice(priceUZS),
+  };
+};
