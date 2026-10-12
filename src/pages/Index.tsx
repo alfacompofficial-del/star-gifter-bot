@@ -300,7 +300,7 @@ const Index = () => {
           <meta property="og:url" content={`https://alfacomp.uz${getProductUrl(selectedProduct)}`} />
           <meta property="og:type" content="product" />
           <meta property="product:price:amount" content={String(selectedProduct.price)} />
-          <meta property="product:price:currency" content="USD" />
+          <meta property="product:price:currency" content="UZS" />
           <meta name="twitter:title" content={`${selectedProduct.name} — AlfaComp`} />
           <meta name="twitter:image" content={selectedProduct.image} />
           <script type="application/ld+json">{JSON.stringify(productJsonLd)}</script>

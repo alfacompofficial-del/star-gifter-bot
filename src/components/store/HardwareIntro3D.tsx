@@ -217,10 +217,8 @@ export const HardwareIntro3D: React.FC<HardwareIntro3DProps> = ({ onComplete }) 
                 </div>
               )}
 
-              {/* ──────────────────────────────────────────────────────────
-                  1.8–2.2s: ALFACOMP ПОЯВЛЯЕТСЯ
-                 ────────────────────────────────────────────────────────── */}
-              {time >= 1.3 && (
+              {/* AlfaComp.uz appears smoothly at 0.7s */}
+              {time >= 0.7 && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.92, filter: "blur(8px)" }}
                   animate={{

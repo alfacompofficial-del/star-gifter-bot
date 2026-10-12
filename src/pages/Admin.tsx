@@ -1009,7 +1009,6 @@ export const Admin = () => {
                       <td className="p-4 sm:p-5 text-right font-mono">
                         {editingPriceId === p.id ? (
                           <div className="flex items-center justify-end gap-1.5">
-                            <span className="text-white/40">$</span>
                             <input
                               type="number"
                               value={editingPriceValue}
@@ -1019,8 +1018,9 @@ export const Admin = () => {
                                 if (e.key === "Escape") cancelEditPrice();
                               }}
                               autoFocus
-                              className="w-20 bg-white/10 border border-[#FF5A00]/70 rounded px-2 py-1 text-xs font-mono font-bold text-white text-right outline-none"
+                              className="w-28 bg-white/10 border border-[#FF5A00]/70 rounded px-2 py-1 text-xs font-mono font-bold text-white text-right outline-none"
                             />
+                            <span className="text-white/40 text-[10px]">сум</span>
                             <button
                               onClick={() => saveEditPrice(p.id)}
                               className="p-1 rounded bg-green-500/20 text-green-400"
@@ -1038,11 +1038,11 @@ export const Admin = () => {
                               className="font-bold text-sm text-white hover:text-[#FF5A00] transition-colors flex items-center gap-1 ml-auto group/price"
                               title="Нажмите чтобы изменить цену"
                             >
-                              <span>${p.price}</span>
+                              <span>{formatPrice(p.price)} сум</span>
                               <Pencil className="w-2.5 h-2.5 opacity-0 group-hover/price:opacity-50 text-white/50" />
                             </button>
                             <div className="text-[10px] text-white/40 mt-0.5">
-                              {formatPrice(p.price)} сум {exchangeRate > 0 ? `(≈$${Math.round(p.price / exchangeRate)})` : ""}
+                              {exchangeRate > 0 ? `≈ $${Math.round(p.price / exchangeRate)}` : ""}
                             </div>
                           </div>
                         )}

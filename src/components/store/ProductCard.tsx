@@ -179,7 +179,7 @@ const ProductCard = ({
     }
   };
 
-  // product.price is already in UZS. USD reference = price / exchangeRate.
+  // product.price is in UZS (sum). USD reference is product.price / exchangeRate
   const priceUZS = formatPrice(product.price);
   const oldPriceUZS = product.old_price ? formatPrice(product.old_price) : null;
   const priceUSDRef = exchangeRate > 0 ? Math.round(product.price / exchangeRate) : null;

@@ -136,7 +136,7 @@ const CartModal = ({
                             <span className="text-data text-[12px] font-bold text-white">
                               {formatPrice(itemTotalUZS)}
                             </span>
-                            <span className="text-data text-[10px] text-white/35">UZS</span>
+                            <span className="text-data text-[10px] text-white/35">сум</span>
                             <span className="text-data text-[10px] text-white/25 ml-1">
                               {exchangeRate > 0 ? `(≈$${Math.round(itemTotalUZS / exchangeRate)})` : ""}
                             </span>
@@ -198,7 +198,7 @@ const CartModal = ({
                     <div className="text-right">
                       <div className="text-data text-[1.35rem] font-bold text-white tracking-tight leading-none">
                         {formatPrice(totalUZS)}
-                        <span className="text-data text-[11px] text-white/40 font-normal ml-1">UZS</span>
+                        <span className="text-data text-[11px] text-white/40 font-normal ml-1">сум</span>
                       </div>
                       <div className="text-data text-[11px] text-[#FF5A00] mt-0.5">{totalUSDRef ? `≈ $${totalUSDRef}` : ""}</div>
                     </div>

@@ -351,45 +351,43 @@ export const ProductDrawerEditor: React.FC<ProductDrawerEditorProps> = ({
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <label className="text-[11px] font-mono uppercase text-white/60 tracking-wider">
-                        Цена в долларах ($ USD) *
+                        Цена (сум UZS) *
                       </label>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono font-bold text-white/40">$</span>
                         <input
                           type="number"
-                          step="0.01"
+                          step="1"
                           required
-                          placeholder="85"
+                          placeholder="450000"
                           value={price}
                           onChange={(e) => setPrice(e.target.value)}
-                          className="w-full bg-[#12151d] border border-white/10 rounded-lg pl-8 pr-3 py-3 text-lg font-mono font-bold text-[#FF5A00] outline-none focus:border-[#FF5A00] transition-all"
+                          className="w-full bg-[#12151d] border border-white/10 rounded-lg px-3 py-3 text-lg font-mono font-bold text-[#FF5A00] outline-none focus:border-[#FF5A00] transition-all"
                         />
                       </div>
                       {price && !isNaN(parseFloat(price)) && (
                         <p className="text-[11px] font-mono text-emerald-400/90 mt-1">
-                          ≈ {formatPrice(Math.round(parseFloat(price) * exchangeRate))} сум
+                          {formatPrice(parseFloat(price))} сум {exchangeRate > 0 ? `(≈ $${Math.round(parseFloat(price) / exchangeRate)})` : ""}
                         </p>
                       )}
                     </div>
 
                     <div className="space-y-1.5">
                       <label className="text-[11px] font-mono uppercase text-white/60 tracking-wider">
-                        Старая цена ($ скидка)
+                        Старая цена (сум)
                       </label>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono font-bold text-white/30">$</span>
                         <input
                           type="number"
-                          step="0.01"
-                          placeholder="100"
+                          step="1"
+                          placeholder="500000"
                           value={oldPrice}
                           onChange={(e) => setOldPrice(e.target.value)}
-                          className="w-full bg-[#12151d] border border-white/10 rounded-lg pl-8 pr-3 py-3 text-sm font-mono text-red-400 outline-none focus:border-red-500 transition-all"
+                          className="w-full bg-[#12151d] border border-white/10 rounded-lg px-3 py-3 text-sm font-mono text-red-400 outline-none focus:border-red-500 transition-all"
                         />
                       </div>
                       {oldPrice && !isNaN(parseFloat(oldPrice)) && (
                         <p className="text-[10px] font-mono text-white/30 mt-1">
-                          Зачеркнутая цена для скидки
+                          {formatPrice(parseFloat(oldPrice))} сум {exchangeRate > 0 ? `(≈ $${Math.round(parseFloat(oldPrice) / exchangeRate)})` : ""}
                         </p>
                       )}
                     </div>

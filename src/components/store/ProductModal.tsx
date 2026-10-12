@@ -113,7 +113,7 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
     const url = `${window.location.origin}${getProductUrl(product)}`;
     try {
       if (navigator.share) {
-        await navigator.share({ title: product.name, text: `${product.name} — ${formatPrice(Math.round(product.price * exchangeRate))} сум`, url });
+        await navigator.share({ title: product.name, text: `${product.name} — ${formatPrice(product.price)} сум`, url });
       } else {
         await navigator.clipboard.writeText(url);
         setCopied(true);
@@ -137,8 +137,9 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
 
   const handleBuyNow = () => {
     if (!product) return;
+    const usdText = exchangeRate > 0 ? ` (~$${Math.round(product.price / exchangeRate)})` : "";
     const text = encodeURIComponent(
-      `Заказ из каталога AlfaComp:\nТовар: ${product.name}\nБренд: ${product.brand || "—"}\nЦена: ${formatPrice(product.price)} сум (≈$${exchangeRate > 0 ? Math.round(product.price / exchangeRate) : ""})\nСтатус: ${product.in_stock ? "В наличии" : "Под заказ"}`
+      `Заказ из каталога AlfaComp:\nТовар: ${product.name}\nБренд: ${product.brand || "—"}\nЦена: ${formatPrice(product.price)} сум${usdText}\nСтатус: ${product.in_stock ? "В наличии" : "Под заказ"}`
     );
     window.open(`https://t.me/ALIBABO777?text=${text}`, "_blank");
   };
@@ -681,7 +682,7 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
                         <span className="text-data text-[1.6rem] sm:text-[1.9rem] font-bold text-white tracking-tight leading-none">
                           {priceUZS}
                         </span>
-                        <span className="text-data text-[11px] text-white/40">UZS</span>
+                        <span className="text-data text-[11px] text-white/40">сум</span>
                         {isAdmin && <Pencil className="w-3 h-3 text-[#FF5A00] opacity-0 group-hover/p:opacity-100 ml-1" />}
                       </div>
                     )}

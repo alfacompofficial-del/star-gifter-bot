@@ -132,7 +132,8 @@ const AIChatWidget = ({ products = [], onSelectProduct, onAddToCart }: AIChatWid
         const specsText = p.specs && Object.keys(p.specs).length > 0
           ? `| ${Object.entries(p.specs).slice(0, 3).map(([k, v]) => `${k}: ${v}`).join(", ")}`
           : "";
-        return `[ID:${p.id}] "${p.name}" | Кат: ${p.category} | $${p.price} (~${formatPrice(Math.round(p.price * exchangeRate))} сум) | ${p.in_stock ? "В наличии" : "Под заказ"} | Бренд: ${p.brand || "AlfaComp"} ${specsText}`;
+        const usdRef = exchangeRate > 0 ? ` (~$${Math.round(p.price / exchangeRate)})` : "";
+        return `[ID:${p.id}] "${p.name}" | Кат: ${p.category} | ${formatPrice(p.price)} сум${usdRef} | ${p.in_stock ? "В наличии" : "Под заказ"} | Бренд: ${p.brand || "AlfaComp"} ${specsText}`;
       })
       .join("\n");
 
@@ -310,7 +311,12 @@ ${productCatalogText}
                         {p.name}
                       </h5>
                       <div className="text-xs font-mono font-bold text-white">
-                        {formatPrice(Math.round(p.price * exchangeRate))} сум
+                        {formatPrice(p.price)} сум
+                        {exchangeRate > 0 && (
+                          <span className="text-white/40 font-normal ml-1.5">
+                            ≈ ${Math.round(p.price / exchangeRate)}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
