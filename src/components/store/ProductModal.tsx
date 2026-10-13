@@ -296,7 +296,7 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
   if (!product) return null;
 
   // Resolve prices: DB may store USD (e.g. 33) or UZS (e.g. 394350) — resolveProductPrices handles both
-  const { formattedUZS: priceUZS, priceUSD: priceUSDRef } = resolveProductPrices(product.price, exchangeRate || 14000);
+  const { formattedUZS: priceUZS, priceUSD: priceUSDRef, priceUZS: numericPriceUZS } = resolveProductPrices(product.price, exchangeRate || 14000);
   const oldPriceUZS = product.old_price
     ? resolveProductPrices(product.old_price, exchangeRate || 14000).formattedUZS
     : null;
@@ -356,7 +356,6 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
 
   const productSlug = product ? getProductUrl(product) : "";
   const canonicalUrl = `https://alfacomp.uz${productSlug}`;
-  const numericPriceUZS = product.price;
   const seoTitle = product ? `${product.name} — купить в Ташкенте по цене ${priceUZS} сум | AlfaComp` : "";
   const seoDescription = product ? `Купить ${product.name} в Ташкенте с официальной гарантией. Цена: ${priceUZS} сум${priceUSDRef ? ` (≈$${priceUSDRef})` : ""}. Бренд: ${product.brand || 'AlfaComp'}. ${product.in_stock ? 'В наличии на складе.' : 'Доступно под заказ.'} Доставка по Ташкенту за 1 день.` : "";
 

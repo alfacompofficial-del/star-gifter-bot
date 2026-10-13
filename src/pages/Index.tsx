@@ -21,7 +21,7 @@ import { useCart } from "@/hooks/useCart";
 import { useProducts } from "@/hooks/useProducts";
 import { useAdminAccess } from "@/hooks/useAdminAccess";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
-import { formatPrice } from "@/lib/constants";
+import { formatPrice, resolveProductPrices } from "@/lib/constants";
 import {
   findProductBySlug,
   getProductUrl,
@@ -210,15 +210,18 @@ const Index = () => {
     })),
   };
 
-  // product.price is already in UZS
-  const productJsonLd = selectedProduct
+  const selectedPrices = selectedProduct
+    ? resolveProductPrices(selectedProduct.price, exchangeRate || 14000)
+    : null;
+
+  const productJsonLd = selectedProduct && selectedPrices
     ? {
         "@context": "https://schema.org",
         "@type": "Product",
         name: selectedProduct.name,
         image: [selectedProduct.image],
         description: `Купить ${selectedProduct.name} в Ташкенте по цене ${formatPrice(
-          selectedProduct.price
+          selectedPrices.priceUZS
         )} сум с официальной гарантией и доставкой по Узбекистану в интернет-магазине AlfaComp.`,
         sku: `ALFA-${selectedProduct.id}`,
         mpn: `ALFA-PROD-${selectedProduct.id}`,
@@ -231,7 +234,7 @@ const Index = () => {
           "@type": "Offer",
           url: `https://alfacomp.uz${getProductUrl(selectedProduct)}`,
           priceCurrency: "UZS",
-          price: selectedProduct.price,
+          price: selectedPrices.priceUZS,
           priceValidUntil: "2026-12-31",
           availability: selectedProduct.in_stock
             ? "https://schema.org/InStock"
@@ -371,14 +374,15 @@ const Index = () => {
         products={products}
         isLoading={isLoading}
         error={error}
-        onAddToCart={(p) =>
+        onAddToCart={(p) => {
+          const { priceUZS } = resolveProductPrices(p.price, exchangeRate || 14000);
           cart.addItem({
             id: p.id,
             name: p.name,
-            price: p.price,
+            price: priceUZS,
             image: p.image,
-          })
-        }
+          });
+        }}
         onProductClick={handleProductClick}
         isAdmin={isAdmin ?? false}
         activeCategory={activeCategoryName}
@@ -407,14 +411,15 @@ const Index = () => {
             <ProductModal
               product={selectedProduct}
               onClose={handleCloseModal}
-              onAddToCart={(p) =>
+              onAddToCart={(p) => {
+                const { priceUZS } = resolveProductPrices(p.price, exchangeRate || 14000);
                 cart.addItem({
                   id: p.id,
                   name: p.name,
-                  price: p.price,
+                  price: priceUZS,
                   image: p.image,
-                })
-              }
+                });
+              }}
               isAdmin={isAdmin ?? false}
             />
           </ErrorBoundary>
@@ -424,14 +429,15 @@ const Index = () => {
       <AIChatWidget
         products={products}
         onSelectProduct={handleProductClick}
-        onAddToCart={(p) =>
+        onAddToCart={(p) => {
+          const { priceUZS } = resolveProductPrices(p.price, exchangeRate || 14000);
           cart.addItem({
             id: p.id,
             name: p.name,
-            price: p.price,
+            price: priceUZS,
             image: p.image,
-          })
-        }
+          });
+        }}
       />
 
       {/* Mobile bottom navigation */}
