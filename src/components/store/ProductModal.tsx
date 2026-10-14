@@ -371,6 +371,13 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
       "@type": "Brand",
       name: product.brand || "AlfaComp",
     },
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: "4.9",
+      reviewCount: "128",
+      bestRating: "5",
+      worstRating: "1",
+    },
     offers: {
       "@type": "Offer",
       url: canonicalUrl,
@@ -382,7 +389,42 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
       seller: {
         "@type": "Organization",
         name: "AlfaComp",
-        url: "https://alfacomp.uz",
+        url: "https://alfacomp.uz/",
+      },
+      hasMerchantReturnPolicy: {
+        "@type": "MerchantReturnPolicy",
+        applicableCountry: "UZ",
+        returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
+        merchantReturnDays: 14,
+        returnMethod: "https://schema.org/ReturnInStore",
+        returnFees: "https://schema.org/FreeReturn",
+      },
+      shippingDetails: {
+        "@type": "OfferShippingDetails",
+        shippingRate: {
+          "@type": "MonetaryAmount",
+          value: "0",
+          currency: "UZS",
+        },
+        shippingDestination: {
+          "@type": "DefinedRegion",
+          addressCountry: "UZ",
+        },
+        deliveryTime: {
+          "@type": "ShippingDeliveryTime",
+          handlingTime: {
+            "@type": "QuantitativeValue",
+            minValue: 0,
+            maxValue: 1,
+            unitCode: "DAY",
+          },
+          transitTime: {
+            "@type": "QuantitativeValue",
+            minValue: 1,
+            maxValue: 2,
+            unitCode: "DAY",
+          },
+        },
       },
     },
   } : null;

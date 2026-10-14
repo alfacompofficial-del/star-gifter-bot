@@ -8,9 +8,14 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <link rel="icon" type="image/x-icon" href="/favicon.png" />
-
-
+    <!-- FAVICONS & SITE ICONS FOR GOOGLE SEARCH & BROWSERS -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
 
     <!-- TITLE / DESCRIPTION -->
     <title>Купить компьютер и монитор в Ташкенте — Магазин ПК AlfaComp.uz</title>
@@ -59,15 +64,40 @@
     <meta name="twitter:description" content="Игровые ПК, мониторы 2K/4K/OLED и комплектующие в Ташкенте. Гарантия и доставка по Узбекистану." />
     <meta name="twitter:image" content="https://alfacomp.uz/banner.jpg" />
 
+    <!-- ORGANIZATION SCHEMA — Для Google Search логотипа и сниппета -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "AlfaComp",
+      "alternateName": ["AlfaComp.uz", "АльфаКомп", "Alfa Comp"],
+      "url": "https://alfacomp.uz/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://alfacomp.uz/icon-512.png",
+        "width": 512,
+        "height": 512
+      },
+      "image": "https://alfacomp.uz/banner.jpg",
+      "telephone": "+998883203333",
+      "email": "info@alfacomp.uz",
+      "sameAs": [
+        "https://t.me/ALIBABO777",
+        "https://t.me/alfacomp",
+        "https://instagram.com/alfacomp"
+      ]
+    }
+    </script>
+
     <!-- STORE SCHEMA — дополнено sameAs, aggregateRating, geo, priceRange, availability -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "ComputerStore",
+      "@type": ["ComputerStore", "Organization"],
       "name": "AlfaComp",
       "alternateName": ["AlfaComp.uz", "АльфаКомп", "Alfa Comp"],
       "url": "https://alfacomp.uz/",
-      "logo": "https://alfacomp.uz/logo.png",
+      "logo": "https://alfacomp.uz/icon-512.png",
       "image": "https://alfacomp.uz/banner.jpg",
       "telephone": "+998883203333",
       "email": "info@alfacomp.uz",
