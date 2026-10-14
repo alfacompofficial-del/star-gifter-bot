@@ -210,7 +210,7 @@ const Footer = () => {
             <h3 className="text-label text-white/30 mb-4">Контакты</h3>
             <ul className="space-y-3">
               {[
-                { icon: MapPin, text: CONTACTS.ADDRESS, href: undefined },
+                { icon: MapPin, text: CONTACTS.ADDRESS, href: (CONTACTS as any).MAPS_URL },
                 { icon: Phone, text: CONTACTS.PHONE, href: `tel:${CONTACTS.PHONE}` },
                 { icon: Clock, text: "Пн–Сб 9:00–19:00", href: undefined },
                 { icon: Mail, text: CONTACTS.EMAIL, href: `mailto:${CONTACTS.EMAIL}` },

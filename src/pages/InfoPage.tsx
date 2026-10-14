@@ -60,8 +60,8 @@ export const InfoPage = ({ type }: InfoPageProps) => {
       case "contacts":
       default:
         return {
-          title: "Контакты магазина компьютеров AlfaComp в Ташкенте — адрес, телефон, Telegram",
-          description: "Контакты интернет-магазина AlfaComp: Ташкент, Узбекистан. Телефон: +998 88 320 33 33. Telegram: @ALIBABO777. Консультации и заказ техники.",
+          title: "Контакты магазина компьютеров AlfaComp в Ташкенте — Малика, блок А27",
+          description: "Магазин компьютеров и комплектующих AlfaComp: г. Ташкент, базар «Малика», блок А27. Телефон: +998 88 320 33 33. Telegram: @ALIBABO777. Самовывоз и быстрая доставка.",
           canonical: "https://alfacomp.uz/contacts",
           h1: "Контакты AlfaComp",
           breadcrumb: "Контакты",
@@ -106,6 +106,12 @@ export const InfoPage = ({ type }: InfoPageProps) => {
       addressRegion: "Ташкент",
       addressCountry: "UZ",
     },
+    geo: {
+      "@type": "GeoCoordinates",
+      latitude: CONTACTS.LATITUDE,
+      longitude: CONTACTS.LONGITUDE,
+    },
+    hasMap: CONTACTS.MAPS_URL,
     openingHoursSpecification: [
       {
         "@type": "OpeningHoursSpecification",
@@ -392,22 +398,43 @@ export const InfoPage = ({ type }: InfoPageProps) => {
               </div>
             </div>
 
-            <div className="bg-[#0f1117] border border-white/[0.07] rounded-xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-white/[0.05] border border-white/[0.1] flex items-center justify-center shrink-0">
-                  <MapPin className="w-5 h-5 text-white/80" />
+            <div className="bg-[#0f1117] border border-white/[0.07] rounded-xl p-6 flex flex-col gap-5">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-start sm:items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-[#FF5A00]/10 border border-[#FF5A00]/25 flex items-center justify-center shrink-0 mt-0.5 sm:mt-0">
+                    <MapPin className="w-5 h-5 text-[#FF5A00]" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-white mb-0.5">Магазин и пункт выдачи</h3>
+                    <p className="text-sm font-semibold text-white/90">{CONTACTS.ADDRESS}</p>
+                    <p className="text-xs text-white/50 mt-0.5">Ориентир: торговые ряды «Флешка» (базар Малика), блок А27. Самовывоз и доставка по Ташкенту и всему Узбекистану.</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-sm font-bold text-white">Локация</h3>
-                  <p className="text-xs text-white/50">{CONTACTS.ADDRESS} (доставка по всему городу и Узбекистану)</p>
+                <div className="flex items-center gap-2.5 shrink-0 w-full sm:w-auto">
+                  <a
+                    href={CONTACTS.MAPS_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-accent px-4 py-2.5 text-xs font-semibold rounded-lg flex items-center justify-center gap-2 w-full sm:w-auto shadow-md"
+                  >
+                    <MapPin className="w-4 h-4" />
+                    <span>Открыть в Google Картах</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </a>
                 </div>
               </div>
-              <Link
-                to="/"
-                className="btn-accent px-5 py-2.5 text-xs font-semibold rounded-lg shrink-0"
-              >
-                Перейти в каталог →
-              </Link>
+
+              {/* Embedded Google Map */}
+              <div className="relative rounded-xl overflow-hidden border border-white/[0.08] bg-[#08090d] w-full h-72 sm:h-80">
+                <iframe
+                  title="AlfaComp на карте — базар Малика, блок А27"
+                  src="https://maps.google.com/maps?q=41.3388889,69.2718204&hl=ru&z=19&output=embed"
+                  className="w-full h-full border-0"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  allowFullScreen
+                />
+              </div>
             </div>
           </div>
         )}

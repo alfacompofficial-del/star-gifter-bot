@@ -5,7 +5,10 @@ export const CONTACTS = {
   TELEGRAM: "https://t.me/ALIBABO777",
   PHONE: "+998883203333",
   EMAIL: "info@alfacomp.uz",
-  ADDRESS: "Ташкент, Узбекистан",
+  ADDRESS: "г. Ташкент, базар «Малика», блок А27",
+  MAPS_URL: "https://www.google.com/maps/place/Alfacomp/@41.338707,69.2720058,20.32z/data=!4m12!1m5!3m4!2zNDHCsDIwJzE5LjUiTiA2OcKwMTYnMTkuNSJF!8m2!3d41.338751!4d69.272091!3m5!1s0x38ae8ba6bec7c1a7:0x9338a5673ee034c4!8m2!3d41.3388889!4d69.2718204!16s%2Fg%2F11sqwkvq7r",
+  LATITUDE: 41.3388889,
+  LONGITUDE: 69.2718204,
 };
 
 export const ADMIN_PASSWORD = "Xojakbar777";
