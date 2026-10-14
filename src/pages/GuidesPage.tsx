@@ -92,8 +92,16 @@ export const GuidesPage = () => {
           property="og:description"
           content="Практические советы по выбору железа, мониторов и ИБП в Ташкенте от AlfaComp."
         />
+        <meta property="og:image" content="https://alfacomp.uz/banner.jpg" />
         <meta property="og:url" content="https://alfacomp.uz/guides" />
         <meta property="og:type" content="article" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Гайды и советы по выбору электроники — AlfaComp" />
+        <meta
+          name="twitter:description"
+          content="Практические советы по выбору железа, мониторов и ИБП в Ташкенте от AlfaComp."
+        />
+        <meta name="twitter:image" content="https://alfacomp.uz/banner.jpg" />
         <script type="application/ld+json">{JSON.stringify(breadcrumbsJsonLd)}</script>
       </Helmet>
 

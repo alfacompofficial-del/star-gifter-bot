@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta http-equiv="content-language" content="ru, uz" />
+    <meta http-equiv="content-language" content="ru" />
     <meta name="theme-color" content="#090a0d" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -31,9 +31,12 @@
 
     <link rel="canonical" href="https://alfacomp.uz/" />
 
-    <!-- HREFLANG — важно для двуязычного сайта -->
+    <!-- HREFLANG — язык документа: только ru (страница на русском языке).
+         hreflang uz намеренно убран: маршрут /uz/ не существует, возвращает 404.
+         Ложный hreflang нарушает правила Google и портит Quality Score домена.
+         Добавить снова ТОЛЬКО после запуска реальной узбекской языковой версии
+         с взаимными return-tags на каждой соответствующей странице. -->
     <link rel="alternate" hreflang="ru" href="https://alfacomp.uz/" />
-    <link rel="alternate" hreflang="uz" href="https://alfacomp.uz/uz/" />
     <link rel="alternate" hreflang="x-default" href="https://alfacomp.uz/" />
 
     <!-- SITEMAP -->
@@ -51,7 +54,6 @@
     <meta property="og:url" content="https://alfacomp.uz/" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="ru_RU" />
-    <meta property="og:locale:alternate" content="uz_UZ" />
     <meta property="og:image" content="https://alfacomp.uz/banner.jpg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -64,40 +66,24 @@
     <meta name="twitter:description" content="Игровые ПК, мониторы 2K/4K/OLED и комплектующие в Ташкенте. Гарантия и доставка по Узбекистану." />
     <meta name="twitter:image" content="https://alfacomp.uz/banner.jpg" />
 
-    <!-- ORGANIZATION SCHEMA — Для Google Search логотипа и сниппета -->
+    <!-- STORE & ORGANIZATION SCHEMA — Для Google Search логотипа, сниппета и локальной выдачи -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "Organization",
+      "@type": ["ComputerStore", "Organization"],
+      "@id": "https://alfacomp.uz/#organization",
       "name": "AlfaComp",
       "alternateName": ["AlfaComp.uz", "АльфаКомп", "Alfa Comp"],
       "url": "https://alfacomp.uz/",
       "logo": {
         "@type": "ImageObject",
+        "@id": "https://alfacomp.uz/#logo",
         "url": "https://alfacomp.uz/icon-512.png",
+        "contentUrl": "https://alfacomp.uz/icon-512.png",
         "width": 512,
-        "height": 512
+        "height": 512,
+        "caption": "AlfaComp Logo"
       },
-      "image": "https://alfacomp.uz/banner.jpg",
-      "telephone": "+998883203333",
-      "email": "info@alfacomp.uz",
-      "sameAs": [
-        "https://t.me/ALIBABO777",
-        "https://t.me/alfacomp_computers",
-        "https://instagram.com/alfacomp.uz"
-      ]
-    }
-    </script>
-
-    <!-- STORE SCHEMA — дополнено sameAs, aggregateRating, geo, priceRange, availability -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": ["ComputerStore", "Organization"],
-      "name": "AlfaComp",
-      "alternateName": ["AlfaComp.uz", "АльфаКомп", "Alfa Comp"],
-      "url": "https://alfacomp.uz/",
-      "logo": "https://alfacomp.uz/icon-512.png",
       "image": "https://alfacomp.uz/banner.jpg",
       "telephone": "+998883203333",
       "email": "info@alfacomp.uz",
@@ -114,13 +100,6 @@
         "latitude": 41.311081,
         "longitude": 69.240562
       },
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.9",
-        "reviewCount": "148",
-        "bestRating": "5",
-        "worstRating": "1"
-      },
       "areaServed": "UZ",
       "currenciesAccepted": "UZS, USD",
       "paymentAccepted": "Cash, Credit Card, Payme, Click, Uzumbank",
@@ -128,8 +107,8 @@
       "priceRange": "$$",
       "sameAs": [
         "https://t.me/ALIBABO777",
-        "https://t.me/alfacomp",
-        "https://instagram.com/alfacomp"
+        "https://t.me/alfacomp_computers",
+        "https://instagram.com/alfacomp.uz"
       ]
     }
     </script>
@@ -139,13 +118,12 @@
     {
       "@context": "https://schema.org",
       "@type": "WebSite",
+      "@id": "https://alfacomp.uz/#website",
       "name": "AlfaComp — Премиальная электроника",
       "url": "https://alfacomp.uz/",
-      "inLanguage": ["ru", "uz"],
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": "https://alfacomp.uz/?q={search_term_string}",
-        "query-input": "required name=search_term_string"
+      "inLanguage": "ru",
+      "publisher": {
+        "@id": "https://alfacomp.uz/#organization"
       }
     }
     </script>
@@ -167,8 +145,21 @@
     <!-- NOSCRIPT FALLBACK — критично, если нет SSR/prerendering: боты и превью-краулеры
          (Telegram, WhatsApp) могут не дождаться рендера React и увидеть пустую страницу -->
     <noscript>
-      <h1>AlfaComp — купить компьютер, мониторы и комплектующие в Ташкенте</h1>
-      <p>Игровые ПК, мониторы MSI, ASUS, Dell, LG, Samsung, видеокарты RTX и комплектующие с гарантией и доставкой по Узбекистану.</p>
+      <div style="padding:20px;font-family:sans-serif;background:#08090c;color:#fff;">
+        <h1>AlfaComp — купить компьютер, мониторы и комплектующие в Ташкенте</h1>
+        <p>Игровые ПК, мониторы MSI, ASUS, Dell, LG, Samsung, видеокарты RTX, ИБП Ion и комплектующие с гарантией и доставкой по Узбекистану.</p>
+        <p>Категории товаров:</p>
+        <ul>
+          <li><a href="/category/monitors" style="color:#ff5a00;">Купить мониторы в Ташкенте</a></li>
+          <li><a href="/category/ups" style="color:#ff5a00;">Источники бесперебойного питания (ИБП) Ion</a></li>
+          <li><a href="/category/components" style="color:#ff5a00;">Комплектующие для ПК (видеокарты, SSD, RAM)</a></li>
+          <li><a href="/category/computers" style="color:#ff5a00;">Игровые компьютеры и сборка ПК</a></li>
+          <li><a href="/category/wifi-routers" style="color:#ff5a00;">Wi-Fi 6 и Wi-Fi 7 роутеры</a></li>
+          <li><a href="/delivery" style="color:#ff5a00;">Условия доставки и оплаты</a></li>
+          <li><a href="/contacts" style="color:#ff5a00;">Контакты и адрес в Ташкенте</a></li>
+        </ul>
+        <p>Телефон: +998 88 320 33 33 | Telegram: @ALIBABO777</p>
+      </div>
     </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -125,8 +125,13 @@ export const InfoPage = ({ type }: InfoPageProps) => {
         <link rel="canonical" href={config.canonical} />
         <meta property="og:title" content={config.title} />
         <meta property="og:description" content={config.description} />
+        <meta property="og:image" content="https://alfacomp.uz/banner.jpg" />
         <meta property="og:url" content={config.canonical} />
         <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={config.title} />
+        <meta name="twitter:description" content={config.description} />
+        <meta name="twitter:image" content="https://alfacomp.uz/banner.jpg" />
         <script type="application/ld+json">{JSON.stringify(breadcrumbsJsonLd)}</script>
         {type === "contacts" && (
           <script type="application/ld+json">{JSON.stringify(localBusinessJsonLd)}</script>

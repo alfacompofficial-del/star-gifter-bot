@@ -1,5 +1,7 @@
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
+import { Helmet } from "react-helmet-async";
+import { Link } from "react-router-dom";
 
 const NotFound = () => {
   const location = useLocation();
@@ -9,15 +11,30 @@ const NotFound = () => {
   }, [location.pathname]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">404</h1>
-        <p className="mb-4 text-xl text-muted-foreground">Oops! Page not found</p>
-        <a href="/" className="text-primary underline hover:text-primary/90">
-          Return to Home
-        </a>
+    <>
+      <Helmet>
+        {/* noindex: 404 pages must not be indexed */}
+        <meta name="robots" content="noindex, nofollow" />
+        <title>404 — Страница не найдена | AlfaComp</title>
+        <meta name="description" content="Страница не существует или была удалена. Вернитесь в каталог AlfaComp." />
+        <link rel="canonical" href="https://alfacomp.uz/" />
+      </Helmet>
+      <div className="flex min-h-screen items-center justify-center bg-[#08090c] text-white">
+        <div className="text-center px-4">
+          <p className="text-[#FF5A00] font-mono text-sm font-bold uppercase tracking-widest mb-3">404</p>
+          <h1 className="text-3xl font-bold mb-3">Страница не найдена</h1>
+          <p className="text-white/50 text-sm mb-6">
+            Такой страницы не существует или она была удалена.
+          </p>
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#FF5A00] text-white text-sm font-semibold rounded-lg hover:bg-[#FF6A15] transition-colors"
+          >
+            Вернуться в каталог
+          </Link>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

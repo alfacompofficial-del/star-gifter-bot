@@ -195,13 +195,23 @@ const Index = () => {
       }
     : null;
 
-  // Catalog ItemList schema for Google Shopping & rich snippets
+  // Catalog ItemList schema for Google Shopping & rich snippets.
+  // BUG FIX: previously always sliced from all products regardless of active category.
+  // Now correctly filters to the category being displayed on this page.
+  const catalogProducts = useMemo(() => {
+    if (activeCategorySlug) {
+      const catName = getCategoryNameBySlug(activeCategorySlug);
+      return products.filter((p) => p.category === catName).slice(0, 24);
+    }
+    return products.slice(0, 24);
+  }, [products, activeCategorySlug]);
+
   const catalogItemListJsonLd = {
     "@context": "https://schema.org",
     "@type": "ItemList",
     name: categorySeo ? `${categorySeo.name} в Ташкенте` : "Каталог ПК и электроники AlfaComp",
-    numberOfItems: Math.min(products.length, 24),
-    itemListElement: products.slice(0, 24).map((p, idx) => ({
+    numberOfItems: catalogProducts.length,
+    itemListElement: catalogProducts.map((p, idx) => ({
       "@type": "ListItem",
       position: idx + 1,
       name: p.name,
@@ -223,26 +233,22 @@ const Index = () => {
         description: `Купить ${selectedProduct.name} в Ташкенте по цене ${formatPrice(
           selectedPrices.priceUZS
         )} сум с официальной гарантией и доставкой по Узбекистану в интернет-магазине AlfaComp.`,
+        // sku: стабильный внутренний артикул AlfaComp.
+        // mpn намеренно убран: артикул производителя отсутствует в данных БД.
         sku: `ALFA-${selectedProduct.id}`,
-        mpn: `ALFA-PROD-${selectedProduct.id}`,
         brand: {
           "@type": "Brand",
           name: selectedProduct.brand || "AlfaComp",
         },
         category: selectedProduct.category,
-        aggregateRating: {
-          "@type": "AggregateRating",
-          ratingValue: "4.9",
-          reviewCount: "128",
-          bestRating: "5",
-          worstRating: "1",
-        },
+        // aggregateRating намеренно убран: реальных отзывов на странице нет.
+        // Указание фиктивных цифр нарушает политику Google Rich Results.
         offers: {
           "@type": "Offer",
           url: `https://alfacomp.uz${getProductUrl(selectedProduct)}`,
           priceCurrency: "UZS",
           price: selectedPrices.priceUZS,
-          priceValidUntil: "2026-12-31",
+          // priceValidUntil намеренно убран: нет механизма автообновления даты.
           availability: selectedProduct.in_stock
             ? "https://schema.org/InStock"
             : "https://schema.org/PreOrder",
@@ -258,13 +264,15 @@ const Index = () => {
             returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
             merchantReturnDays: 14,
             returnMethod: "https://schema.org/ReturnInStore",
-            returnFees: "https://schema.org/FreeReturn",
+            // returnFees: FreeReturn убран — возврат является платным согласно
+            // реальной политике AlfaComp.
           },
           shippingDetails: {
             "@type": "OfferShippingDetails",
             shippingRate: {
               "@type": "MonetaryAmount",
-              value: "0",
+              // Минимальная стоимость доставки по Ташкенту (от 30 000 сум).
+              value: "30000",
               currency: "UZS",
             },
             shippingDestination: {
@@ -282,7 +290,7 @@ const Index = () => {
               transitTime: {
                 "@type": "QuantitativeValue",
                 minValue: 1,
-                maxValue: 2,
+                maxValue: 3,
                 unitCode: "DAY",
               },
             },
@@ -324,13 +332,13 @@ const Index = () => {
       {selectedProduct && (
         <Helmet>
           <title>{`${selectedProduct.name} — купить в Ташкенте по цене ${formatPrice(
-            selectedProduct.price
+            selectedPrices ? selectedPrices.priceUZS : selectedProduct.price
           )} сум | AlfaComp`}</title>
           <meta
             name="description"
             content={`Купить ${selectedProduct.name} в Ташкенте с гарантией и быстрой доставкой по Узбекистану в AlfaComp. Цена: ${formatPrice(
-              selectedProduct.price
-            )} сум${exchangeRate > 0 ? ` (≈$${Math.round(selectedProduct.price / exchangeRate)})` : ""}.`}
+              selectedPrices ? selectedPrices.priceUZS : selectedProduct.price
+            )} сум${selectedPrices && selectedPrices.priceUSD > 0 ? ` (≈$${selectedPrices.priceUSD})` : ""}.`}
           />
           <link rel="canonical" href={`https://alfacomp.uz${getProductUrl(selectedProduct)}`} />
           <meta
@@ -344,9 +352,19 @@ const Index = () => {
           <meta property="og:image" content={selectedProduct.image} />
           <meta property="og:url" content={`https://alfacomp.uz${getProductUrl(selectedProduct)}`} />
           <meta property="og:type" content="product" />
-          <meta property="product:price:amount" content={String(selectedProduct.price)} />
+          <meta
+            property="product:price:amount"
+            content={String(selectedPrices ? selectedPrices.priceUZS : selectedProduct.price)}
+          />
           <meta property="product:price:currency" content="UZS" />
+          <meta name="twitter:card" content="summary_large_image" />
           <meta name="twitter:title" content={`${selectedProduct.name} — AlfaComp`} />
+          <meta
+            name="twitter:description"
+            content={`Купить ${selectedProduct.name} в Ташкенте по цене ${formatPrice(
+              selectedPrices ? selectedPrices.priceUZS : selectedProduct.price
+            )} сум с доставкой по Узбекистану.`}
+          />
           <meta name="twitter:image" content={selectedProduct.image} />
           <script type="application/ld+json">{JSON.stringify(productJsonLd)}</script>
           <script type="application/ld+json">{JSON.stringify(productBreadcrumbsJsonLd)}</script>
@@ -361,8 +379,13 @@ const Index = () => {
           <link rel="canonical" href={`https://alfacomp.uz${getCategoryUrl(categorySeo.slug)}`} />
           <meta property="og:title" content={categorySeo.metaTitle} />
           <meta property="og:description" content={categorySeo.metaDescription} />
+          <meta property="og:image" content="https://alfacomp.uz/banner.jpg" />
           <meta property="og:url" content={`https://alfacomp.uz${getCategoryUrl(categorySeo.slug)}`} />
           <meta property="og:type" content="website" />
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:title" content={categorySeo.metaTitle} />
+          <meta name="twitter:description" content={categorySeo.metaDescription} />
+          <meta name="twitter:image" content="https://alfacomp.uz/banner.jpg" />
           <script type="application/ld+json">{JSON.stringify(categoryBreadcrumbsJsonLd)}</script>
           <script type="application/ld+json">{JSON.stringify(catalogItemListJsonLd)}</script>
         </Helmet>
@@ -382,8 +405,16 @@ const Index = () => {
             property="og:description"
             content="Игровые ПК, мониторы 2K/4K/OLED, комплектующие и ИБП в Ташкенте. Официальная гарантия и быстрая доставка по Узбекистану."
           />
+          <meta property="og:image" content="https://alfacomp.uz/banner.jpg" />
           <meta property="og:url" content="https://alfacomp.uz/" />
           <meta property="og:type" content="website" />
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:title" content="Купить компьютер и монитор в Ташкенте — AlfaComp.uz" />
+          <meta
+            name="twitter:description"
+            content="Игровые ПК, мониторы 2K/4K/OLED, комплектующие и ИБП в Ташкенте. Официальная гарантия и быстрая доставка по Узбекистану."
+          />
+          <meta name="twitter:image" content="https://alfacomp.uz/banner.jpg" />
           <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
           <script type="application/ld+json">{JSON.stringify(catalogItemListJsonLd)}</script>
         </Helmet>

@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import {
   X, Heart, Share2, ShoppingCart, Send, ZoomIn, CheckCircle,
@@ -365,25 +364,22 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
     name: product.name,
     image: [product.image],
     description: seoDescription,
+    // sku использует стабильный внутренний артикул AlfaComp.
+    // mpn НЕ указывается: артикул производителя отсутствует в данных БД.
     sku: `ALFA-${product.id}`,
-    mpn: `ALFA-${product.id}`,
     brand: {
       "@type": "Brand",
       name: product.brand || "AlfaComp",
     },
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: "4.9",
-      reviewCount: "128",
-      bestRating: "5",
-      worstRating: "1",
-    },
+    // aggregateRating намеренно убран: реальных отзывов на странице нет.
+    // Указание фиктивных цифр нарушает политику Google Rich Results.
     offers: {
       "@type": "Offer",
       url: canonicalUrl,
       priceCurrency: "UZS",
       price: numericPriceUZS,
-      priceValidUntil: "2026-12-31",
+      // priceValidUntil намеренно убран: фиксированная дата без реального
+      // механизма обновления вводит поисковые системы в заблуждение.
       availability: product.in_stock ? "https://schema.org/InStock" : "https://schema.org/PreOrder",
       itemCondition: "https://schema.org/NewCondition",
       seller: {
@@ -397,13 +393,16 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
         returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
         merchantReturnDays: 14,
         returnMethod: "https://schema.org/ReturnInStore",
-        returnFees: "https://schema.org/FreeReturn",
+        // returnFees: FreeReturn убран — возврат товара является платным
+        // согласно реальной политике AlfaComp (не «бесплатный возврат»).
       },
       shippingDetails: {
         "@type": "OfferShippingDetails",
         shippingRate: {
           "@type": "MonetaryAmount",
-          value: "0",
+          // Минимальная стоимость доставки по Ташкенту (от 30 000 сум согласно странице /delivery).
+          // Реальная сумма зависит от заказа — здесь указан подтверждённый минимум.
+          value: "30000",
           currency: "UZS",
         },
         shippingDestination: {
@@ -421,7 +420,7 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
           transitTime: {
             "@type": "QuantitativeValue",
             minValue: 1,
-            maxValue: 2,
+            maxValue: 3,
             unitCode: "DAY",
           },
         },
@@ -454,22 +453,14 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
     ],
   } : null;
 
+
   return (
     <>
-      {product && (
-        <Helmet>
-          <title>{seoTitle}</title>
-          <meta name="description" content={seoDescription} />
-          <link rel="canonical" href={canonicalUrl} />
-          <meta property="og:title" content={`${product.name} — купить в Ташкенте | AlfaComp`} />
-          <meta property="og:description" content={seoDescription} />
-          <meta property="og:image" content={product.image} />
-          <meta property="og:url" content={canonicalUrl} />
-          <meta property="og:type" content="product" />
-          <script type="application/ld+json">{JSON.stringify(productJsonLd)}</script>
-          <script type="application/ld+json">{JSON.stringify(breadcrumbsJsonLd)}</script>
-        </Helmet>
-      )}
+      {/* SEO meta tags for this product are managed exclusively by Index.tsx Helmet.
+          ProductModal intentionally does NOT emit a second <Helmet> to avoid
+          react-helmet-async conflicts (duplicate title/canonical/ld+json).
+          The productJsonLd and breadcrumbsJsonLd variables above remain available
+          if a standalone product page is extracted in the future. */}
 
       {/* Backdrop */}
       <motion.div

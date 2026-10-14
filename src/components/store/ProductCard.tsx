@@ -247,6 +247,8 @@ const ProductCard = ({
         <img
           src={product.image}
           alt={`${product.name} — купить в Ташкенте AlfaComp`}
+          width={360}
+          height={360}
           className="max-w-full max-h-full object-contain relative z-10
             transition-transform duration-500 group-hover:scale-[1.04]"
           style={{ willChange: "transform", transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)" }}

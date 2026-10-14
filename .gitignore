@@ -24,3 +24,9 @@ dist-ssr
 *.sw?
 admin-alfacomp-repo/
 /*.png
+
+# Environment variables — NEVER commit these
+.env
+.env.local
+.env.production
+.env.*.local

@@ -379,10 +379,10 @@ const CatalogSection = ({
               КАТАЛОГ ОБОРУДОВАНИЯ
             </div>
             <h2 className="text-[1.75rem] sm:text-[2.1rem] font-bold tracking-tight text-white leading-tight mb-1">
-              Каталог товаров
+              {categorySeo ? categorySeo.h1 : "Каталог товаров"}
             </h2>
-            <p className="text-[13px] text-white/45 font-normal leading-relaxed max-w-lg">
-              Прямые поставки с гарантией и сервисом в Ташкенте. Цены в&nbsp;UZS и&nbsp;USD.
+            <p className="text-[13px] text-white/45 font-normal leading-relaxed max-w-2xl">
+              {categorySeo ? categorySeo.seoDescription : "Прямые поставки с гарантией и сервисом в Ташкенте. Цены в UZS и USD."}
             </p>
           </div>
 
