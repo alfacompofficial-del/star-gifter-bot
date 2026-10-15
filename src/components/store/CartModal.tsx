@@ -1,7 +1,10 @@
+import { useEffect } from "react";
 import { X, Minus, Plus, Trash2, ShoppingCart, Send } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { formatPrice, CONTACTS } from "@/lib/constants";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
+import { trackGoogleAdsPageView } from "@/utils/googleAds";
 import type { CartItem } from "@/hooks/useCart";
 
 interface CartModalProps {
@@ -24,6 +27,14 @@ const CartModal = ({
   onClear,
 }: CartModalProps) => {
   const { exchangeRate } = useExchangeRate();
+  const navigate = useNavigate();
+
+  // Track Google Ads page view when cart is opened
+  useEffect(() => {
+    if (isOpen) {
+      trackGoogleAdsPageView("/cart");
+    }
+  }, [isOpen]);
 
   // item.price is already in UZS (product.price from DB is UZS)
   const checkoutMessage = items
@@ -33,6 +44,38 @@ const CartModal = ({
   // total is sum of UZS prices (from useCart)
   const totalUZS = total;
   const totalUSDRef = exchangeRate > 0 ? Math.round(totalUZS / exchangeRate) : null;
+
+  const handleCheckout = () => {
+    const telegramUrl = `${CONTACTS.TELEGRAM}?text=${encodeURIComponent(
+      "Здравствуйте! Хочу оформить заказ в AlfaComp:\n\n" +
+      checkoutMessage +
+      "\n\nИтого: " + formatPrice(totalUZS) + " сум" + (totalUSDRef ? " (≈$" + totalUSDRef + ")" : "")
+    )}`;
+
+    // Save order data for /cart/success page
+    try {
+      sessionStorage.setItem(
+        "alfacomp_last_order",
+        JSON.stringify({
+          items,
+          total: totalUZS,
+          date: new Date().toISOString(),
+        })
+      );
+    } catch {
+      // ignore
+    }
+
+    // Open Telegram checkout
+    window.open(telegramUrl, "_blank", "noopener,noreferrer");
+
+    // Clear cart and close modal
+    onClear();
+    onClose();
+
+    // Navigate to Google Ads conversion route
+    navigate("/cart/success");
+  };
 
   return (
     <AnimatePresence>
@@ -215,20 +258,15 @@ const CartModal = ({
                   >
                     Очистить
                   </button>
-                  <a
-                    href={`${CONTACTS.TELEGRAM}?text=${encodeURIComponent(
-                      "Здравствуйте! Хочу оформить заказ в AlfaComp:\n\n" +
-                      checkoutMessage +
-                      "\n\nИтого: " + formatPrice(totalUZS) + " сум" + (totalUSDRef ? " (≈$" + totalUSDRef + ")" : "")
-                    )}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    type="button"
+                    onClick={handleCheckout}
                     className="flex-1 btn-primary rounded-lg py-2.5 px-4 text-[12.5px] font-bold uppercase tracking-wider
-                      flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(255,90,0,0.22)]"
+                      flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(255,90,0,0.22)] transition-all active:scale-[0.98]"
                   >
                     <Send className="w-3.5 h-3.5" />
                     <span>Оформить в Telegram</span>
-                  </a>
+                  </button>
                 </div>
 
                 <p className="text-data text-[10px] text-center text-white/28 leading-relaxed">
