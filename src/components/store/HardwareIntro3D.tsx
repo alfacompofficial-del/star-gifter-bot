@@ -1,40 +1,52 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Sparkles } from "lucide-react";
-import hardwareIntroImage from "@/assets/hardware-intro.png";
+import { X } from "lucide-react";
+import hardwareIntroImage from "@/assets/hardware-intro.webp";
 
 interface HardwareIntro3DProps {
   onComplete: () => void;
 }
 
+export const INTRO_STORAGE_KEY = "alfacomp_intro_seen_v2";
+
+export function markIntroAsViewed() {
+  try {
+    localStorage.setItem(INTRO_STORAGE_KEY, "1");
+    sessionStorage.setItem(INTRO_STORAGE_KEY, "1");
+  } catch {}
+}
+
 /**
  * Cinematic Hardware Intro Sequence
  * ─────────────────────────────────────────────────────────────
- * 0.0–0.5s: Тёмный экран → появление оборудования
- * 0.5–1.3s: Медленный camera movement + оранжевый свет по железу
- * 1.3–1.8s: Световая линия проходит через сцену
- * 1.3–3.1s: AlfaComp.uz логотип — виден ~1.8 секунды
- * 3.1–3.5s: Плавный кинематографичный переход в сайт
+ * 0.0–0.35s: Мгновенное появление оборудования и логотипа AlfaComp.uz
+ * 0.35–1.1s: Плавное движение камеры + янтарный свет по оборудованию
+ * 0.9–1.5s:  Световая лазерная линия с анаморфным бликом
+ * 1.8–2.2s:  Плавный кинематографичный переход в витрину магазина
+ * Всего: 2.2 секунды. Запоминается навсегда (1 раз при входе).
  */
 export const HardwareIntro3D: React.FC<HardwareIntro3DProps> = ({ onComplete }) => {
-  // Current time in seconds (0.0 -> 2.5)
   const [time, setTime] = useState(0);
   const [isExiting, setIsExiting] = useState(false);
   const finishedRef = useRef(false);
 
+  // Сразу при монтировании интро фиксируем его просмотр, чтобы при любом переходе или
+  // перезагрузке страницы интро НИКОГДА не повторялось повторно в домене
+  useEffect(() => {
+    markIntroAsViewed();
+  }, []);
+
   const handleFinish = useCallback(() => {
     if (finishedRef.current) return;
     finishedRef.current = true;
-    try {
-      sessionStorage.setItem("alfacomp_intro_viewed", "1");
-    } catch {}
+    markIntroAsViewed();
     setIsExiting(true);
     setTimeout(() => {
       onComplete();
-    }, 400);
+    }, 350);
   }, [onComplete]);
 
-  // Keyboard shortcut (ESC or Space) to skip
+  // Быстрый пропуск по клавишам ESC или пробел
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" || e.key === " ") {
@@ -45,9 +57,7 @@ export const HardwareIntro3D: React.FC<HardwareIntro3DProps> = ({ onComplete }) 
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleFinish]);
 
-  // Master timeline controller running with requestAnimationFrame
-  // IMPORTANT: deps array has NO state vars that change during animation
-  // to prevent the RAF loop from restarting mid-sequence.
+  // Контроллер анимации на requestAnimationFrame
   useEffect(() => {
     const startMs = performance.now();
     let rafId: number;
@@ -57,8 +67,8 @@ export const HardwareIntro3D: React.FC<HardwareIntro3DProps> = ({ onComplete }) 
       const elapsedSec = (now - startMs) / 1000;
       setTime(elapsedSec);
 
-      // Finish sequence at 3.5s
-      if (elapsedSec >= 3.5) {
+      // Завершаем последовательность на 2.2s
+      if (elapsedSec >= 2.2) {
         handleFinish();
       } else {
         rafId = requestAnimationFrame(tick);
@@ -67,7 +77,7 @@ export const HardwareIntro3D: React.FC<HardwareIntro3DProps> = ({ onComplete }) 
 
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [handleFinish]); // ← только handleFinish (стабильный useCallback)
+  }, [handleFinish]);
 
   return (
     <AnimatePresence>
@@ -75,9 +85,9 @@ export const HardwareIntro3D: React.FC<HardwareIntro3DProps> = ({ onComplete }) 
         <motion.div
           key="cinematic-intro"
           initial={{ opacity: 1 }}
-          animate={{ opacity: isExiting || time >= 3.1 ? 0 : 1 }}
+          animate={{ opacity: isExiting || time >= 1.8 ? 0 : 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
           className="fixed inset-0 z-[99999] bg-[#030407] select-none overflow-hidden cursor-pointer"
           onClick={handleFinish}
           role="region"
@@ -88,7 +98,7 @@ export const HardwareIntro3D: React.FC<HardwareIntro3DProps> = ({ onComplete }) 
             className="absolute inset-0 pointer-events-none"
             style={{
               background:
-                "radial-gradient(ellipse 70% 50% at 50% 50%, rgba(255,90,0,0.12) 0%, transparent 70%), radial-gradient(circle at 50% 100%, #030407 0%, transparent 60%)",
+                "radial-gradient(ellipse 70% 50% at 50% 50%, rgba(255,90,0,0.14) 0%, transparent 70%), radial-gradient(circle at 50% 100%, #030407 0%, transparent 60%)",
             }}
           />
 
@@ -103,25 +113,24 @@ export const HardwareIntro3D: React.FC<HardwareIntro3DProps> = ({ onComplete }) 
           />
 
           {/* ══════════════════════════════════════════════════════════
-              STAGES 0.0–1.3s: HARDWARE STAGE & CAMERA MOVEMENT
+              HARDWARE VISUAL STAGE & CAMERA MOVEMENT
              ══════════════════════════════════════════════════════════ */}
           <div className="absolute inset-0 flex items-center justify-center p-2 sm:p-6 md:p-10">
             {/* Cinematic Frame */}
             <motion.div
-              // Camera movement: 0.0-0.5 fade in & slight scale, 0.5-1.3 slow push/pan
-              initial={{ opacity: 0, scale: 1.08 }}
+              initial={{ opacity: 0, scale: 1.05 }}
               animate={{
-                opacity: time < 0.05 ? 0 : time < 0.5 ? Math.min(time / 0.5, 1) : 1,
+                opacity: time < 0.05 ? 0 : time < 0.35 ? Math.min(time / 0.35, 1) : 1,
                 scale:
-                  time < 0.5
-                    ? 1.08 - (time / 0.5) * 0.03
-                    : 1.05 - Math.min((time - 0.5) / 1.5, 1) * 0.05,
-                y: time < 0.5 ? 0 : -Math.min((time - 0.5) / 1.5, 1) * 8,
+                  time < 0.35
+                    ? 1.05 - (time / 0.35) * 0.02
+                    : 1.03 - Math.min((time - 0.35) / 1.5, 1) * 0.04,
+                y: time < 0.35 ? 0 : -Math.min((time - 0.35) / 1.5, 1) * 6,
               }}
               transition={{ ease: "linear", duration: 0 }}
               className="relative w-full max-w-[1100px] h-[82vh] max-h-[760px] aspect-[16/10] rounded-2xl sm:rounded-3xl overflow-hidden border border-white/[0.08] shadow-[0_0_100px_rgba(0,0,0,0.95),0_0_40px_rgba(255,90,0,0.15)] bg-[#05070c]"
             >
-              {/* Equipment Photo */}
+              {/* Equipment Photo (WebP, loads instantly) */}
               <img
                 src={hardwareIntroImage}
                 alt="AlfaComp Hardware"
@@ -139,9 +148,9 @@ export const HardwareIntro3D: React.FC<HardwareIntro3DProps> = ({ onComplete }) 
               />
 
               {/* ──────────────────────────────────────────────────────────
-                  0.5–1.3s: ОРАНЖЕВЫЙ СВЕТ ПРОХОДИТ ПО ЖЕЛЕЗУ
+                  0.35–1.1s: ОРАНЖЕВЫЙ СВЕТ ПРОХОДИТ ПО ЖЕЛЕЗУ
                  ────────────────────────────────────────────────────────── */}
-              {time >= 0.45 && time <= 1.45 && (
+              {time >= 0.35 && time <= 1.25 && (
                 <motion.div
                   initial={{ left: "-40%", opacity: 0 }}
                   animate={{
@@ -149,7 +158,7 @@ export const HardwareIntro3D: React.FC<HardwareIntro3DProps> = ({ onComplete }) 
                     opacity: [0, 0.9, 0.9, 0],
                   }}
                   transition={{
-                    duration: 0.85,
+                    duration: 0.75,
                     ease: [0.25, 0.1, 0.25, 1],
                   }}
                   className="absolute top-0 bottom-0 w-[45%] pointer-events-none z-20"
@@ -162,15 +171,15 @@ export const HardwareIntro3D: React.FC<HardwareIntro3DProps> = ({ onComplete }) 
                 />
               )}
 
-              {/* Secondary hardware specular glint at 0.8s */}
-              {time >= 0.7 && time <= 1.3 && (
+              {/* Hardware specular glint at 0.6s */}
+              {time >= 0.55 && time <= 1.15 && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{
                     opacity: [0, 0.85, 0],
                     scale: [0.8, 1.2, 0.9],
                   }}
-                  transition={{ duration: 0.55, ease: "easeOut" }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
                   className="absolute top-[28%] right-[22%] w-24 h-24 rounded-full pointer-events-none z-20"
                   style={{
                     background:
@@ -182,11 +191,10 @@ export const HardwareIntro3D: React.FC<HardwareIntro3DProps> = ({ onComplete }) 
               )}
 
               {/* ──────────────────────────────────────────────────────────
-                  1.3–1.8s: СВЕТОВАЯ ЛИНИЯ ПРОХОДИТ ЧЕРЕЗ СЦЕНУ
+                  0.9–1.5s: СВЕТОВАЯ ЛИНИЯ ПРОХОДИТ ЧЕРЕЗ СЦЕНУ
                  ────────────────────────────────────────────────────────── */}
-              {time >= 1.25 && time <= 1.85 && (
+              {time >= 0.85 && time <= 1.55 && (
                 <div className="absolute inset-0 pointer-events-none z-30 overflow-hidden">
-                  {/* High-speed horizontal laser line */}
                   <motion.div
                     initial={{ top: "35%", left: "-20%", width: "0%", opacity: 0 }}
                     animate={{
@@ -196,7 +204,7 @@ export const HardwareIntro3D: React.FC<HardwareIntro3DProps> = ({ onComplete }) 
                       top: ["35%", "52%"],
                     }}
                     transition={{
-                      duration: 0.5,
+                      duration: 0.45,
                       ease: [0.16, 1, 0.3, 1],
                     }}
                     className="absolute h-[3px]"
@@ -207,24 +215,23 @@ export const HardwareIntro3D: React.FC<HardwareIntro3DProps> = ({ onComplete }) 
                         "0 0 20px 4px rgba(255,90,0,0.9), 0 0 45px 10px rgba(255,140,0,0.4), 0 0 4px 1px #ffffff",
                     }}
                   >
-                    {/* Anamorphic lens flare flare-star */}
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-[1px] bg-white blur-[0.5px]" />
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-8 rounded-full bg-[#FF5A00]/50 blur-md" />
                   </motion.div>
                 </div>
               )}
 
-              {/* AlfaComp.uz appears smoothly at 0.7s */}
-              {time >= 0.7 && (
+              {/* AlfaComp.uz появляется органично с первых долей секунды (без задержки в пустоте) */}
+              {time >= 0.1 && (
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.92, filter: "blur(8px)" }}
+                  initial={{ opacity: 0, scale: 0.94, filter: "blur(6px)" }}
                   animate={{
                     opacity: 1,
                     scale: 1,
                     filter: "blur(0px)",
                   }}
-                  transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                  className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-40 bg-black/40 backdrop-blur-[3px]"
+                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                  className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-40 bg-black/40 backdrop-blur-[2px]"
                 >
                   {/* Glowing backdrop halo */}
                   <motion.div
@@ -236,9 +243,9 @@ export const HardwareIntro3D: React.FC<HardwareIntro3DProps> = ({ onComplete }) 
 
                   {/* Brand Typography */}
                   <motion.div
-                    initial={{ letterSpacing: "0.2em", y: 8 }}
+                    initial={{ letterSpacing: "0.1em", y: 6 }}
                     animate={{ letterSpacing: "-0.03em", y: 0 }}
-                    transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                    transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
                     className="relative flex items-center justify-center"
                   >
                     <h1 className="text-4xl sm:text-6xl md:text-7xl font-black text-white tracking-[-0.03em] drop-shadow-[0_4px_24px_rgba(0,0,0,0.8)]">
@@ -249,9 +256,9 @@ export const HardwareIntro3D: React.FC<HardwareIntro3DProps> = ({ onComplete }) 
 
                   {/* Subtitle */}
                   <motion.div
-                    initial={{ opacity: 0, y: 6 }}
+                    initial={{ opacity: 0, y: 5 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: 0.1 }}
+                    transition={{ duration: 0.25, delay: 0.08 }}
                     className="flex items-center gap-2 mt-2 font-mono text-[10px] sm:text-xs tracking-[0.28em] uppercase text-white/80 font-bold"
                   >
                     <span className="w-1.5 h-1.5 rounded-full bg-[#FF5A00] animate-ping" />
@@ -285,7 +292,7 @@ export const HardwareIntro3D: React.FC<HardwareIntro3DProps> = ({ onComplete }) 
             <div className="w-36 sm:w-48 h-[2px] bg-white/10 rounded-full overflow-hidden">
               <div
                 className="h-full bg-[#FF5A00] shadow-[0_0_10px_#FF5A00] transition-all duration-75"
-                style={{ width: `${Math.min((time / 3.5) * 100, 100)}%` }}
+                style={{ width: `${Math.min((time / 2.2) * 100, 100)}%` }}
               />
             </div>
           </div>

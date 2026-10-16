@@ -3,7 +3,7 @@ import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion
 import { Shield, Truck, Headphones, ArrowRight, Send } from "lucide-react";
 import { CONTACTS } from "@/lib/constants";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
-import heroPcImage from "@/assets/hero-pc.png";
+import heroPcImage from "@/assets/hero-pc.webp";
 
 // ── Animation helper ──────────────────────────────────
 const fadeUp = (delay: number = 0) => ({
@@ -19,7 +19,11 @@ const TRUST = [
   { icon: Headphones, label: "Поддержка" },
 ];
 
-const HeroSection = () => {
+interface HeroSectionProps {
+  asSubheading?: boolean;
+}
+
+const HeroSection = ({ asSubheading = false }: HeroSectionProps) => {
   const { exchangeRate } = useExchangeRate();
   const sectionRef = useRef<HTMLElement>(null);
   const prefersReducedMotion = useReducedMotion();
@@ -91,11 +95,19 @@ const HeroSection = () => {
 
             {/* Headline */}
             <motion.div {...fadeUp(0.12)} className="hero-headline-wrap">
-              <h1 className="hero-h1">
-                <span className="hero-h1-white">Компьютеры и мониторы</span>
-                <br />
-                <span className="hero-h1-accent">в Ташкенте</span>
-              </h1>
+              {asSubheading ? (
+                <h2 className="hero-h1">
+                  <span className="hero-h1-white">Компьютеры и мониторы</span>
+                  <br />
+                  <span className="hero-h1-accent">в Ташкенте</span>
+                </h2>
+              ) : (
+                <h1 className="hero-h1">
+                  <span className="hero-h1-white">Компьютеры и мониторы</span>
+                  <br />
+                  <span className="hero-h1-accent">в Ташкенте</span>
+                </h1>
+              )}
             </motion.div>
 
             {/* Sub-copy */}

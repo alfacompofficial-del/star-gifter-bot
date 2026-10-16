@@ -76,10 +76,10 @@ const DownloadPage = () => {
       <Helmet>
         <title>Скачать приложение AlfaComp для Windows и Android</title>
         <meta name="description" content="Скачайте AlfaComp для Windows 10/11 и Android 8+. Удобный доступ к каталогу, заказам и уведомлениям." />
-        <link rel="canonical" href="https://star-gift-anon.lovable.app/download" />
+        <link rel="canonical" href="https://alfacomp.uz/download" />
         <meta property="og:title" content="Скачать AlfaComp — приложения для Windows и Android" />
         <meta property="og:description" content="Десктопное приложение и APK для Android. Управляйте заказами AlfaComp с компьютера и телефона." />
-        <meta property="og:url" content="https://star-gift-anon.lovable.app/download" />
+        <meta property="og:url" content="https://alfacomp.uz/download" />
         <script type="application/ld+json">{JSON.stringify(softwareJsonLd)}</script>
       </Helmet>
       <Header cartCount={cart.count} onCartClick={() => cart.setIsOpen(true)} />

@@ -23,6 +23,7 @@ import { useAdminAccess } from "@/hooks/useAdminAccess";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
 import { formatPrice, resolveProductPrices } from "@/lib/constants";
 import {
+  resolveProductFromSlug,
   findProductBySlug,
   getProductUrl,
   getCategoryUrl,
@@ -37,6 +38,35 @@ import type { Product } from "@/hooks/useProducts";
 import { database } from "../firebaseConfig";
 import { ref, increment, update } from "firebase/database";
 
+const INTRO_STORAGE_KEY = "alfacomp_intro_seen_v2";
+
+function shouldShowIntro(pathname: string): boolean {
+  try {
+    if (typeof window === "undefined") return false;
+    // 1. Показываем интро ТОЛЬКО при первом заходе на корень сайта ("/")
+    // Никаких интро при прямом переходе на товары, категории, корзину или подстраницы
+    const cleanPath = pathname.replace(/\/$/, "");
+    if (cleanPath !== "" && cleanPath !== "/") {
+      return false;
+    }
+
+    // 2. Проверяем persistent localStorage & sessionStorage
+    const local = localStorage.getItem(INTRO_STORAGE_KEY);
+    const session = sessionStorage.getItem(INTRO_STORAGE_KEY);
+    const legacy = sessionStorage.getItem("alfacomp_intro_viewed");
+    if (local === "1" || session === "1" || legacy === "1") {
+      return false;
+    }
+
+    // 3. Сразу фиксируем просмотр, чтобы при переходах по каталогу или перезагрузке интро НИКОГДА не повторялось
+    localStorage.setItem(INTRO_STORAGE_KEY, "1");
+    sessionStorage.setItem(INTRO_STORAGE_KEY, "1");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 const Index = () => {
   const cart = useCart();
   const { data: products = [], isLoading, error } = useProducts();
@@ -47,13 +77,8 @@ const Index = () => {
   const location = useLocation();
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [showIntro, setShowIntro] = useState(() => {
-    try {
-      return sessionStorage.getItem("alfacomp_intro_viewed") !== "1";
-    } catch {
-      return false;
-    }
-  });
+  const [isProductNotFound, setIsProductNotFound] = useState(false);
+  const [showIntro, setShowIntro] = useState(() => shouldShowIntro(window.location.pathname));
 
   // Extract category slug from params or direct path (e.g. /category/monitors or direct /monitors)
   const activeCategorySlug = useMemo(() => {
@@ -78,14 +103,24 @@ const Index = () => {
   useEffect(() => {
     if (!products.length) return;
     if (slug) {
-      const found = findProductBySlug(slug, products);
-      if (found) {
-        setSelectedProduct(found);
+      const resolved = resolveProductFromSlug(slug, products);
+      if (resolved) {
+        setIsProductNotFound(false);
+        setSelectedProduct(resolved.product);
+        // If incoming URL is non-canonical (e.g. old shifted ID or numeric ID),
+        // transparently update browser URL to canonical path so search engines and users get canonical
+        if (!resolved.isCanonical) {
+          navigate(getProductUrl(resolved.product), { replace: true });
+        }
+      } else {
+        setSelectedProduct(null);
+        setIsProductNotFound(true);
       }
     } else if (!location.pathname.startsWith("/product/")) {
       setSelectedProduct(null);
+      setIsProductNotFound(false);
     }
-  }, [slug, products, location.pathname]);
+  }, [slug, products, location.pathname, navigate]);
 
   // Backward-compatibility: redirect old hash URLs (/#/products/:category/:id) to clean SEO URLs
   useEffect(() => {
@@ -328,6 +363,18 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-[62px] md:pb-0">
+      {/* ── 0. Product Not Found (Soft 404 Protection) ── */}
+      {isProductNotFound && (
+        <Helmet>
+          <title>Товар не найден — 404 | AlfaComp</title>
+          <meta name="robots" content="noindex, nofollow" />
+          <meta
+            name="description"
+            content="Запрошенный товар не найден или был удален из каталога магазина AlfaComp. Вернитесь в каталог для подбора ПК, мониторов и комплектующих."
+          />
+        </Helmet>
+      )}
+
       {/* ── 1. Specific Product SEO Helmet (when modal or direct product route is open) ── */}
       {selectedProduct && (
         <Helmet>
@@ -372,7 +419,7 @@ const Index = () => {
       )}
 
       {/* ── 2. Category SEO Helmet ── */}
-      {!selectedProduct && categorySeo && (
+      {!selectedProduct && !isProductNotFound && categorySeo && (
         <Helmet>
           <title>{categorySeo.metaTitle}</title>
           <meta name="description" content={categorySeo.metaDescription} />
@@ -392,7 +439,7 @@ const Index = () => {
       )}
 
       {/* ── 3. Default Home Page SEO Helmet ── */}
-      {!selectedProduct && !categorySeo && (
+      {!selectedProduct && !categorySeo && !isProductNotFound && (
         <Helmet>
           <title>Купить компьютер и монитор в Ташкенте — Магазин ПК AlfaComp.uz</title>
           <meta
@@ -441,7 +488,32 @@ const Index = () => {
       )}
 
       <Header cartCount={cart.count} onCartClick={() => cart.setIsOpen(true)} />
-      <HeroSection />
+
+      {/* 404 message if a direct product URL was requested but not found */}
+      {isProductNotFound && (
+        <div className="pt-28 pb-6 px-4 max-w-xl mx-auto text-center">
+          <div className="bg-[#12141a] border border-white/10 rounded-2xl p-8 sm:p-10 shadow-2xl">
+            <span className="font-mono text-xs uppercase tracking-widest text-[#ff5a00] bg-[#ff5a00]/10 px-3 py-1.5 rounded-full inline-block mb-4 font-bold">
+              Ошибка 404
+            </span>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-white mb-3">
+              Товар не найден
+            </h1>
+            <p className="text-white/60 text-sm leading-relaxed mb-6">
+              Товар по этому адресу был снят с продажи, переименован или никогда не существовал. Ознакомьтесь с актуальным ассортиментом в каталоге ниже.
+            </p>
+            <Link
+              to="/"
+              onClick={() => setIsProductNotFound(false)}
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#ff5a00] text-white font-semibold text-sm hover:bg-[#ff6a15] transition-all shadow-lg shadow-[#ff5a00]/20"
+            >
+              Перейти к каталогу
+            </Link>
+          </div>
+        </div>
+      )}
+
+      <HeroSection asSubheading={!!selectedProduct || isProductNotFound} />
 
       <CatalogSection
         products={products}

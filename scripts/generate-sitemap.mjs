@@ -1,4 +1,4 @@
-import { writeFileSync, existsSync, readFileSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const BASE_URL = "https://alfacomp.uz";
@@ -25,6 +25,7 @@ const STATIC_ROUTES = [
   { path: "/warranty", changefreq: "monthly", priority: "0.6" },
   { path: "/contacts", changefreq: "monthly", priority: "0.7" },
   { path: "/guides", changefreq: "weekly", priority: "0.7" },
+  { path: "/download", changefreq: "monthly", priority: "0.7" },
 ];
 
 // Transliteration helper for Russian characters
@@ -55,11 +56,13 @@ function getProductSlug(id, name) {
 }
 
 async function fetchProducts() {
-  const supabaseUrl = process.env.VITE_SUPABASE_URL || "https://kpuqkdodgcspopidfuat.supabase.co";
-  const supabaseKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtwdXFrZG9kZ2NzcG9waWRmdWF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3MjQwMjgsImV4cCI6MjA5MzMwMDAyOH0.OIbSk3jz3uUG6OtQplx1gQK5vaVJ3qq2_sujqUAIeBI";
+  // Use active production Supabase database
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || "https://vtlzfcjxpnrsqlsrvyer.supabase.co";
+  const supabaseKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || "sb_publishable_Ieiof0ojLifGDUpgD6ldVA_utmqM2nZ";
 
+  console.log(`[sitemap] Fetching products from primary database: ${supabaseUrl}`);
   try {
-    const res = await fetch(`${supabaseUrl}/rest/v1/products?select=id,name,category,created_at`, {
+    const res = await fetch(`${supabaseUrl}/rest/v1/products?select=id,name,category,created_at&order=id.asc`, {
       headers: {
         apikey: supabaseKey,
         Authorization: `Bearer ${supabaseKey}`,
@@ -67,33 +70,47 @@ async function fetchProducts() {
     });
 
     if (!res.ok) {
-      console.warn(`[sitemap] Supabase returned status ${res.status}`);
-      return [];
+      throw new Error(`Supabase returned HTTP status ${res.status} (${res.statusText})`);
     }
 
     const data = await res.json();
-    return Array.isArray(data) ? data : [];
+    if (!Array.isArray(data) || data.length < 100) {
+      throw new Error(`Incomplete product dataset received: got ${Array.isArray(data) ? data.length : typeof data} products (expected >= 100)`);
+    }
+
+    return data;
   } catch (err) {
-    console.warn(`[sitemap] Error fetching products:`, err.message);
-    return [];
+    console.error(`[sitemap] CRITICAL ERROR fetching products for sitemap:`, err.message);
+    // Exit with non-zero status to halt build instead of generating a broken sitemap
+    process.exit(1);
   }
 }
 
 async function generate() {
   const products = await fetchProducts();
-  console.log(`[sitemap] Fetched ${products.length} products for sitemap`);
+  console.log(`[sitemap] Successfully fetched ${products.length} valid products from primary database`);
 
   const entries = [...STATIC_ROUTES];
+  const seenSlugs = new Set();
 
   // Add all products with their clean SEO URL: /product/{slug}
   for (const product of products) {
-    if (!product.id || !product.name) continue;
+    if (!product.id || !product.name) {
+      console.error(`[sitemap] CRITICAL: Invalid product data detected:`, product);
+      process.exit(1);
+    }
     const slug = getProductSlug(product.id, product.name);
+    if (seenSlugs.has(slug)) {
+      console.error(`[sitemap] CRITICAL: Duplicate product slug detected: "${slug}"`);
+      process.exit(1);
+    }
+    seenSlugs.add(slug);
+
     entries.push({
       path: `/product/${slug}`,
       changefreq: "weekly",
       priority: "0.9",
-      lastmod: product.updated_at ? product.updated_at.split("T")[0] : TODAY,
+      lastmod: TODAY,
     });
   }
 
@@ -113,8 +130,9 @@ async function generate() {
     `</urlset>`,
   ].join("\n");
 
-  writeFileSync(resolve("public/sitemap.xml"), xml, "utf-8");
-  console.log(`sitemap.xml successfully written (${entries.length} entries) with base URL ${BASE_URL}`);
+  const outputPath = resolve("public/sitemap.xml");
+  writeFileSync(outputPath, xml, "utf-8");
+  console.log(`[sitemap] sitemap.xml successfully written (${entries.length} entries: ${STATIC_ROUTES.length} static + ${products.length} products) with base URL ${BASE_URL}`);
 }
 
 generate();

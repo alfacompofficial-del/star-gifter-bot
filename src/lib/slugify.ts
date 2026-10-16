@@ -201,24 +201,84 @@ export function extractProductIdFromSlug(slug: string): number | null {
   return null;
 }
 
-/** Find a product by slug or ID */
-export function findProductBySlug<T extends { id: number; name: string }>(slug: string, products: T[]): T | undefined {
+export interface ResolvedProduct<T> {
+  product: T;
+  isCanonical: boolean;
+  canonicalSlug: string;
+}
+
+/**
+ * Robust product resolution algorithm:
+ * 1. Exact canonical slug match -> { product, isCanonical: true }
+ * 2. Pure numeric ID (e.g. "31") -> { product, isCanonical: false, canonicalSlug }
+ * 3. Base slug match (name part matches product name):
+ *    - If ID matches -> isCanonical: true
+ *    - If ID differs (shifted/old ID) -> isCanonical: false, canonicalSlug
+ * 4. Fallback: ID match ONLY IF product name at that ID is compatible with the base slug.
+ *    If ID has completely different product name, NEVER open the wrong product!
+ * 5. Returns undefined if not found.
+ */
+export function resolveProductFromSlug<T extends { id: number; name: string }>(
+  slug: string,
+  products: T[]
+): ResolvedProduct<T> | undefined {
   if (!slug || !products.length) return undefined;
-  
-  // 1. Try extracting trailing numeric ID
-  const id = extractProductIdFromSlug(slug);
-  if (id !== null) {
-    const byId = products.find((p) => p.id === id);
-    if (byId) return byId;
+
+  // 1. Exact canonical slug match
+  const exact = products.find((p) => generateProductSlug(p) === slug);
+  if (exact) {
+    return { product: exact, isCanonical: true, canonicalSlug: slug };
   }
 
-  // 2. Try exact slug match
-  const byExactSlug = products.find((p) => generateProductSlug(p) === slug);
-  if (byExactSlug) return byExactSlug;
-
-  // 3. Try base slug match (without ID)
+  const isPureNumber = /^\d+$/.test(slug);
+  const incomingId = extractProductIdFromSlug(slug);
   const baseInputSlug = slug.replace(/-\d+$/, "");
-  return products.find((p) => slugify(p.name) === baseInputSlug);
+
+  // 2. Pure numeric URL e.g. "/product/31"
+  if (isPureNumber && incomingId !== null) {
+    const byId = products.find((p) => p.id === incomingId);
+    if (byId) {
+      return {
+        product: byId,
+        isCanonical: false,
+        canonicalSlug: generateProductSlug(byId),
+      };
+    }
+    return undefined;
+  }
+
+  // 3. Search by base slug (product name transliterated)
+  const byBaseSlug = products.find((p) => slugify(p.name) === baseInputSlug);
+  if (byBaseSlug) {
+    // Name matches! Even if ID was shifted/outdated in URL, we found the intended product!
+    return {
+      product: byBaseSlug,
+      isCanonical: false,
+      canonicalSlug: generateProductSlug(byBaseSlug),
+    };
+  }
+
+  // 4. Safe fallback: check byId only if names are partially compatible
+  if (incomingId !== null) {
+    const byId = products.find((p) => p.id === incomingId);
+    if (byId) {
+      const dbBase = slugify(byId.name);
+      if (dbBase.includes(baseInputSlug) || baseInputSlug.includes(dbBase)) {
+        return {
+          product: byId,
+          isCanonical: false,
+          canonicalSlug: generateProductSlug(byId),
+        };
+      }
+    }
+  }
+
+  return undefined;
+}
+
+/** Find a product by slug or ID (backwards compatible wrapper) */
+export function findProductBySlug<T extends { id: number; name: string }>(slug: string, products: T[]): T | undefined {
+  return resolveProductFromSlug(slug, products)?.product;
 }
 
 /**
