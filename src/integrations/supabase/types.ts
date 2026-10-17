@@ -95,6 +95,41 @@ export type Database = {
         }
         Relationships: []
       }
+      product_ratings: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: number
+          rating: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: number
+          rating: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: number
+          rating?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_ratings_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           brand: string | null
@@ -103,11 +138,15 @@ export type Database = {
           id: number
           image: string | null
           in_stock: boolean | null
+          likes: number | null
           name: string
           old_price: number | null
           price: number | null
           priority: number | null
+          rating: number | null
+          rating_count: number | null
           specs: Json | null
+          views: number | null
         }
         Insert: {
           brand?: string | null
@@ -116,11 +155,15 @@ export type Database = {
           id?: never
           image?: string | null
           in_stock?: boolean | null
+          likes?: number | null
           name: string
           old_price?: number | null
           price?: number | null
           priority?: number | null
+          rating?: number | null
+          rating_count?: number | null
           specs?: Json | null
+          views?: number | null
         }
         Update: {
           brand?: string | null
@@ -129,11 +172,15 @@ export type Database = {
           id?: never
           image?: string | null
           in_stock?: boolean | null
+          likes?: number | null
           name?: string
           old_price?: number | null
           price?: number | null
           priority?: number | null
+          rating?: number | null
+          rating_count?: number | null
           specs?: Json | null
+          views?: number | null
         }
         Relationships: []
       }

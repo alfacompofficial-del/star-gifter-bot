@@ -397,6 +397,7 @@ const Index = () => {
             content={`Оригинальный ${selectedProduct.name} в наличии и под заказ с гарантией. Доставка по Ташкенту и всему Узбекистану.`}
           />
           <meta property="og:image" content={selectedProduct.image} />
+          <meta property="og:image:alt" content={`${selectedProduct.name} — купить в Ташкенте AlfaComp`} />
           <meta property="og:url" content={`https://alfacomp.uz${getProductUrl(selectedProduct)}`} />
           <meta property="og:type" content="product" />
           <meta

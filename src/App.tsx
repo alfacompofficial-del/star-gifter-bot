@@ -27,17 +27,8 @@ const PageFallback = () => (
 
 const queryClient = new QueryClient();
 
-// Guards /admin: only visitors from allowed IP can view it.
+// /admin route: authenticated admins access the panel, others see the secure AdminLogin gateway
 const AdminGate = () => {
-  const allowed = useAdminAccess();
-  if (allowed === null) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center text-white/50 text-sm">
-        Проверка доступа…
-      </div>
-    );
-  }
-  if (!allowed) return <Navigate to="/" replace />;
   return (
     <Suspense fallback={<PageFallback />}>
       <Admin />

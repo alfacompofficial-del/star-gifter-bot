@@ -8,6 +8,7 @@ import { getProductUrl } from "@/lib/slugify";
 import type { Product } from "@/hooks/useProducts";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { clearProductsCache, broadcastProductsUpdate } from "@/lib/productsDb";
 
 interface ProductCardProps {
   product: Product;
@@ -48,9 +49,9 @@ const ProductCard = ({
   });
   const [copied, setCopied] = useState(false);
 
-  // Admin: inline price editing
+  // Admin: inline price editing (primary currency = USD)
   const [editingPrice, setEditingPrice] = useState(false);
-  const [priceValue, setPriceValue] = useState(String(product.price));
+  const [priceValue, setPriceValue] = useState("");
   const [savingPrice, setSavingPrice] = useState(false);
 
   // Extract key hardware specification tags for prominent display
@@ -104,9 +105,11 @@ const ProductCard = ({
     async (e: React.MouseEvent) => {
       e.stopPropagation();
       const url = `${window.location.origin}${productUrl}`;
+      const { formattedUZS } = resolveProductPrices(product.price, exchangeRate || 14000);
+      const shareMessage = `${product.name} — ${formattedUZS} сум в AlfaComp\n${url}`;
       const shareData = {
         title: product.name,
-        text: `${product.name} — ${resolveProductPrices(product.price, exchangeRate || 14000).formattedUZS} сум в AlfaComp`,
+        text: shareMessage,
         url,
       };
       try {
@@ -115,15 +118,19 @@ const ProductCard = ({
         } else {
           await navigator.clipboard.writeText(url);
           setCopied(true);
+          toast.success("Ссылка на товар скопирована в буфер обмена!");
           setTimeout(() => setCopied(false), 2000);
         }
-      } catch {
-        try {
-          await navigator.clipboard.writeText(url);
-          setCopied(true);
-          setTimeout(() => setCopied(false), 2000);
-        } catch {
-          /* silent */
+      } catch (err: any) {
+        if (err?.name !== "AbortError") {
+          try {
+            await navigator.clipboard.writeText(url);
+            setCopied(true);
+            toast.success("Ссылка на товар скопирована в буфер обмена!");
+            setTimeout(() => setCopied(false), 2000);
+          } catch {
+            /* silent */
+          }
         }
       }
     },
@@ -135,28 +142,36 @@ const ProductCard = ({
     onProductClick?.(product);
   };
 
-  // Admin: price edit handlers
+  // Admin: price edit handlers (enter USD, saves UZS)
   const handlePriceClick = (e: React.MouseEvent) => {
     if (!isAdmin) return;
     e.stopPropagation();
-    setPriceValue(String(product.price));
+    // Seed with USD value derived from stored price
+    const rate = exchangeRate || 14000;
+    const usdSeed = product.price > 1000 ? Math.round(product.price / rate) : product.price;
+    setPriceValue(String(usdSeed));
     setEditingPrice(true);
   };
 
   const handlePriceSave = async (e: React.MouseEvent | React.KeyboardEvent) => {
     e.stopPropagation();
-    const val = parseFloat(priceValue);
-    if (isNaN(val) || val <= 0) {
-      toast.error("Введите корректную цену");
+    const usdVal = parseFloat(priceValue);
+    if (isNaN(usdVal) || usdVal <= 0) {
+      toast.error("Введите корректную цену в долларах ($)");
       return;
     }
+    // Convert USD → UZS before saving
+    const rate = exchangeRate || 14000;
+    const uzsVal = Math.round(usdVal * rate);
     setSavingPrice(true);
     try {
-      const { error } = await supabase.from("products").update({ price: val } as never).eq("id", product.id);
+      const { error } = await supabase.from("products").update({ price: uzsVal } as never).eq("id", product.id);
       if (!error) {
-        toast.success("Цена обновлена!");
-        onPriceUpdate?.(product.id, val);
+        toast.success(`Цена обновлена: $${usdVal} ≈ ${uzsVal.toLocaleString()} сум`);
+        onPriceUpdate?.(product.id, uzsVal);
         setEditingPrice(false);
+        await clearProductsCache();
+        broadcastProductsUpdate();
       } else {
         toast.error("Ошибка сохранения");
       }
@@ -247,6 +262,8 @@ const ProductCard = ({
         <img
           src={product.image}
           alt={`${product.name} — купить в Ташкенте AlfaComp`}
+          title={`${product.name} — купить по лучшей цене в Ташкенте в AlfaComp`}
+          itemProp="image"
           width={360}
           height={360}
           className="max-w-full max-h-full object-contain relative z-10
@@ -352,10 +369,18 @@ const ProductCard = ({
 
       {/* ── Product Information Body ────────────────────────────────── */}
       <div className="p-4 flex flex-col flex-1 gap-2">
-        {/* Brand & Category Micro-bar */}
+        {/* Brand, Category & Rating Micro-bar */}
         <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-white/40">
-          <span className="font-semibold text-white/60">{product.brand || "ALFACOMP"}</span>
-          <span className="truncate max-w-[120px]">{product.category}</span>
+          <div className="flex items-center gap-1.5 truncate">
+            <span className="font-semibold text-white/60">{product.brand || "ALFACOMP"}</span>
+            <span className="text-white/20">·</span>
+            <div className="flex items-center gap-1 text-amber-400 font-bold font-mono" title={`Рейтинг: ${(product.rating ?? 5.0).toFixed(1)} из 5`}>
+              <Star className="w-3 h-3 fill-amber-400 text-amber-400 shrink-0" />
+              <span>{(product.rating ?? 5.0).toFixed(1)}</span>
+              <span className="text-white/30 text-[9px]">({product.rating_count ?? 0})</span>
+            </div>
+          </div>
+          <span className="truncate max-w-[90px] shrink-0 text-right">{product.category}</span>
         </div>
 
         {/* Semantic H3 Product Title */}
@@ -397,32 +422,40 @@ const ProductCard = ({
               </div>
             )}
 
-            {/* Admin inline price editor */}
+            {/* Admin inline price editor (primary = USD) */}
             {isAdmin && editingPrice ? (
-              <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                <span className="text-[11px] font-mono text-[#ff5a00]">$</span>
-                <input
-                  type="number"
-                  value={priceValue}
-                  onChange={(e) => setPriceValue(e.target.value)}
-                  onKeyDown={handlePriceKeyDown}
-                  autoFocus
-                  className="w-16 bg-[#141722] border border-[#ff5a00] rounded px-1.5 py-0.5
-                    text-xs font-mono text-white outline-none text-right"
-                />
-                <button
-                  onClick={handlePriceSave}
-                  disabled={savingPrice}
-                  className="w-5 h-5 flex items-center justify-center bg-emerald-500/20 text-emerald-400 rounded"
-                >
-                  <Check className="w-3 h-3" />
-                </button>
-                <button
-                  onClick={handlePriceCancel}
-                  className="w-5 h-5 flex items-center justify-center bg-red-500/20 text-red-400 rounded"
-                >
-                  ✕
-                </button>
+              <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center gap-1">
+                  <span className="text-[11px] font-mono text-[#ff5a00]">$</span>
+                  <input
+                    type="number"
+                    value={priceValue}
+                    onChange={(e) => setPriceValue(e.target.value)}
+                    onKeyDown={handlePriceKeyDown}
+                    placeholder="USD"
+                    autoFocus
+                    className="w-16 bg-[#141722] border border-[#ff5a00] rounded px-1.5 py-0.5
+                      text-xs font-mono text-white outline-none text-right"
+                  />
+                  <button
+                    onClick={handlePriceSave}
+                    disabled={savingPrice}
+                    className="w-5 h-5 flex items-center justify-center bg-emerald-500/20 text-emerald-400 rounded"
+                  >
+                    <Check className="w-3 h-3" />
+                  </button>
+                  <button
+                    onClick={handlePriceCancel}
+                    className="w-5 h-5 flex items-center justify-center bg-red-500/20 text-red-400 rounded"
+                  >
+                    ✕
+                  </button>
+                </div>
+                {priceValue && !isNaN(parseFloat(priceValue)) && (
+                  <span className="text-[9px] font-mono text-white/35 pl-3">
+                    ≈ {Math.round(parseFloat(priceValue) * (exchangeRate || 14000)).toLocaleString()} сум
+                  </span>
+                )}
               </div>
             ) : (
               <div

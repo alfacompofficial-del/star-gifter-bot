@@ -55,45 +55,78 @@ function getProductSlug(id, name) {
   return `${base}-${id}`;
 }
 
+function escapeXml(str) {
+  if (!str) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+function normalizeImageUrl(img) {
+  if (!img) return null;
+  const trimmed = String(img).trim();
+  if (!trimmed) return null;
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed;
+  if (trimmed.startsWith("/")) return `${BASE_URL}${trimmed}`;
+  return `${BASE_URL}/${trimmed}`;
+}
+
 async function fetchProducts() {
   // Use active production Supabase database
   const supabaseUrl = process.env.VITE_SUPABASE_URL || "https://vtlzfcjxpnrsqlsrvyer.supabase.co";
   const supabaseKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || "sb_publishable_Ieiof0ojLifGDUpgD6ldVA_utmqM2nZ";
 
   console.log(`[sitemap] Fetching products from primary database: ${supabaseUrl}`);
-  try {
-    const res = await fetch(`${supabaseUrl}/rest/v1/products?select=id,name,category,created_at&order=id.asc`, {
-      headers: {
-        apikey: supabaseKey,
-        Authorization: `Bearer ${supabaseKey}`,
-      },
-    });
+  let lastErr = null;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const res = await fetch(`${supabaseUrl}/rest/v1/products?select=id,name,category,created_at,image&order=id.asc`, {
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+        },
+      });
 
-    if (!res.ok) {
-      throw new Error(`Supabase returned HTTP status ${res.status} (${res.statusText})`);
+      if (!res.ok) {
+        throw new Error(`Supabase returned HTTP status ${res.status} (${res.statusText})`);
+      }
+
+      const data = await res.json();
+      if (!Array.isArray(data) || data.length < 50) {
+        throw new Error(`Incomplete product dataset received: got ${Array.isArray(data) ? data.length : typeof data} products`);
+      }
+
+      return data;
+    } catch (err) {
+      lastErr = err;
+      console.warn(`[sitemap] Attempt ${attempt}/3 failed: ${err.message}. Retrying...`);
+      if (attempt < 3) await new Promise((r) => setTimeout(r, 1000));
     }
-
-    const data = await res.json();
-    if (!Array.isArray(data) || data.length < 100) {
-      throw new Error(`Incomplete product dataset received: got ${Array.isArray(data) ? data.length : typeof data} products (expected >= 100)`);
-    }
-
-    return data;
-  } catch (err) {
-    console.error(`[sitemap] CRITICAL ERROR fetching products for sitemap:`, err.message);
-    // Exit with non-zero status to halt build instead of generating a broken sitemap
-    process.exit(1);
   }
+
+  console.error(`[sitemap] CRITICAL ERROR fetching products for sitemap:`, lastErr?.message);
+  process.exit(1);
 }
 
 async function generate() {
   const products = await fetchProducts();
   console.log(`[sitemap] Successfully fetched ${products.length} valid products from primary database`);
 
-  const entries = [...STATIC_ROUTES];
+  const entries = [
+    {
+      ...STATIC_ROUTES[0],
+      image: `${BASE_URL}/banner.jpg`,
+      imageTitle: "AlfaComp — Магазин компьютеров и мониторов в Ташкенте",
+      imageCaption: "Купить игровой компьютер, мониторы 2K/4K, комплектующие в Ташкенте с гарантией — AlfaComp.uz",
+    },
+    ...STATIC_ROUTES.slice(1),
+  ];
   const seenSlugs = new Set();
 
-  // Add all products with their clean SEO URL: /product/{slug}
+  // Add all products with their clean SEO URL: /product/{slug} and image metadata for Google/Yandex Images
   for (const product of products) {
     if (!product.id || !product.name) {
       console.error(`[sitemap] CRITICAL: Invalid product data detected:`, product);
@@ -106,33 +139,51 @@ async function generate() {
     }
     seenSlugs.add(slug);
 
+    const imageUrl = normalizeImageUrl(product.image);
+
     entries.push({
       path: `/product/${slug}`,
       changefreq: "weekly",
       priority: "0.9",
       lastmod: TODAY,
+      image: imageUrl,
+      imageTitle: `${product.name} — купить в Ташкенте | AlfaComp`,
+      imageCaption: `Оригинальный ${product.name} в Ташкенте по выгодной цене с официальной гарантией и быстрой доставкой по Узбекистану в AlfaComp.uz`,
     });
   }
 
   const xml = [
     `<?xml version="1.0" encoding="UTF-8"?>`,
-    `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`,
-    ...entries.map((entry) =>
-      [
+    `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">`,
+    ...entries.map((entry) => {
+      const parts = [
         `  <url>`,
         `    <loc>${BASE_URL}${entry.path}</loc>`,
         `    <lastmod>${entry.lastmod || TODAY}</lastmod>`,
-        entry.changefreq ? `    <changefreq>${entry.changefreq}</changefreq>` : null,
-        entry.priority ? `    <priority>${entry.priority}</priority>` : null,
-        `  </url>`,
-      ].filter(Boolean).join("\n")
-    ),
+      ];
+      if (entry.changefreq) parts.push(`    <changefreq>${entry.changefreq}</changefreq>`);
+      if (entry.priority) parts.push(`    <priority>${entry.priority}</priority>`);
+      if (entry.image) {
+        parts.push(`    <image:image>`);
+        parts.push(`      <image:loc>${escapeXml(entry.image)}</image:loc>`);
+        if (entry.imageTitle) {
+          parts.push(`      <image:title>${escapeXml(entry.imageTitle)}</image:title>`);
+        }
+        if (entry.imageCaption) {
+          parts.push(`      <image:caption>${escapeXml(entry.imageCaption)}</image:caption>`);
+        }
+        parts.push(`    </image:image>`);
+      }
+      parts.push(`  </url>`);
+      return parts.join("\n");
+    }),
     `</urlset>`,
   ].join("\n");
 
   const outputPath = resolve("public/sitemap.xml");
   writeFileSync(outputPath, xml, "utf-8");
-  console.log(`[sitemap] sitemap.xml successfully written (${entries.length} entries: ${STATIC_ROUTES.length} static + ${products.length} products) with base URL ${BASE_URL}`);
+  const withImagesCount = entries.filter((e) => e.image).length;
+  console.log(`[sitemap] sitemap.xml successfully written (${entries.length} URLs, ${withImagesCount} with Google/Yandex images) with base URL ${BASE_URL}`);
 }
 
 generate();

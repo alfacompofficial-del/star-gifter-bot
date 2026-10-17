@@ -5,7 +5,7 @@ import {
   BarChart3, Package, Plus, Eye, Heart, Download,
   ToggleLeft, ToggleRight, RefreshCw, TrendingUp, Users,
   Globe, AlertTriangle, Copy, SlidersHorizontal, LogOut,
-  Layers, ArrowUpDown, ChevronDown, Sparkles
+  Layers, ArrowUpDown, ChevronDown, Sparkles, Star
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -13,7 +13,7 @@ import {
   PieChart, Pie, Cell, Legend, LineChart, Line
 } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
-import { formatPrice } from "@/lib/constants";
+import { formatPrice, resolveProductPrices } from "@/lib/constants";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
 import { broadcastProductsUpdate, clearProductsCache } from "@/lib/productsDb";
 import type { Product } from "@/hooks/useProducts";
@@ -45,7 +45,10 @@ export const Admin = () => {
   // ── Authentication State ──────────────────────────────────
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     try {
-      return sessionStorage.getItem("alfacomp_admin_auth") === "1";
+      return (
+        sessionStorage.getItem("alfacomp_admin_auth") === "1" ||
+        localStorage.getItem("alfacomp_admin_auth") === "1"
+      );
     } catch {
       return false;
     }
@@ -268,6 +271,7 @@ export const Admin = () => {
         if (error) throw error;
         toast.success("Товар успешно обновлен!");
       }
+      await clearProductsCache();
       fetchProducts();
       broadcastProductsUpdate();
       return true;
@@ -284,6 +288,7 @@ export const Admin = () => {
       if (error) throw error;
       toast.success("Товар удален");
       setProducts((prev) => prev.filter((p) => p.id !== id));
+      await clearProductsCache();
       broadcastProductsUpdate();
     } catch {
       toast.error("Ошибка при удалении товара");
@@ -306,6 +311,7 @@ export const Admin = () => {
       const { error } = await supabase.from("products").insert([duplicateData as any]);
       if (error) throw error;
       toast.success(`Товар продублирован: ${duplicateData.name}`);
+      await clearProductsCache();
       fetchProducts();
       broadcastProductsUpdate();
     } catch {
@@ -319,32 +325,38 @@ export const Admin = () => {
       if (error) throw error;
       toast.success(!current ? "Товар переведен в наличие!" : "Товар снят с продажи");
       setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, in_stock: !current } : p)));
+      await clearProductsCache();
       broadcastProductsUpdate();
     } catch {
       toast.error("Ошибка переключения статуса наличия");
     }
   };
 
-  // ── Inline Price & Name Editing ───────────────────────────
+  // ── Inline Price & Name Editing (USD Primary) ────────────
   const startEditPrice = (p: Product) => {
     setEditingPriceId(p.id);
-    setEditingPriceValue(String(p.price));
+    const { priceUSD } = resolveProductPrices(p.price, exchangeRate || 14000);
+    setEditingPriceValue(String(priceUSD));
   };
   const cancelEditPrice = () => {
     setEditingPriceId(null);
     setEditingPriceValue("");
   };
   const saveEditPrice = async (id: number) => {
-    const val = parseFloat(editingPriceValue);
-    if (isNaN(val) || val <= 0) {
-      toast.error("Введите корректную цену");
+    const usdVal = parseFloat(editingPriceValue);
+    if (isNaN(usdVal) || usdVal <= 0) {
+      toast.error("Введите корректную цену в USD ($)");
       return;
     }
-    const { error } = await supabase.from("products").update({ price: val }).eq("id", id);
+    const currentRate = exchangeRate > 0 ? exchangeRate : 11858;
+    const finalUZS = Math.round(usdVal * currentRate);
+
+    const { error } = await supabase.from("products").update({ price: finalUZS }).eq("id", id);
     if (!error) {
-      toast.success("Цена обновлена!");
-      setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, price: val } : p)));
+      toast.success(`Цена обновлена: $${usdVal} (${formatPrice(finalUZS)} сум)`);
+      setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, price: finalUZS } : p)));
       cancelEditPrice();
+      await clearProductsCache();
       broadcastProductsUpdate();
     } else {
       toast.error("Ошибка сохранения цены");
@@ -370,6 +382,7 @@ export const Admin = () => {
       toast.success("Название обновлено!");
       setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, name: val } : p)));
       cancelEditName();
+      await clearProductsCache();
       broadcastProductsUpdate();
     } else {
       toast.error("Ошибка сохранения названия");
@@ -406,6 +419,7 @@ export const Admin = () => {
         if (!error) {
           toast.success("Фото обновлено!");
           setProducts((prev) => prev.map((p) => (p.id === productId ? { ...p, image: dataUrl } : p)));
+          await clearProductsCache();
           broadcastProductsUpdate();
         } else {
           toast.error("Ошибка загрузки фото в базу");
@@ -456,6 +470,7 @@ export const Admin = () => {
         updates.map(({ id, priority }) => supabase.from("products").update({ priority }).eq("id", id))
       );
       toast.success("Порядок товаров сохранен!");
+      await clearProductsCache();
       broadcastProductsUpdate();
     } catch {
       toast.error("Ошибка при сохранении порядка");
@@ -527,6 +542,11 @@ export const Admin = () => {
   const handleLogout = () => {
     try {
       sessionStorage.removeItem("alfacomp_admin_auth");
+      sessionStorage.removeItem("alfacomp_admin_auth_time");
+      sessionStorage.removeItem("alfacomp_admin_email");
+      localStorage.removeItem("alfacomp_admin_auth");
+      localStorage.removeItem("alfacomp_admin_auth_time");
+      window.dispatchEvent(new CustomEvent("admin-auth-changed"));
     } catch {}
     setIsAuthenticated(false);
     toast.success("Сессия оператора завершена");
@@ -867,7 +887,7 @@ export const Admin = () => {
                     <th className="p-4 sm:p-5">Товар</th>
                     <th className="p-4 sm:p-5 hidden md:table-cell">Категория</th>
                     <th className="p-4 sm:p-5">Наличие</th>
-                    <th className="p-4 sm:p-5 text-right">Цена ($ / UZS)</th>
+                    <th className="p-4 sm:p-5 text-right">Цена ($ USD ➔ UZS)</th>
                     <th className="p-4 sm:p-5 text-center hidden lg:table-cell">Метрики</th>
                     <th className="p-4 sm:p-5 text-right">Действия</th>
                   </tr>
@@ -1005,52 +1025,74 @@ export const Admin = () => {
                         </button>
                       </td>
 
-                      {/* Price USD & UZS */}
+                      {/* Price USD Primary with Auto UZS */}
                       <td className="p-4 sm:p-5 text-right font-mono">
                         {editingPriceId === p.id ? (
-                          <div className="flex items-center justify-end gap-1.5">
-                            <input
-                              type="number"
-                              value={editingPriceValue}
-                              onChange={(e) => setEditingPriceValue(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") saveEditPrice(p.id);
-                                if (e.key === "Escape") cancelEditPrice();
-                              }}
-                              autoFocus
-                              className="w-28 bg-white/10 border border-[#FF5A00]/70 rounded px-2 py-1 text-xs font-mono font-bold text-white text-right outline-none"
-                            />
-                            <span className="text-white/40 text-[10px]">сум</span>
-                            <button
-                              onClick={() => saveEditPrice(p.id)}
-                              className="p-1 rounded bg-green-500/20 text-green-400"
-                            >
-                              <Check className="w-3 h-3" />
-                            </button>
-                            <button onClick={cancelEditPrice} className="p-1 rounded bg-red-500/20 text-red-400">
-                              <X className="w-3 h-3" />
-                            </button>
-                          </div>
-                        ) : (
-                          <div>
-                            <button
-                              onClick={() => startEditPrice(p)}
-                              className="font-bold text-sm text-white hover:text-[#FF5A00] transition-colors flex items-center gap-1 ml-auto group/price"
-                              title="Нажмите чтобы изменить цену"
-                            >
-                              <span>{formatPrice(p.price)} сум</span>
-                              <Pencil className="w-2.5 h-2.5 opacity-0 group-hover/price:opacity-50 text-white/50" />
-                            </button>
-                            <div className="text-[10px] text-white/40 mt-0.5">
-                              {exchangeRate > 0 ? `≈ $${Math.round(p.price / exchangeRate)}` : ""}
+                          <div className="flex flex-col items-end gap-1" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-end gap-1.5">
+                              <span className="text-[#FF5A00] font-bold text-sm">$</span>
+                              <input
+                                type="number"
+                                step="any"
+                                value={editingPriceValue}
+                                onChange={(e) => setEditingPriceValue(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") saveEditPrice(p.id);
+                                  if (e.key === "Escape") cancelEditPrice();
+                                }}
+                                autoFocus
+                                className="w-20 bg-white/10 border border-[#FF5A00]/70 rounded px-2 py-1 text-sm font-mono font-bold text-white text-right outline-none"
+                              />
+                              <button
+                                onClick={() => saveEditPrice(p.id)}
+                                className="p-1 rounded bg-green-500/20 text-green-400 hover:bg-green-500 hover:text-white transition-colors"
+                                title="Сохранить"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={cancelEditPrice}
+                                className="p-1 rounded bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-colors"
+                                title="Отмена"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
                             </div>
+                            {editingPriceValue && !isNaN(parseFloat(editingPriceValue)) && (
+                              <div className="text-[10px] font-mono text-emerald-400">
+                                = {formatPrice(Math.round(parseFloat(editingPriceValue) * (exchangeRate || 14000)))} сум
+                              </div>
+                            )}
                           </div>
-                        )}
+                        ) : (() => {
+                          const { priceUSD, priceUZS } = resolveProductPrices(p.price, exchangeRate || 14000);
+                          return (
+                            <div>
+                              <button
+                                onClick={() => startEditPrice(p)}
+                                className="font-bold text-sm text-[#FF5A00] hover:text-white transition-colors flex items-center gap-1 ml-auto group/price"
+                                title="Нажмите чтобы изменить цену в USD ($)"
+                              >
+                                <span className="text-white/50 text-xs">$</span>
+                                <span className="text-base font-extrabold text-white group-hover/price:text-[#FF5A00]">{priceUSD}</span>
+                                <Pencil className="w-2.5 h-2.5 opacity-0 group-hover/price:opacity-60 text-white/50" />
+                              </button>
+                              <div className="text-[11px] text-white/45 mt-0.5 font-mono">
+                                ≈ {formatPrice(priceUZS)} сум
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </td>
 
-                      {/* Telemetry (Views / Likes) */}
+                      {/* Telemetry (Rating / Views / Likes) */}
                       <td className="p-4 sm:p-5 text-center hidden lg:table-cell">
                         <div className="flex items-center justify-center gap-3 text-[11px] font-mono text-white/40">
+                          <span className="flex items-center gap-1 text-amber-400 font-semibold" title="Рейтинг покупателей">
+                            <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                            {(p.rating ?? 5.0).toFixed(1)}
+                            <span className="text-white/30 text-[10px]">({p.rating_count ?? 0})</span>
+                          </span>
                           <span className="flex items-center gap-1" title="Просмотры">
                             <Eye className="w-3 h-3 text-white/40" /> {p.views || 0}
                           </span>

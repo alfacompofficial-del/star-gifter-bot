@@ -87,7 +87,18 @@ const fetchIpInfo = async (): Promise<{ ip: string; country?: string; country_co
   return null;
 };
 
+export const isUserAdmin = (): boolean => {
+  if (typeof window === "undefined") return false;
+  if (isLocalhost()) return true;
+  try {
+    if (sessionStorage.getItem("alfacomp_admin_auth") === "1") return true;
+    if (localStorage.getItem("alfacomp_admin_auth") === "1") return true;
+  } catch {}
+  return cachedAllowed === true;
+};
+
 const checkAccess = async (): Promise<boolean> => {
+  if (isUserAdmin()) return true;
   // Instant access on localhost — no IP fetch needed
   if (isLocalhost()) {
     cachedAllowed = true;
@@ -102,12 +113,12 @@ const checkAccess = async (): Promise<boolean> => {
 
   inflight = (async () => {
     const info = await fetchIpInfo();
-    if (!info) return cachedAllowed ?? false;
+    if (!info) return isUserAdmin() || (cachedAllowed ?? false);
 
     // Логируем визит (одноразово за сессию)
     logVisit(info);
 
-    const result = isAllowedIp(info.ip);
+    const result = isAllowedIp(info.ip) || isUserAdmin();
     cachedAllowed = result;
     console.log(`[AdminAccess] Detected IP: ${info.ip} (${info.country || "?"}) | Allowed: ${result}`);
     try {
@@ -123,19 +134,32 @@ const checkAccess = async (): Promise<boolean> => {
 };
 
 export const useAdminAccess = () => {
-  // If localhost, return true immediately
-  const [allowed, setAllowed] = useState<boolean | null>(
-    isLocalhost() ? true : cachedAllowed
-  );
+  const [allowed, setAllowed] = useState<boolean | null>(() => {
+    if (isUserAdmin()) return true;
+    return isLocalhost() ? true : cachedAllowed;
+  });
 
   useEffect(() => {
+    const handleAuthChange = () => {
+      setAllowed(isUserAdmin() ? true : cachedAllowed);
+    };
+
+    window.addEventListener("admin-auth-changed", handleAuthChange);
+    window.addEventListener("storage", handleAuthChange);
+
     let cancelled = false;
-    // Всегда запускаем проверку — она также логирует визит (даже для уже кэшированных пользователей это выполняется 1 раз за сессию)
     checkAccess().then((result) => {
-      if (!cancelled) setAllowed(result);
+      if (!cancelled) {
+        setAllowed(isUserAdmin() ? true : result);
+      }
     });
-    return () => { cancelled = true; };
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("admin-auth-changed", handleAuthChange);
+      window.removeEventListener("storage", handleAuthChange);
+    };
   }, []);
 
-  return allowed;
+  return isUserAdmin() ? true : allowed;
 };

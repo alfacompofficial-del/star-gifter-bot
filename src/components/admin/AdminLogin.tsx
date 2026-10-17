@@ -164,13 +164,15 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess, onExit }) => 
 
       if (emailMatches && passMatches) {
         setIsSuccess(true);
-        // Reset brute-force counter on success
         try {
           localStorage.removeItem("alfacomp_admin_attempts");
           localStorage.removeItem("alfacomp_lockout_until");
           sessionStorage.setItem("alfacomp_admin_auth", "1");
           sessionStorage.setItem("alfacomp_admin_auth_time", String(Date.now()));
           sessionStorage.setItem("alfacomp_admin_email", cleanEmail);
+          localStorage.setItem("alfacomp_admin_auth", "1");
+          localStorage.setItem("alfacomp_admin_auth_time", String(Date.now()));
+          window.dispatchEvent(new CustomEvent("admin-auth-changed"));
         } catch {}
 
         toast.success("Авторизация успешна! Вход в панель управления...");

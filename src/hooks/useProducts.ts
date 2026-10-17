@@ -21,6 +21,8 @@ export interface Product {
   specs?: Record<string, string> | null;
   views?: number;
   likes?: number;
+  rating?: number;
+  rating_count?: number;
   created_at?: string;
 }
 

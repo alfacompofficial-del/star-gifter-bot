@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { getCategoryUrl, getCategorySlug, CATEGORY_SEO_DATA } from "@/lib/slugify";
 import { supabase } from "@/integrations/supabase/client";
+import { clearProductsCache } from "@/lib/productsDb";
 
 interface CatalogSectionProps {
   products: Product[];
@@ -210,6 +211,7 @@ const CatalogSection = ({
         )
       );
       toast.success("Порядок сохранён!");
+      await clearProductsCache();
     } catch {
       toast.error("Ошибка сохранения порядка");
     }
@@ -234,7 +236,7 @@ const CatalogSection = ({
 
       if (!error && data) {
         toast.success("Товар создан!");
-        window.dispatchEvent(new CustomEvent("products-updated"));
+        await clearProductsCache();
         onProductClick?.(data as Product);
       } else {
         toast.error("Ошибка при создании: " + (error?.message || "неизвестно"));
@@ -261,7 +263,7 @@ const CatalogSection = ({
 
       if (!error && data) {
         toast.success(`Вкладка "${catName}" создана!`);
-        window.dispatchEvent(new CustomEvent("products-updated"));
+        await clearProductsCache();
         setFilter(catName.trim());
       } else {
         toast.error("Ошибка при создании вкладки: " + (error?.message || "неизвестно"));
@@ -280,7 +282,7 @@ const CatalogSection = ({
       if (error) throw error;
       toast.success(`Вкладка "${categoryName}" удалена!`);
       setFilter("all");
-      window.dispatchEvent(new CustomEvent("products-updated"));
+      await clearProductsCache();
     } catch (err: any) {
       toast.error("Ошибка при удалении: " + err.message);
     }
@@ -307,7 +309,7 @@ const CatalogSection = ({
           });
           if (error) throw error;
           toast.success("Товар успешно вставлен!");
-          window.dispatchEvent(new CustomEvent("products-updated"));
+          await clearProductsCache();
         } catch (err: any) {
           toast.error("Ошибка при вставке: " + err.message);
         }
@@ -333,7 +335,7 @@ const CatalogSection = ({
       });
       if (error) throw error;
       toast.success("Товар успешно вставлен!");
-      window.dispatchEvent(new CustomEvent("products-updated"));
+      await clearProductsCache();
     } catch (err: any) {
       toast.error("Ошибка при вставке: " + err.message);
     }

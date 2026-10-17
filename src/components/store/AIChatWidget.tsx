@@ -385,7 +385,8 @@ ${productCatalogText}
       });
     } catch (e) {
       console.error("Gemini stream error:", e);
-      let fallbackText = "Извините, не удалось обработать запрос через AI. Попробуйте ещё раз.";
+      const realErr = e instanceof Error ? e.message : String(e);
+      let fallbackText = `⚠️ AI временно недоступен.\n\n*Причина:* ${realErr}\n\nЕсли проблема повторяется — обратитесь к администратору.`;
       const lower = textToSend.toLowerCase();
       if (lower.includes("сколько") || lower.includes("товар") || lower.includes("счетчик")) {
         fallbackText = `В нашем каталоге прямо сейчас **${totalCount} товаров** (${inStockCount} в наличии)!\n\nКатегории:\n${Object.entries(categoryCounts).map(([cat, c]) => `• **${cat}**: ${c} шт.`).join("\n")}\n\nНапишите, какой товар вас интересует, и я помогу с выбором!`;

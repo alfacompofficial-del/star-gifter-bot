@@ -3,12 +3,18 @@ Allow: /
 Disallow: /admin
 Disallow: /admin/
 
+User-agent: Googlebot-Image
+Allow: /
+
 User-agent: Yandex
 Allow: /
 Disallow: /admin
 Disallow: /admin/
 Clean-param: search /category/*
 Clean-param: search /
+
+User-agent: YandexImages
+Allow: /
 
 User-agent: *
 Allow: /

@@ -11,6 +11,8 @@ import { getProductUrl, getCategoryUrl } from "@/lib/slugify";
 import type { Product } from "@/hooks/useProducts";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import ProductRatingWidget from "./ProductRatingWidget";
+import { clearProductsCache, broadcastProductsUpdate } from "@/lib/productsDb";
 
 interface ProductModalProps {
   product: Product | null;
@@ -102,7 +104,7 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
     setLiked(isLiking);
     try {
       const newGlobalLikes = Math.max(0, (product.likes || 0) + (isLiking ? 1 : -1));
-      await supabase.from("products").update({ likes: newGlobalLikes } as never).eq("id", product.id);
+      await supabase.from("products").update({ likes: newGlobalLikes } as never).eq("id", product.id).catch(() => {});
       product.likes = newGlobalLikes;
     } catch {}
   }, [product]);
@@ -110,20 +112,30 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
   const handleShare = useCallback(async () => {
     if (!product) return;
     const url = `${window.location.origin}${getProductUrl(product)}`;
+    const { formattedUZS } = resolveProductPrices(product.price, exchangeRate || 14000);
+    const shareMessage = `${product.name} — ${formattedUZS} сум в AlfaComp\n${url}`;
     try {
       if (navigator.share) {
-        await navigator.share({ title: product.name, text: `${product.name} — ${resolveProductPrices(product.price, exchangeRate || 14000).formattedUZS} сум`, url });
+        await navigator.share({
+          title: product.name,
+          text: shareMessage,
+          url,
+        });
       } else {
         await navigator.clipboard.writeText(url);
         setCopied(true);
+        toast.success("Ссылка на товар скопирована в буфер обмена!");
         setTimeout(() => setCopied(false), 2000);
       }
-    } catch {
-      try {
-        await navigator.clipboard.writeText(url);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      } catch {}
+    } catch (err: any) {
+      if (err?.name !== "AbortError") {
+        try {
+          await navigator.clipboard.writeText(url);
+          setCopied(true);
+          toast.success("Ссылка на товар скопирована в буфер обмена!");
+          setTimeout(() => setCopied(false), 2000);
+        } catch {}
+      }
     }
   }, [product, exchangeRate]);
 
@@ -155,22 +167,29 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
   // ── Admin Handlers ─────────────────────────────────────────────
   const handlePriceClick = () => {
     if (!isAdmin || !product) return;
-    setPriceValue(String(product.price));
+    // Seed with USD value
+    const rate = exchangeRate || 14000;
+    const usdSeed = product.price > 1000 ? Math.round(product.price / rate) : product.price;
+    setPriceValue(String(usdSeed));
     setEditingPrice(true);
   };
 
   const handlePriceSave = async () => {
     if (!product) return;
-    const val = parseFloat(priceValue);
-    if (isNaN(val) || val <= 0) { toast.error("Введите корректную цену"); return; }
+    const usdVal = parseFloat(priceValue);
+    if (isNaN(usdVal) || usdVal <= 0) { toast.error("Введите корректную цену в долларах ($)"); return; }
+    // Convert USD → UZS before saving
+    const rate = exchangeRate || 14000;
+    const uzsVal = Math.round(usdVal * rate);
     setSavingPrice(true);
     try {
-      const { error } = await supabase.from("products").update({ price: val }).eq("id", product.id);
+      const { error } = await supabase.from("products").update({ price: uzsVal }).eq("id", product.id);
       if (!error) {
-        toast.success("Цена обновлена!");
-        product.price = val;
+        toast.success(`Цена обновлена: $${usdVal} ≈ ${uzsVal.toLocaleString()} сум`);
+        product.price = uzsVal;
         setEditingPrice(false);
-        window.dispatchEvent(new CustomEvent("products-updated"));
+        await clearProductsCache();
+        broadcastProductsUpdate();
       } else {
         toast.error("Ошибка сохранения");
       }
@@ -189,7 +208,8 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
         if (!error) {
           toast.success("Обновлено!");
           (product as any)[field] = newValue.trim();
-          window.dispatchEvent(new CustomEvent("products-updated"));
+          await clearProductsCache();
+          broadcastProductsUpdate();
         } else {
           toast.error("Ошибка сохранения");
         }
@@ -212,7 +232,8 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
       }).select().single();
       if (!error && data) {
         toast.success("Товар продублирован!");
-        window.dispatchEvent(new CustomEvent("products-updated"));
+        await clearProductsCache();
+        broadcastProductsUpdate();
         onClose();
       } else {
         toast.error("Ошибка при дублировании");
@@ -230,7 +251,8 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
       if (!error) {
         setSpecs(newSpecs);
         product.specs = newSpecs;
-        window.dispatchEvent(new CustomEvent("products-updated"));
+        await clearProductsCache();
+        broadcastProductsUpdate();
         setSavingSpec(false);
         return true;
       } else {
@@ -283,7 +305,8 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
       if (!error) {
         product.in_stock = !product.in_stock;
         toast.success(product.in_stock ? "Статус: В наличии" : "Статус: Под заказ");
-        window.dispatchEvent(new CustomEvent("products-updated"));
+        await clearProductsCache();
+        broadcastProductsUpdate();
       } else {
         toast.error("Ошибка обновления статуса");
       }
@@ -371,8 +394,15 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
       "@type": "Brand",
       name: product.brand || "AlfaComp",
     },
-    // aggregateRating намеренно убран: реальных отзывов на странице нет.
-    // Указание фиктивных цифр нарушает политику Google Rich Results.
+    ...(product.rating_count && product.rating_count > 0 ? {
+      aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: (product.rating ?? 5.0).toFixed(1),
+        reviewCount: product.rating_count,
+        bestRating: "5",
+        worstRating: "1",
+      }
+    } : {}),
     offers: {
       "@type": "Offer",
       url: canonicalUrl,
@@ -553,7 +583,9 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
 
                 <img
                   src={product.image}
-                  alt={product.name}
+                  alt={`${product.name} — фото и характеристики, купить в Ташкенте | AlfaComp`}
+                  title={`${product.name} — оригинальное фото товара | AlfaComp`}
+                  itemProp="image"
                   className="max-w-full max-h-full object-contain relative z-10 transition-all duration-200"
                   style={
                     isZooming
@@ -686,32 +718,40 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
                     )}
 
                     {isAdmin && editingPrice ? (
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-mono text-sm text-[#FF5A00]">$</span>
-                        <input
-                          type="number"
-                          value={priceValue}
-                          onChange={(e) => setPriceValue(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") handlePriceSave();
-                            if (e.key === "Escape") setEditingPrice(false);
-                          }}
-                          autoFocus
-                          className="w-24 bg-[#181B22] border border-[#FF5A00] rounded px-2 py-1
-                            text-sm font-mono text-white outline-none"
-                        />
-                        <button onClick={handlePriceSave} disabled={savingPrice} className="p-1 bg-[#22c55e]/20 text-[#22c55e] rounded">
-                          <Check className="w-3.5 h-3.5" />
-                        </button>
-                        <button onClick={() => setEditingPrice(false)} className="p-1 bg-red-500/20 text-red-400 rounded">
-                          <X className="w-3.5 h-3.5" />
-                        </button>
+                      <div className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-mono text-sm text-[#FF5A00]">$</span>
+                          <input
+                            type="number"
+                            value={priceValue}
+                            onChange={(e) => setPriceValue(e.target.value)}
+                            placeholder="USD"
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") handlePriceSave();
+                              if (e.key === "Escape") setEditingPrice(false);
+                            }}
+                            autoFocus
+                            className="w-24 bg-[#181B22] border border-[#FF5A00] rounded px-2 py-1
+                              text-sm font-mono text-white outline-none"
+                          />
+                          <button onClick={handlePriceSave} disabled={savingPrice} className="p-1 bg-[#22c55e]/20 text-[#22c55e] rounded">
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                          <button onClick={() => setEditingPrice(false)} className="p-1 bg-red-500/20 text-red-400 rounded">
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        {priceValue && !isNaN(parseFloat(priceValue)) && (
+                          <span className="text-[10px] font-mono text-white/40 pl-5">
+                            ≈ {Math.round(parseFloat(priceValue) * (exchangeRate || 14000)).toLocaleString()} сум
+                          </span>
+                        )}
                       </div>
                     ) : (
                       <div
                         className={`flex items-baseline gap-1.5 ${isAdmin ? "cursor-pointer group/p" : ""}`}
                         onClick={handlePriceClick}
-                        title={isAdmin ? "Изменить цену" : undefined}
+                        title={isAdmin ? "Нажмите чтобы изменить цену (вводите в USD)" : undefined}
                       >
                         <span className="text-data text-[1.6rem] sm:text-[1.9rem] font-bold text-white tracking-tight leading-none">
                           {priceUZS}
@@ -755,6 +795,19 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
                     Ссылка скопирована в буфер обмена
                   </div>
                 )}
+              </motion.div>
+
+              {/* ── Interactive Product Rating Widget ── */}
+              <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.18, duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <ProductRatingWidget
+                  productId={product.id}
+                  initialRating={product.rating}
+                  initialRatingCount={product.rating_count}
+                />
               </motion.div>
 
               {/* CTAs */}

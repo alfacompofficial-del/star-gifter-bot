@@ -19,13 +19,14 @@ export interface SendChatOptions {
   onChunk: (delta: string, accumulated: string) => void;
 }
 
+// Real Gemini API model IDs — ordered by preference (free quota first)
 const CANDIDATE_MODELS = [
-  import.meta.env.VITE_GEMINI_MODEL || "gemini-3.8-flash",
-  "gemini-3.6-flash",
-  "gemini-3.5-flash",
-  "gemini-flash-lite-latest",
-  "gemini-3.1-flash-lite",
-  "gemini-flash-latest",
+  import.meta.env.VITE_GEMINI_MODEL || "gemini-2.5-flash",
+  "gemini-2.5-flash",
+  "gemini-2.0-flash",
+  "gemini-1.5-flash",
+  "gemini-1.5-flash-8b",
+  "gemini-1.5-flash-latest",
 ];
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -234,5 +235,6 @@ export async function streamGeminiChat({
     }
   }
 
-  throw lastError || new Error("Не удалось получить ответ от AI. Сервер Gemini временно перегружен, попробуйте через пару секунд.");
+  const errMsg = lastError?.message || "неизвестная ошибка";
+  throw new Error(`AI недоступен. Причина: ${errMsg}. Проверьте VITE_GEMINI_API_KEY в .env`);
 }
