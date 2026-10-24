@@ -50,6 +50,26 @@ const flagEmoji = (code?: string | null) => {
 export const Admin = () => {
   const navigate = useNavigate();
 
+  // ── Admin PWA Manifest (injected dynamically, invisible in static source) ──
+  useEffect(() => {
+    const prev = document.querySelector('link[rel="manifest"]') as HTMLLinkElement | null;
+    const prevHref = prev?.href || "";
+    const el = document.createElement("link");
+    el.rel = "manifest";
+    // Obfuscated name — looks like a generic asset file in Network tab
+    el.href = "/ac-ext.json";
+    document.head.appendChild(el);
+    // Remove original manifest while admin is active
+    if (prev) prev.remove();
+    return () => {
+      el.remove();
+      if (prev) {
+        prev.href = prevHref;
+        document.head.appendChild(prev);
+      }
+    };
+  }, []);
+
   // ── Authentication State ──────────────────────────────────
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     try {
@@ -64,6 +84,7 @@ export const Admin = () => {
 
   // ── Core Navigation Tabs ──────────────────────────────────
   const [tab, setTab] = useState<"products" | "analytics" | "stats" | "telegram">("products");
+
 
   // ── Product States ────────────────────────────────────────
   const [products, setProducts] = useState<Product[]>([]);
