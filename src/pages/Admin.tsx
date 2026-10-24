@@ -806,7 +806,7 @@ export const Admin = () => {
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
 
       {/* ── TOP TELEMETRY BAR ──────────────────────────────── */}
-      <header className="border-b border-white/[0.08] h-16 flex items-center px-4 sm:px-8 justify-between sticky top-0 bg-[#0c0e14]/92 backdrop-blur-xl z-50">
+      <header className="border-b border-white/[0.08] h-14 sm:h-16 flex items-center px-3 sm:px-8 justify-between sticky top-0 bg-[#0c0e14]/95 backdrop-blur-xl z-50">
         <div className="flex items-center gap-3.5">
           <button
             onClick={() => navigate("/")}
@@ -818,19 +818,19 @@ export const Admin = () => {
           <div>
             <h1
               onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-              className="font-extrabold tracking-tight text-xs uppercase flex items-center gap-2 cursor-pointer select-none"
+              className="font-extrabold tracking-tight text-xs uppercase flex items-center gap-1.5 cursor-pointer select-none"
               title="Наверх"
             >
               <span className="text-white">ALFACOMP</span>
-              <span className="text-[#0066ff] font-mono text-[11px]">// CONTROL CENTER</span>
+              <span className="text-[#0066ff] font-mono text-[11px] hidden sm:inline">// CONTROL CENTER</span>
+              <span className="text-[#0066ff] font-mono text-[11px] sm:hidden">ADM</span>
             </h1>
             <div className="flex items-center gap-2 text-[10px] font-mono text-white/40 mt-0.5">
               <span className="flex items-center gap-1 text-emerald-400">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 ONLINE
               </span>
-              <span>·</span>
-              <span>SUPABASE SYNCED</span>
+              <span className="hidden sm:inline">· SUPABASE SYNCED</span>
             </div>
           </div>
         </div>
@@ -944,9 +944,9 @@ export const Admin = () => {
       </header>
 
       {/* ── MAIN DASHBOARD VIEW ────────────────────────────── */}
-      <main className="max-w-[1540px] mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
-        {/* Navigation Sub-Tabs */}
-        <div className="flex items-center justify-between gap-4 border-b border-white/[0.08] pb-3 overflow-x-auto">
+      <main className="max-w-[1540px] mx-auto p-3 sm:p-6 lg:p-8 space-y-5 pb-24 sm:pb-8">
+        {/* Navigation Sub-Tabs — desktop only */}
+        <div className="hidden sm:flex items-center justify-between gap-4 border-b border-white/[0.08] pb-3 overflow-x-auto">
           <div className="flex items-center gap-2">
             {[
               { id: "products", label: "Товары & Каталог", icon: Package },
@@ -993,6 +993,25 @@ export const Admin = () => {
                 <span>Добавить товар</span>
               </button>
             </div>
+          )}
+        </div>
+
+        {/* Mobile page title bar */}
+        <div className="sm:hidden flex items-center justify-between">
+          <div className="text-xs font-mono uppercase tracking-widest text-white/40">
+            {tab === "products" && "📦 Товары & Каталог"}
+            {tab === "analytics" && "📊 Аналитика"}
+            {tab === "stats" && "🌐 Трафик"}
+            {tab === "telegram" && "✈️ Telegram"}
+          </div>
+          {tab === "products" && (
+            <button
+              onClick={() => { setDrawerProduct(null); setDrawerOpen(true); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0066ff] text-white text-xs font-bold uppercase tracking-wider transition-all shadow-lg shadow-[#0066ff]/20 active:scale-95"
+            >
+              <Plus className="w-4 h-4" />
+              Добавить
+            </button>
           )}
         </div>
 
@@ -1117,8 +1136,113 @@ export const Admin = () => {
               </div>
             </div>
 
-            {/* Products Table */}
-            <div className="bg-[#0f1219] rounded-xl border border-white/[0.08] overflow-hidden shadow-2xl">
+            {/* ── MOBILE PRODUCT CARDS (visible on sm and below) ── */}
+            <div className="md:hidden space-y-3">
+              {loading && (
+                <div className="text-center py-10 text-white/40 font-mono text-xs">
+                  Синхронизация с Supabase...
+                </div>
+              )}
+              {!loading && filteredProducts.length === 0 && (
+                <div className="text-center py-10 text-white/40 font-mono text-xs">
+                  По вашему запросу ничего не найдено
+                </div>
+              )}
+              {filteredProducts.map((p) => {
+                const { priceUSD, priceUZS } = resolveProductPrices(p.price, exchangeRate || 14000);
+                return (
+                  <div
+                    key={p.id}
+                    className="bg-[#0f1219] rounded-xl border border-white/[0.08] p-3.5 flex gap-3 active:bg-white/[0.02] transition-colors"
+                  >
+                    {/* Thumbnail */}
+                    <div
+                      onClick={() => handleImageClick(p.id)}
+                      className="relative w-16 h-16 rounded-lg overflow-hidden border border-white/10 bg-[#090b10] cursor-pointer shrink-0"
+                    >
+                      {uploadingImageId === p.id ? (
+                        <div className="w-full h-full flex items-center justify-center bg-black/80">
+                          <div className="w-4 h-4 border-2 border-[#0066ff] border-t-transparent rounded-full animate-spin" />
+                        </div>
+                      ) : (
+                        <img
+                          src={p.image}
+                          alt={p.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => { (e.target as HTMLImageElement).src = "https://via.placeholder.com/64?text=HW"; }}
+                        />
+                      )}
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="font-bold text-white text-sm truncate">{p.name}</div>
+                          <div className="text-[10px] font-mono text-white/40 mt-0.5">
+                            #{p.id} · <span className="text-[#0066ff]/80 uppercase">{p.brand || "AlfaComp"}</span>
+                          </div>
+                        </div>
+                        {/* Stock toggle */}
+                        <button
+                          onClick={() => handleToggleStock(p.id, p.in_stock)}
+                          className={`shrink-0 px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase border ${
+                            p.in_stock
+                              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                              : "bg-red-500/10 text-red-400 border-red-500/20"
+                          }`}
+                        >
+                          {p.in_stock ? "✓ Есть" : "✗ Нет"}
+                        </button>
+                      </div>
+
+                      {/* Price row */}
+                      <div className="flex items-center justify-between mt-2">
+                        <button
+                          onClick={() => startEditPrice(p)}
+                          className="flex items-center gap-1 text-white font-bold text-sm"
+                        >
+                          <span className="text-white/50 text-xs">$</span>{priceUSD}
+                          <span className="text-[10px] font-mono text-white/40 font-normal">≈ {formatPrice(priceUZS)} сум</span>
+                        </button>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => { setDrawerProduct(p); setDrawerOpen(true); }}
+                            className="p-2 rounded-lg bg-white/[0.06] border border-white/10 text-white/70"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDuplicateProduct(p)}
+                            className="p-2 rounded-lg bg-white/[0.06] border border-white/10 text-white/70"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteProduct(p.id, p.name)}
+                            className="p-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Category tag */}
+                      <div className="mt-1.5">
+                        <span className="px-2 py-0.5 rounded bg-white/[0.04] border border-white/5 text-[10px] font-mono text-white/50">
+                          {p.category}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* ── DESKTOP PRODUCT TABLE (hidden on mobile) ── */}
+            <div className="hidden md:block bg-[#0f1219] rounded-xl border border-white/[0.08] overflow-hidden shadow-2xl">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-white/[0.02] text-[10px] uppercase font-mono tracking-[0.16em] text-white/40 border-b border-white/[0.06]">
@@ -2094,6 +2218,34 @@ export const Admin = () => {
           </div>
         )}
       </main>
+
+      {/* ── MOBILE BOTTOM NAVIGATION BAR ──────────────────── */}
+      <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#0c0e14]/98 backdrop-blur-xl border-t border-white/[0.08] safe-area-inset-bottom">
+        <div className="flex items-stretch h-16">
+          {[
+            { id: "products" as const, label: "Товары", icon: Package },
+            { id: "analytics" as const, label: "Графики", icon: BarChart3 },
+            { id: "stats" as const, label: "Трафик", icon: Globe },
+            { id: "telegram" as const, label: "Telegram", icon: Send },
+          ].map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => setTab(id)}
+              className={`flex-1 flex flex-col items-center justify-center gap-1 transition-colors ${
+                tab === id
+                  ? "text-[#0066ff]"
+                  : "text-white/40 active:text-white/70"
+              }`}
+            >
+              <Icon className="w-5 h-5" />
+              <span className="text-[9px] font-mono uppercase tracking-wider">{label}</span>
+              {tab === id && (
+                <span className="absolute bottom-0 w-8 h-0.5 bg-[#0066ff] rounded-t-full" />
+              )}
+            </button>
+          ))}
+        </div>
+      </nav>
 
       {/* ── PRODUCT SIDE DRAWER INSPECTOR ──────────────────── */}
       <ProductDrawerEditor
