@@ -49,10 +49,23 @@ if (existsSync(KEYWORDS_FILE)) {
   }
 }
 
-function inj(raw, { title, desc, canon, oimg, otype, noindex, schemas, keywords, subject, topic }) {
+function inj(raw, { title, desc, canon, oimg, otype, noindex, schemas, keywords, subject, topic, oalt, isHome }) {
   let h = raw;
+
+  // --- 1. Strip hreflang tags from all non-home pages ---
+  if (!isHome) {
+    h = h.replace(/<link\s+rel="alternate"\s+hreflang="[^"]*"\s+href="[^"]*"\s*\/?>/gi, "");
+  }
+
+  // --- 2. Strip the BreadcrumbList from index.html that would leak to all pages ---
+  // Remove the static breadcrumb script block (home-only, 1 item)
+  h = h.replace(/<script\s+type="application\/ld\+json">\s*\{\s*"@context"\s*:\s*"https:\/\/schema\.org"\s*,\s*"@type"\s*:\s*"BreadcrumbList"[\s\S]*?<\/script>/gi, "");
+
+  // --- 3. Replace title and description ---
   h = h.replace(/<title>[^<]*<\/title>/, "<title>" + eh(title) + "</title>");
   h = h.replace(/<meta\s+name="description"\s+content="[^"]*"\s*\/?>/i, '<meta name="description" content="' + eh(desc) + '" />');
+
+  // --- 4. Update optional meta tags ---
   if (keywords) {
     h = h.replace(/<meta\s+name="keywords"\s+content="[^"]*"\s*\/?>/i, '<meta name="keywords" content="' + eh(keywords) + '" />');
   }
@@ -62,30 +75,54 @@ function inj(raw, { title, desc, canon, oimg, otype, noindex, schemas, keywords,
   if (topic) {
     h = h.replace(/<meta\s+name="topic"\s+content="[^"]*"\s*\/?>/i, '<meta name="topic" content="' + eh(topic) + '" />');
   }
+
+  // --- 5. Strip all OG/Twitter/canonical tags from index.html (will be re-injected below) ---
   h = h.replace(/<meta\s+property="og:title"\s+content="[^"]*"\s*\/>/g, "");
   h = h.replace(/<meta\s+property="og:description"\s+content="[^"]*"\s*\/>/g, "");
   h = h.replace(/<meta\s+property="og:url"\s+content="[^"]*"\s*\/>/g, "");
   h = h.replace(/<meta\s+property="og:type"\s+content="[^"]*"\s*\/>/g, "");
   h = h.replace(/<meta\s+property="og:image"\s+content="[^"]*"\s*\/>/g, "");
+  h = h.replace(/<meta\s+property="og:image:width"\s+content="[^"]*"\s*\/>/g, "");
+  h = h.replace(/<meta\s+property="og:image:height"\s+content="[^"]*"\s*\/>/g, "");
   h = h.replace(/<meta\s+property="og:image:alt"\s+content="[^"]*"\s*\/>/g, "");
   h = h.replace(/<link\s+rel="canonical"\s+href="[^"]*"\s*\/>/g, "");
   h = h.replace(/<meta\s+name="twitter:card"\s+content="[^"]*"\s*\/>/g, "");
   h = h.replace(/<meta\s+name="twitter:title"\s+content="[^"]*"\s*\/>/g, "");
   h = h.replace(/<meta\s+name="twitter:description"\s+content="[^"]*"\s*\/>/g, "");
   h = h.replace(/<meta\s+name="twitter:image"\s+content="[^"]*"\s*\/>/g, "");
+
+  // --- 6. Strip existing robots tag; will restore correctly below ---
   h = h.replace(/<meta\s+name="robots"\s+content="[^"]*"\s*\/?>/gi, "");
+
+  // Determine og:image alt text
+  const imgAlt = oalt || title || "AlfaComp — компьютеры, мониторы и комплектующие в Ташкенте";
+  // Determine image dimensions (use 1200×630 for banners, square-ish for product images)
+  const isProductImg = oimg && !oimg.includes("banner.jpg");
+  const imgW = isProductImg ? "800" : "1200";
+  const imgH = isProductImg ? "800" : "630";
+
   const x = [
-    ...(noindex ? ['<meta name="robots" content="noindex, follow" />'] : []),
+    // 3. Robots: always restore with max-image-preview:large for indexable pages, noindex for user pages
+    noindex
+      ? '<meta name="robots" content="noindex, follow" />'
+      : '<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />',
+    // Canonical — always inject (fixes missing canonical on home page)
     '<link rel="canonical" href="' + eh(canon) + '" />',
+    // OG tags with proper width/height/alt
     '<meta property="og:title" content="' + eh(title) + '" />',
     '<meta property="og:description" content="' + eh(desc) + '" />',
     '<meta property="og:image" content="' + eh(oimg) + '" />',
+    '<meta property="og:image:width" content="' + imgW + '" />',
+    '<meta property="og:image:height" content="' + imgH + '" />',
+    '<meta property="og:image:alt" content="' + eh(imgAlt) + '" />',
     '<meta property="og:url" content="' + eh(canon) + '" />',
     '<meta property="og:type" content="' + eh(otype || "website") + '" />',
+    // Twitter
     '<meta name="twitter:card" content="summary_large_image" />',
     '<meta name="twitter:title" content="' + eh(title) + '" />',
     '<meta name="twitter:description" content="' + eh(desc) + '" />',
     '<meta name="twitter:image" content="' + eh(oimg) + '" />',
+    // LD+JSON schemas
     ...(schemas || []).map(s => '<script type="application/ld+json">' + ej(s) + '</script>'),
   ].join("\n    ");
   h = h.replace("</head>", "    " + x + "\n  </head>");
@@ -120,6 +157,7 @@ async function main(){
       keywords: pKeywords,
       subject: `${p.name} — купить в Ташкенте`,
       topic: p.category || "Компьютерная техника",
+      oalt: `${p.name} — купить в Ташкенте | AlfaComp`,
       canon:url,oimg:im,otype:"product",
       schemas:[
         {"@context":"https://schema.org","@type":"Product","name":p.name,"image":[im],"sku":"ALFA-"+p.id,
@@ -211,7 +249,19 @@ async function main(){
   }
   console.log("[prerender] OK "+userPages.length+" user pages with noindex");
 
-  const total=pc+cc+3+SP.length+userPages.length;
+  // --- HOME PAGE: inject canonical + robots (keep hreflang since isHome=true keeps them) ---
+  const homeHtml = inj(base, {
+    title: "Купить компьютер и монитор в Ташкенте — Магазин ПК AlfaComp.uz",
+    desc: "Купить мощный игровой компьютер, мониторы MSI, ASUS, Dell, LG и комплектующие в Ташкенте. Сборка ПК на заказ, ИБП Ion, гарантия до 3 лет и доставка по Узбекистану — AlfaComp.uz",
+    canon: BASE_URL + "/",
+    oimg: BASE_URL + "/banner.jpg",
+    oalt: "AlfaComp — компьютеры, мониторы и комплектующие в Ташкенте",
+    isHome: true,
+  });
+  writeFileSync(resolve(DIST, "index.html"), homeHtml, "utf-8");
+  console.log("[prerender] OK home page (canonical + robots injected)");
+
+  const total=pc+cc+3+SP.length+userPages.length+1;
   console.log("[prerender] DONE: "+total+" total routes pre-rendered.");
 }
 main().catch(e=>{console.error("[prerender] FATAL:",e);process.exit(1);});
