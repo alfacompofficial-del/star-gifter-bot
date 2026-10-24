@@ -86,6 +86,16 @@ export const GuidesPage = () => {
           name="description"
           content="Полезные практические руководства по выбору игровых компьютеров, комплектующих, мониторов и ИБП в Ташкенте. Экспертные советы от инженеров AlfaComp."
         />
+        <meta
+          name="keywords"
+          content="гайды по сборке ПК, как выбрать компьютер Ташкент, выбор игрового монитора, подбор ИБП для сервера, как выбрать видеокарту, AlfaComp блог, статьи о ПК"
+        />
+        <meta name="subject" content="Гайды и советы по выбору электроники в Ташкенте" />
+        <meta name="topic" content="Компьютерные руководства и статьи" />
+        <meta name="geo.region" content="UZ-TO" />
+        <meta name="geo.placename" content="Tashkent, Uzbekistan" />
+        <meta name="geo.position" content="41.338889;69.271820" />
+        <meta name="ICBM" content="41.338889, 69.271820" />
         <link rel="canonical" href="https://alfacomp.uz/guides" />
         <meta property="og:title" content="Гайды и советы по выбору электроники — AlfaComp" />
         <meta

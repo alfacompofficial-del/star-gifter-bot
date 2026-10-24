@@ -1,3 +1,5 @@
+import { CATEGORY_KEYWORDS_MAP } from "./seoKeywords";
+
 // Transliteration map for Russian to Latin characters (SEO-friendly)
 const RU_TO_LATIN: Record<string, string> = {
   а: "a", б: "b", в: "v", г: "g", д: "d", е: "e", ё: "yo", ж: "zh",
@@ -55,6 +57,7 @@ export interface CategorySEOInfo {
   metaTitle: string;
   metaDescription: string;
   seoDescription: string;
+  keywords: string;
 }
 
 export const CATEGORY_SEO_DATA: Record<string, CategorySEOInfo> = {
@@ -65,6 +68,7 @@ export const CATEGORY_SEO_DATA: Record<string, CategorySEOInfo> = {
     metaTitle: "Купить игровой или офисный монитор в Ташкенте — MSI, ASUS, Dell, LG | AlfaComp",
     metaDescription: "Игровые и профессиональные мониторы 2K, 4K, OLED с частотой 144–360 Гц в Ташкенте. MSI, ASUS, Dell, LG, Samsung. Официальная гарантия, доставка по Узбекистану.",
     seoDescription: "В интернет-магазине AlfaComp вы можете купить мониторы ведущих брендов MSI, ASUS, Dell, LG и Samsung с официальной гарантией. В наличии модели для киберспорта с частотой обновления до 360 Гц, сверхчеткие 2K и 4K панели для дизайна и видеомонтажа, а также надежные офисные мониторы с защитой зрения.",
+    keywords: CATEGORY_KEYWORDS_MAP["monitors"] ?? "",
   },
   ups: {
     name: "ИБП",
@@ -73,6 +77,7 @@ export const CATEGORY_SEO_DATA: Record<string, CategorySEOInfo> = {
     metaTitle: "Купить ИБП Ion в Ташкенте — защита серверов, ПК и дома | AlfaComp",
     metaDescription: "ИБП Ion в Ташкенте: линейно-интерактивные и онлайн ИБП для ПК, серверов, котлов и медицинской техники. Мощность от 650VA до 120kVA. Официальная гарантия в AlfaComp.",
     seoDescription: "Надежные источники бесперебойного питания Ion для защиты чувствительной техники от перепадов напряжения и аварийных отключений электросети в Ташкенте и регионах Узбекистана. Подбор мощности, профессиональная консультация и гарантийное обслуживание.",
+    keywords: CATEGORY_KEYWORDS_MAP["ups"] ?? "",
   },
   components: {
     name: "Комплектующие",
@@ -81,6 +86,7 @@ export const CATEGORY_SEO_DATA: Record<string, CategorySEOInfo> = {
     metaTitle: "Купить комплектующие для ПК в Ташкенте — видеокарты, память, SSD, процессоры | AlfaComp",
     metaDescription: "Комплектующие для сборки и апгрейда ПК в Ташкенте: видеокарты RTX, оперативная память DDR4/DDR5, скоростные NVMe SSD, кулеры и блоки питания. Гарантия качества — AlfaComp.",
     seoDescription: "Каталог оригинальных комплектующих для сборки игровых и рабочих компьютеров в Ташкенте. Видеокарты NVIDIA GeForce RTX, оперативная память Lexar и Kingston, скоростные накопители NVMe PCIe 4.0/5.0. Быстрая доставка по Ташкенту и всему Узбекистану.",
+    keywords: CATEGORY_KEYWORDS_MAP["components"] ?? "",
   },
   networking: {
     name: "Сеть",
@@ -89,6 +95,7 @@ export const CATEGORY_SEO_DATA: Record<string, CategorySEOInfo> = {
     metaTitle: "Сетевое оборудование в Ташкенте — роутеры, коммутаторы, кабели | AlfaComp",
     metaDescription: "Профессиональное сетевое оборудование в Ташкенте: гигабитные коммутаторы, оптоволоконные компоненты, патч-корды и сетевые карты. Надежные решения для дома и бизнеса в AlfaComp.",
     seoDescription: "Полный спектр оборудования для организации стабильных проводных и беспроводных локальных сетей в офисах, дата-центрах и частных домах. Доставка и официальная гарантия.",
+    keywords: CATEGORY_KEYWORDS_MAP["networking"] ?? "",
   },
   "wifi-routers": {
     name: "Wi-Fi роутеры",
@@ -97,6 +104,7 @@ export const CATEGORY_SEO_DATA: Record<string, CategorySEOInfo> = {
     metaTitle: "Купить Wi-Fi роутер в Ташкенте — Wi-Fi 6 и Wi-Fi 7 | AlfaComp",
     metaDescription: "Современные Wi-Fi роутеры с поддержкой Wi-Fi 6 и Wi-Fi 7 в Ташкенте. Высокая скорость, стабильное покрытие без мертвых зон. Доставка по Ташкенту — AlfaComp.",
     seoDescription: "Маршрутизаторы нового поколения для высокоскоростного интернета. Поддержка множества одновременных подключений, низкий пинг для онлайн-игр и потокового видео в 4K/8K.",
+    keywords: CATEGORY_KEYWORDS_MAP["wifi-routers"] ?? "",
   },
   deco: {
     name: "Deco",
@@ -105,6 +113,7 @@ export const CATEGORY_SEO_DATA: Record<string, CategorySEOInfo> = {
     metaTitle: "Купить Mesh-системы Deco в Ташкенте — бесшовный Wi-Fi для больших помещений | AlfaComp",
     metaDescription: "Mesh-системы TP-Link Deco в Ташкенте: бесшовный роуминг Wi-Fi для квартир, коттеджей и офисов. Единая сеть без обрывов. В наличии в AlfaComp с гарантией.",
     seoDescription: "Mesh-системы Deco обеспечивают идеальное покрытие Wi-Fi на площади до сотен квадратных метров. Автоматическое переключение между модулями без задержек и обрывов связи.",
+    keywords: CATEGORY_KEYWORDS_MAP["deco"] ?? "",
   },
   "all-in-one": {
     name: "Моноблоки",
@@ -113,6 +122,7 @@ export const CATEGORY_SEO_DATA: Record<string, CategorySEOInfo> = {
     metaTitle: "Купить моноблок для офиса и дома в Ташкенте | AlfaComp",
     metaDescription: "Стильные и производительные моноблоки в Ташкенте: современные процессоры Intel и AMD, IPS экраны. Экономия рабочего пространства. Гарантия и доставка — AlfaComp.",
     seoDescription: "Универсальные моноблоки 'все-в-одному' для эффективной работы, учебы и мультимедиа. Минимум проводов, максимальная эстетика и надежность.",
+    keywords: CATEGORY_KEYWORDS_MAP["all-in-one"] ?? "",
   },
   accessories: {
     name: "Аксессуары",
@@ -121,6 +131,7 @@ export const CATEGORY_SEO_DATA: Record<string, CategorySEOInfo> = {
     metaTitle: "Компьютерные аксессуары в Ташкенте — клавиатуры, кабели, переходники | AlfaComp",
     metaDescription: "Качественные аксессуары для компьютеров и периферии в Ташкенте. Широкий выбор переходников, адаптеров и полезных мелочей по доступным ценам в AlfaComp.",
     seoDescription: "Широкий ассортимент надежных аксессуаров для комфортной работы за компьютером. Вся продукция протестирована на совместимость и долговечность.",
+    keywords: CATEGORY_KEYWORDS_MAP["accessories"] ?? "",
   },
   mounts: {
     name: "Кронштейны",
@@ -129,6 +140,7 @@ export const CATEGORY_SEO_DATA: Record<string, CategorySEOInfo> = {
     metaTitle: "Купить кронштейны для мониторов в Ташкенте — настольные и настенные | AlfaComp",
     metaDescription: "Эргономичные кронштейны с газлифтом для одного и двух мониторов в Ташкенте. Стандарт VESA, плавная регулировка высоты и наклона. Гарантия AlfaComp.",
     seoDescription: "Кронштейны для мониторов освобождают рабочее пространство на столе и позволяют настроить идеальный угол обзора для сохранения правильной осанки.",
+    keywords: CATEGORY_KEYWORDS_MAP["mounts"] ?? "",
   },
   speakers: {
     name: "Колонки",
@@ -137,6 +149,7 @@ export const CATEGORY_SEO_DATA: Record<string, CategorySEOInfo> = {
     metaTitle: "Купить колонки для ПК в Ташкенте — акустические системы | AlfaComp",
     metaDescription: "Акустические системы и колонки для ПК в Ташкенте. Чистый звук, глубокий бас, компактные размеры. Официальная гарантия — AlfaComp.",
     seoDescription: "Качественный звук для фильмов, музыки и компьютерных игр. Компактные стереоколонки и мощные акустические системы в каталоге AlfaComp.",
+    keywords: CATEGORY_KEYWORDS_MAP["speakers"] ?? "",
   },
   mice: {
     name: "Мышки",
@@ -145,6 +158,7 @@ export const CATEGORY_SEO_DATA: Record<string, CategorySEOInfo> = {
     metaTitle: "Купить компьютерную мышь в Ташкенте — игровые и беспроводные | AlfaComp",
     metaDescription: "Игровые и офисные мыши в Ташкенте: высокоточные оптические сенсоры, эргономичный корпус, проводные и Bluetooth модели в AlfaComp.",
     seoDescription: "Мыши для любых задач: от киберспортивных моделей с высоким DPI до удобных эргономичных беспроводных манипуляторов для офисной работы.",
+    keywords: CATEGORY_KEYWORDS_MAP["mice"] ?? "",
   },
   videocards: {
     name: "Видеокарты",
@@ -153,6 +167,7 @@ export const CATEGORY_SEO_DATA: Record<string, CategorySEOInfo> = {
     metaTitle: "Купить видеокарту в Ташкенте — NVIDIA GeForce RTX 5060, 5090 | AlfaComp",
     metaDescription: "Оригинальные видеокарты NVIDIA GeForce RTX в Ташкенте с гарантией. Высокая производительность для 2K/4K гейминга, 3D и нейросетей в AlfaComp.uz.",
     seoDescription: "Каталог мощных видеокарт NVIDIA GeForce RTX в Ташкенте. Топовые модели ASUS ROG Strix, ZOTAC Gaming с эффективным охлаждением и заводским разгоном.",
+    keywords: CATEGORY_KEYWORDS_MAP["videocards"] ?? "",
   },
   computers: {
     name: "Компьютеры",
@@ -161,6 +176,7 @@ export const CATEGORY_SEO_DATA: Record<string, CategorySEOInfo> = {
     metaTitle: "Купить компьютер в Ташкенте — игровые ПК и рабочие станции | AlfaComp",
     metaDescription: "Купить готовый компьютер или заказать индивидуальную сборку ПК в Ташкенте. Игровые компьютеры с RTX, ПК для офиса и дизайна. Гарантия до 3 лет — AlfaComp.uz",
     seoDescription: "AlfaComp предлагает мощные системные блоки и сборку ПК на заказ в Ташкенте. Подбор оптимальной конфигурации под ваш бюджет, стресс-тестирование, профессиональный кабель-менеджмент и гарантия.",
+    keywords: CATEGORY_KEYWORDS_MAP["computers"] ?? "",
   },
 };
 

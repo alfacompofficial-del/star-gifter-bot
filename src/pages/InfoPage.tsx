@@ -43,6 +43,7 @@ export const InfoPage = ({ type }: InfoPageProps) => {
           canonical: "https://alfacomp.uz/about",
           h1: "О магазине AlfaComp",
           breadcrumb: "О компании",
+          keywords: "AlfaComp, о компании AlfaComp, компьютерный магазин Ташкент, интернет магазин ПК Узбекистан, магазин электроники Малика, AlfaComp отзывы, alfacomp.uz",
         };
       case "delivery":
         return {
@@ -51,6 +52,7 @@ export const InfoPage = ({ type }: InfoPageProps) => {
           canonical: "https://alfacomp.uz/delivery",
           h1: "Доставка и оплата",
           breadcrumb: "Доставка и оплата",
+          keywords: "доставка компьютеров Ташкент, доставка по Узбекистану, оплата Payme Click, купить ПК с доставкой, доставка комплектующих Самарканд Бухара, AlfaComp доставка",
         };
       case "warranty":
         return {
@@ -59,6 +61,7 @@ export const InfoPage = ({ type }: InfoPageProps) => {
           canonical: "https://alfacomp.uz/warranty",
           h1: "Гарантия и возврат",
           breadcrumb: "Гарантия",
+          keywords: "гарантия на компьютеры Ташкент, гарантийный талон AlfaComp, возврат техники Узбекистан, сервисный центр ПК Ташкент, гарантия 3 года",
         };
       case "contacts":
       default:
@@ -68,6 +71,7 @@ export const InfoPage = ({ type }: InfoPageProps) => {
           canonical: "https://alfacomp.uz/contacts",
           h1: "Контакты AlfaComp",
           breadcrumb: "Контакты",
+          keywords: "AlfaComp контакты, AlfaComp адрес, магазин компьютеров Малика блок А27, телефон AlfaComp, компьютерный базар Малика, alfacomp.uz контакты",
         };
     }
   };
@@ -131,6 +135,13 @@ export const InfoPage = ({ type }: InfoPageProps) => {
       <Helmet>
         <title>{config.title}</title>
         <meta name="description" content={config.description} />
+        <meta name="keywords" content={config.keywords} />
+        <meta name="subject" content={config.h1} />
+        <meta name="topic" content="Компьютерный магазин AlfaComp" />
+        <meta name="geo.region" content="UZ-TO" />
+        <meta name="geo.placename" content="Tashkent, Uzbekistan" />
+        <meta name="geo.position" content="41.338889;69.271820" />
+        <meta name="ICBM" content="41.338889, 69.271820" />
         <link rel="canonical" href={config.canonical} />
         <meta property="og:title" content={config.title} />
         <meta property="og:description" content={config.description} />

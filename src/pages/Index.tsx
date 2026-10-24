@@ -35,6 +35,7 @@ import {
   CATEGORY_SEO_DATA,
   parseProductHash,
 } from "@/lib/slugify";
+import { HOME_SEO_KEYWORDS, CATALOG_SEO_KEYWORDS } from "@/lib/seoKeywords";
 import type { Product } from "@/hooks/useProducts";
 
 // ПОДКЛЮЧАЕМ FIREBASE
@@ -413,6 +414,12 @@ const Index = ({ initialCartOpen = false, initialProfileOpen = false }: IndexPro
               selectedPrices ? selectedPrices.priceUZS : selectedProduct.price
             )} сум${selectedPrices && selectedPrices.priceUSD > 0 ? ` (≈$${selectedPrices.priceUSD})` : ""}.`}
           />
+          <meta
+            name="keywords"
+            content={`${selectedProduct.name}, купить ${selectedProduct.name} в Ташкенте, цена ${selectedProduct.name}, ${selectedProduct.category}, компьютерный магазин Ташкент, AlfaComp, alfacomp.uz, доставка по Узбекистану`}
+          />
+          <meta name="subject" content={`${selectedProduct.name} — купить в Ташкенте по лучшей цене`} />
+          <meta name="topic" content={selectedProduct.category || "Компьютерная техника"} />
           <link rel="canonical" href={`https://alfacomp.uz${getProductUrl(selectedProduct)}`} />
           <meta
             property="og:title"
@@ -450,6 +457,9 @@ const Index = ({ initialCartOpen = false, initialProfileOpen = false }: IndexPro
         <Helmet>
           <title>{categorySeo.metaTitle}</title>
           <meta name="description" content={categorySeo.metaDescription} />
+          <meta name="keywords" content={categorySeo.keywords || HOME_SEO_KEYWORDS} />
+          <meta name="subject" content={categorySeo.h1} />
+          <meta name="topic" content={categorySeo.name} />
           <link rel="canonical" href={`https://alfacomp.uz${getCategoryUrl(categorySeo.slug)}`} />
           <meta property="og:title" content={categorySeo.metaTitle} />
           <meta property="og:description" content={categorySeo.metaDescription} />
@@ -499,6 +509,9 @@ const Index = ({ initialCartOpen = false, initialProfileOpen = false }: IndexPro
             name="description"
             content="Полный каталог техники AlfaComp: игровые ПК, мониторы 144–360 Гц, комплектующие, ИБП Ion, сетевое оборудование в Ташкенте. Официальная гарантия, доставка по Узбекистану."
           />
+          <meta name="keywords" content={CATALOG_SEO_KEYWORDS} />
+          <meta name="subject" content="Каталог компьютерной техники и мониторов в Ташкенте" />
+          <meta name="topic" content="Компьютерная техника" />
           <link rel="canonical" href="https://alfacomp.uz/catalog" />
           <meta property="og:title" content="Каталог компьютерной техники и мониторов в Ташкенте — AlfaComp" />
           <meta
@@ -527,6 +540,13 @@ const Index = ({ initialCartOpen = false, initialProfileOpen = false }: IndexPro
             name="description"
             content="Купить мощный игровой компьютер, мониторы MSI, ASUS, Dell, LG и комплектующие в Ташкенте. Сборка ПК на заказ, ИБП Ion, гарантия до 3 лет и доставка по Узбекистану — AlfaComp.uz"
           />
+          <meta name="keywords" content={HOME_SEO_KEYWORDS} />
+          <meta name="subject" content="Компьютерный интернет-магазин в Ташкенте: игровые ПК, мониторы, комплектующие, ИБП" />
+          <meta name="topic" content="Компьютерная техника и мониторы в Узбекистане" />
+          <meta name="geo.region" content="UZ-TO" />
+          <meta name="geo.placename" content="Tashkent, Uzbekistan" />
+          <meta name="geo.position" content="41.338889;69.271820" />
+          <meta name="ICBM" content="41.338889, 69.271820" />
           <link rel="canonical" href="https://alfacomp.uz/" />
           <meta property="og:title" content="Купить компьютер и монитор в Ташкенте — AlfaComp.uz" />
           <meta

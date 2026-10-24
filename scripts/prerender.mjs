@@ -36,37 +36,59 @@ async function fp(){
   throw new Error("FATAL: Could not fetch products");
 }
 
-function inj(raw,{title,desc,canon,oimg,otype,noindex,schemas}){
-  let h=raw;
-  h=h.replace(/<title>[^<]*<\/title>/,"<title>"+eh(title)+"</title>");
-  h=h.replace(/<meta\s+name="description"\s+content="[^"]*"\s*\/?>/i,'<meta name="description" content="'+eh(desc)+'" />');
-  h=h.replace(/<meta\s+property="og:title"\s+content="[^"]*"\s*\/>/g,"");
-  h=h.replace(/<meta\s+property="og:description"\s+content="[^"]*"\s*\/>/g,"");
-  h=h.replace(/<meta\s+property="og:url"\s+content="[^"]*"\s*\/>/g,"");
-  h=h.replace(/<meta\s+property="og:type"\s+content="[^"]*"\s*\/>/g,"");
-  h=h.replace(/<meta\s+property="og:image"\s+content="[^"]*"\s*\/>/g,"");
-  h=h.replace(/<meta\s+property="og:image:alt"\s+content="[^"]*"\s*\/>/g,"");
-  h=h.replace(/<link\s+rel="canonical"\s+href="[^"]*"\s*\/>/g,"");
-  h=h.replace(/<meta\s+name="twitter:card"\s+content="[^"]*"\s*\/>/g,"");
-  h=h.replace(/<meta\s+name="twitter:title"\s+content="[^"]*"\s*\/>/g,"");
-  h=h.replace(/<meta\s+name="twitter:description"\s+content="[^"]*"\s*\/>/g,"");
-  h=h.replace(/<meta\s+name="twitter:image"\s+content="[^"]*"\s*\/>/g,"");
-  h=h.replace(/<meta\s+name="robots"\s+content="[^"]*"\s*\/?>/gi,"");
-  const x=[
-    ...(noindex?['<meta name="robots" content="noindex, follow" />']:[]),
-    '<link rel="canonical" href="'+eh(canon)+'" />',
-    '<meta property="og:title" content="'+eh(title)+'" />',
-    '<meta property="og:description" content="'+eh(desc)+'" />',
-    '<meta property="og:image" content="'+eh(oimg)+'" />',
-    '<meta property="og:url" content="'+eh(canon)+'" />',
-    '<meta property="og:type" content="'+eh(otype||"website")+'" />',
+const KEYWORDS_FILE = resolve(__dirname, "category_keywords_map.json");
+let KEYWORDS_MAP = {};
+let HOME_KEYWORDS_STR = "";
+if (existsSync(KEYWORDS_FILE)) {
+  try {
+    const rawK = JSON.parse(readFileSync(KEYWORDS_FILE, "utf-8"));
+    KEYWORDS_MAP = rawK.category_keywords || {};
+    HOME_KEYWORDS_STR = (rawK.home_keywords || []).slice(0, 60).join(", ");
+  } catch (e) {
+    console.warn("[prerender] Could not read category_keywords_map.json:", e.message);
+  }
+}
+
+function inj(raw, { title, desc, canon, oimg, otype, noindex, schemas, keywords, subject, topic }) {
+  let h = raw;
+  h = h.replace(/<title>[^<]*<\/title>/, "<title>" + eh(title) + "</title>");
+  h = h.replace(/<meta\s+name="description"\s+content="[^"]*"\s*\/?>/i, '<meta name="description" content="' + eh(desc) + '" />');
+  if (keywords) {
+    h = h.replace(/<meta\s+name="keywords"\s+content="[^"]*"\s*\/?>/i, '<meta name="keywords" content="' + eh(keywords) + '" />');
+  }
+  if (subject) {
+    h = h.replace(/<meta\s+name="subject"\s+content="[^"]*"\s*\/?>/i, '<meta name="subject" content="' + eh(subject) + '" />');
+  }
+  if (topic) {
+    h = h.replace(/<meta\s+name="topic"\s+content="[^"]*"\s*\/?>/i, '<meta name="topic" content="' + eh(topic) + '" />');
+  }
+  h = h.replace(/<meta\s+property="og:title"\s+content="[^"]*"\s*\/>/g, "");
+  h = h.replace(/<meta\s+property="og:description"\s+content="[^"]*"\s*\/>/g, "");
+  h = h.replace(/<meta\s+property="og:url"\s+content="[^"]*"\s*\/>/g, "");
+  h = h.replace(/<meta\s+property="og:type"\s+content="[^"]*"\s*\/>/g, "");
+  h = h.replace(/<meta\s+property="og:image"\s+content="[^"]*"\s*\/>/g, "");
+  h = h.replace(/<meta\s+property="og:image:alt"\s+content="[^"]*"\s*\/>/g, "");
+  h = h.replace(/<link\s+rel="canonical"\s+href="[^"]*"\s*\/>/g, "");
+  h = h.replace(/<meta\s+name="twitter:card"\s+content="[^"]*"\s*\/>/g, "");
+  h = h.replace(/<meta\s+name="twitter:title"\s+content="[^"]*"\s*\/>/g, "");
+  h = h.replace(/<meta\s+name="twitter:description"\s+content="[^"]*"\s*\/>/g, "");
+  h = h.replace(/<meta\s+name="twitter:image"\s+content="[^"]*"\s*\/>/g, "");
+  h = h.replace(/<meta\s+name="robots"\s+content="[^"]*"\s*\/?>/gi, "");
+  const x = [
+    ...(noindex ? ['<meta name="robots" content="noindex, follow" />'] : []),
+    '<link rel="canonical" href="' + eh(canon) + '" />',
+    '<meta property="og:title" content="' + eh(title) + '" />',
+    '<meta property="og:description" content="' + eh(desc) + '" />',
+    '<meta property="og:image" content="' + eh(oimg) + '" />',
+    '<meta property="og:url" content="' + eh(canon) + '" />',
+    '<meta property="og:type" content="' + eh(otype || "website") + '" />',
     '<meta name="twitter:card" content="summary_large_image" />',
-    '<meta name="twitter:title" content="'+eh(title)+'" />',
-    '<meta name="twitter:description" content="'+eh(desc)+'" />',
-    '<meta name="twitter:image" content="'+eh(oimg)+'" />',
-    ...(schemas||[]).map(s=>'<script type="application/ld+json">'+ej(s)+'</script>'),
+    '<meta name="twitter:title" content="' + eh(title) + '" />',
+    '<meta name="twitter:description" content="' + eh(desc) + '" />',
+    '<meta name="twitter:image" content="' + eh(oimg) + '" />',
+    ...(schemas || []).map(s => '<script type="application/ld+json">' + ej(s) + '</script>'),
   ].join("\n    ");
-  h=h.replace("</head>","    "+x+"\n  </head>");
+  h = h.replace("</head>", "    " + x + "\n  </head>");
   return h;
 }
 
@@ -91,9 +113,13 @@ async function main(){
   for(const p of prods){
     if(!p.id||!p.name)continue;
     const s=slug(p);const url=BASE_URL+"/product/"+s;const im=img(p.image);const cat=cs(p.category||"");
+    const pKeywords = `${p.name}, купить ${p.name} в Ташкенте, ${p.category || ""}, цена ${p.name}, характеристики, магазин электроники Ташкент, AlfaComp, доставка по Узбекистану`;
     wp("product/"+s,inj(base,{
-      title:p.name+" \u2014 \u043a\u0443\u043f\u0438\u0442\u044c \u0432 \u0422\u0430\u0448\u043a\u0435\u043d\u0442\u0435 | AlfaComp",
-      desc:"\u041a\u0443\u043f\u0438\u0442\u044c "+p.name+" \u0432 \u0422\u0430\u0448\u043a\u0435\u043d\u0442\u0435 \u0441 \u0433\u0430\u0440\u0430\u043d\u0442\u0438\u0435\u0439 \u0438 \u0434\u043e\u0441\u0442\u0430\u0432\u043a\u043e\u0439 \u043f\u043e \u0423\u0437\u0431\u0435\u043a\u0438\u0441\u0442\u0430\u043d\u0443. \u041e\u0440\u0438\u0433\u0438\u043d\u0430\u043b\u044c\u043d\u044b\u0439 \u0442\u043e\u0432\u0430\u0440 \u043f\u043e \u043b\u0443\u0447\u0448\u0435\u0439 \u0446\u0435\u043d\u0435 \u0432 AlfaComp.",
+      title:p.name+" — купить в Ташкенте | AlfaComp",
+      desc:"Купить "+p.name+" в Ташкенте с гарантией и доставкой по Узбекистану. Оригинальный товар по лучшей цене в AlfaComp.",
+      keywords: pKeywords,
+      subject: `${p.name} — купить в Ташкенте`,
+      topic: p.category || "Компьютерная техника",
       canon:url,oimg:im,otype:"product",
       schemas:[
         {"@context":"https://schema.org","@type":"Product","name":p.name,"image":[im],"sku":"ALFA-"+p.id,
@@ -102,8 +128,8 @@ async function main(){
            "itemCondition":"https://schema.org/NewCondition",
            "seller":{"@type":"Organization","name":"AlfaComp","url":BASE_URL+"/"}}},
         {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
-          {"@type":"ListItem","position":1,"name":"\u0413\u043b\u0430\u0432\u043d\u0430\u044f","item":BASE_URL+"/"},
-          {"@type":"ListItem","position":2,"name":p.category||"\u041a\u0430\u0442\u0430\u043b\u043e\u0433","item":BASE_URL+"/category/"+cat},
+          {"@type":"ListItem","position":1,"name":"Главная","item":BASE_URL+"/"},
+          {"@type":"ListItem","position":2,"name":p.category||"Каталог","item":BASE_URL+"/category/"+cat},
           {"@type":"ListItem","position":3,"name":p.name,"item":url},
         ]},
       ],
@@ -114,10 +140,17 @@ async function main(){
   let cc=0;
   for(const[cs2,seo]of Object.entries(CATS)){
     const url=BASE_URL+"/category/"+cs2;
+    const catKw = KEYWORDS_MAP[cs2] || HOME_KEYWORDS_STR;
     const catHtml=inj(base,{
-      title:seo.t,desc:seo.d,canon:url,oimg:BASE_URL+"/banner.jpg",
+      title:seo.t,
+      desc:seo.d,
+      keywords: catKw,
+      subject: `${seo.name} в Ташкенте`,
+      topic: seo.name,
+      canon:url,
+      oimg:BASE_URL+"/banner.jpg",
       schemas:[{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
-        {"@type":"ListItem","position":1,"name":"\u0413\u043b\u0430\u0432\u043d\u0430\u044f","item":BASE_URL+"/"},
+        {"@type":"ListItem","position":1,"name":"Главная","item":BASE_URL+"/"},
         {"@type":"ListItem","position":2,"name":seo.name,"item":url},
       ]}],
     });
@@ -126,14 +159,23 @@ async function main(){
     cc+=2;
   }
   wp("gpu",inj(base,{
-    title:CATS.videocards.t,desc:CATS.videocards.d,canon:BASE_URL+"/category/videocards",oimg:BASE_URL+"/banner.jpg"
+    title:CATS.videocards.t,
+    desc:CATS.videocards.d,
+    keywords: KEYWORDS_MAP["videocards"] || HOME_KEYWORDS_STR,
+    subject: "Видеокарты в Ташкенте",
+    topic: "Видеокарты",
+    canon:BASE_URL+"/category/videocards",
+    oimg:BASE_URL+"/banner.jpg"
   }));
   cc++;
   console.log("[prerender] OK "+cc+" category routes");
 
   const catHubHtml=inj(base,{
-    title:"\u041a\u0430\u0442\u0430\u043b\u043e\u0433 \u043a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440\u043d\u043e\u0439 \u0442\u0435\u0445\u043d\u0438\u043a\u0438 \u0438 \u043c\u043e\u043d\u0438\u0442\u043e\u0440\u043e\u0432 \u0432 \u0422\u0430\u0448\u043a\u0435\u043d\u0442\u0435 | AlfaComp",
-    desc:"\u041f\u043e\u043b\u043d\u044b\u0439 \u043a\u0430\u0442\u0430\u043b\u043e\u0433 \u0442\u0435\u0445\u043d\u0438\u043a\u0438 AlfaComp \u0432 \u0422\u0430\u0448\u043a\u0435\u043d\u0442\u0435: \u0438\u0433\u0440\u043e\u0432\u044b\u0435 \u041f\u041a, \u043c\u043e\u043d\u0438\u0442\u043e\u0440\u044b 144\u2013360 \u0413\u0446, \u043a\u043e\u043c\u043f\u043b\u0435\u043a\u0442\u0443\u044e\u0449\u0438\u0435, \u0418\u0411\u041f Ion, \u0441\u0435\u0442\u0435\u0432\u043e\u0435 \u043e\u0431\u043e\u0440\u0443\u0434\u043e\u0432\u0430\u043d\u0438\u0435. \u041e\u0444\u0438\u0446\u0438\u0430\u043b\u044c\u043d\u0430\u044f \u0433\u0430\u0440\u0430\u043d\u0442\u0438\u044f, \u0431\u044b\u0441\u0442\u0440\u0430\u044f \u0434\u043e\u0441\u0442\u0430\u0432\u043a\u0430 \u043f\u043e \u0423\u0437\u0431\u0435\u043a\u0438\u0441\u0442\u0430\u043d\u0443.",
+    title:"Каталог компьютерной техники и мониторов в Ташкенте | AlfaComp",
+    desc:"Полный каталог техники AlfaComp в Ташкенте: игровые ПК, мониторы 144–360 Гц, комплектующие, ИБП Ion, сетевое оборудование. Официальная гарантия, быстрая доставка по Узбекистану.",
+    keywords: "каталог компьютерной техники Ташкент, купить компьютер, купить монитор, комплектующие для ПК, видеокарты RTX, ИБП Ion, Wi-Fi роутеры, моноблоки, мыши, кронштейны, AlfaComp",
+    subject: "Каталог компьютерной техники и мониторов в Ташкенте",
+    topic: "Компьютерная техника",
     canon:BASE_URL+"/catalog",
     oimg:BASE_URL+"/banner.jpg",
   });
