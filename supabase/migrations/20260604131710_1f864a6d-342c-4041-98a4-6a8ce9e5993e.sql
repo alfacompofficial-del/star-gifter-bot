@@ -1,0 +1,1 @@
+UPDATE public.products SET image='https://tezz.uz/uploads/images/product/771/thumbs/208469-10501050.jpg' WHERE id BETWEEN 15 AND 28;

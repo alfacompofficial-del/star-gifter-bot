@@ -1,0 +1,18 @@
+services:
+  - type: static
+    name: alfacomp-store
+    buildCommand: npm ci --no-audit && NODE_OPTIONS="--max-old-space-size=4096" npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: VITE_SUPABASE_URL
+        value: https://vtlzfcjxpnrsqlsrvyer.supabase.co
+      - key: VITE_SUPABASE_PUBLISHABLE_KEY
+        value: sb_publishable_Ieiof0ojLifGDUpgD6ldVA_utmqM2nZ
+      - key: VITE_SUPABASE_PROJECT_ID
+        value: vtlzfcjxpnrsqlsrvyer
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
