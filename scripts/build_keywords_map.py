@@ -23,8 +23,28 @@ mapping = {
     'mice': by_cat.get('Мышки', []),
 }
 
+priority_terms = [
+    "Купить ПК",
+    "Купить Компьютер",
+    "Компьютерный магазин",
+    "kompyuterlar",
+    "pc",
+    "gaming pc",
+    "купить ПК в Ташкенте",
+    "купить компьютер в Ташкенте",
+    "компьютерный магазин Ташкент",
+    "kompyuterlar narxi",
+    "kompyuterlar Toshkent",
+    "kompyuter sotib olish Toshkent",
+    "kompyuter narxi Toshkent",
+    "kompyuter do'koni Toshkent",
+    "сборка ПК Ташкент",
+    "игровой компьютер купить",
+    "игровой ПК в Ташкенте",
+]
+
 # General / Home queries
-home_queries = data['commercial_queries'] + data['uzbek_queries'] + by_cat.get('Общие запросы', [])
+home_queries = priority_terms + data['commercial_queries'] + data['uzbek_queries'] + by_cat.get('Общие запросы', [])
 # Deduplicate while preserving order
 def dedup(lst):
     seen = set()
@@ -40,6 +60,8 @@ home_dedup = dedup(home_queries)
 
 print(f"Home page unique keywords: {len(home_dedup)}")
 for slug, qs in mapping.items():
+    if slug == 'computers':
+        qs = priority_terms + qs
     d = dedup(qs)
     print(f"Slug '{slug}': {len(d)} unique keywords")
     mapping[slug] = d
