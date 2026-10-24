@@ -1,4 +1,4 @@
-// Google Gemini 3.8 Flash Chat & Multimodal Audio Service
+// Google Gemini Chat & Multimodal Audio Service
 
 export interface ChatMessage {
   role: "user" | "assistant" | "system";
@@ -19,15 +19,32 @@ export interface SendChatOptions {
   onChunk: (delta: string, accumulated: string) => void;
 }
 
-// Real Gemini API model IDs — ordered by preference (free quota first)
+export class GeminiAuthError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "GeminiAuthError";
+  }
+}
+
+// Check if a valid Google AI Studio Gemini API key is configured
+export function isGeminiKeyConfigured(): boolean {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (!apiKey || typeof apiKey !== "string") return false;
+  const trimmed = apiKey.trim();
+  // Valid Google AI Studio keys start with AIzaSy and are at least 30 chars
+  if (trimmed.startsWith("AQ.") || trimmed.startsWith("your-") || trimmed.length < 25) {
+    return false;
+  }
+  return true;
+}
+
+// Real Gemini API model IDs from Google AI Studio
 const CANDIDATE_MODELS = [
-  import.meta.env.VITE_GEMINI_MODEL || "gemini-3.5-flash",
-  "gemini-3.5-flash",
-  "gemini-3.5-flash-lite",
-  "gemini-flash-lite-latest",
-  "gemini-3.1-flash-lite",
-  "gemini-flash-latest",
-  "gemini-2.5-flash",
+  import.meta.env.VITE_GEMINI_MODEL || "gemini-2.0-flash",
+  "gemini-2.0-flash",
+  "gemini-1.5-flash",
+  "gemini-1.5-flash-8b",
+  "gemini-1.5-pro",
 ];
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -39,8 +56,8 @@ export async function streamGeminiChat({
   onChunk,
 }: SendChatOptions): Promise<string> {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error("VITE_GEMINI_API_KEY не задан в конфигурации (.env)");
+  if (!apiKey || !isGeminiKeyConfigured()) {
+    throw new GeminiAuthError("VITE_GEMINI_API_KEY не задан или содержит недействительный токен");
   }
 
   // Build Gemini contents
@@ -72,7 +89,6 @@ export async function streamGeminiChat({
           data: audio.data,
         },
       });
-      // If no text was provided with the voice message, provide clear context
       if (!msg.content || !msg.content.trim()) {
         parts.unshift({
           text: "Голосовое сообщение от клиента. Внимательно прослушай аудио и ответь как официальный AI-консультант магазина компьютерной техники AlfaComp.",
@@ -132,7 +148,6 @@ export async function streamGeminiChat({
       body: JSON.stringify(payload),
     });
     if (!resp.ok) {
-      await resp.text().catch(() => "");
       throw new Error(`Sync request failed with status ${resp.status}`);
     }
     const data = await resp.json();
@@ -140,109 +155,104 @@ export async function streamGeminiChat({
   }
 
   let lastError: Error | null = null;
+  const uniqueModels = Array.from(new Set(CANDIDATE_MODELS));
 
   // Try candidate models in order, with automatic fallback if quota (429) or 503 is encountered
-  for (const model of CANDIDATE_MODELS) {
-    for (let attempt = 0; attempt < 2; attempt++) {
-      try {
-        const response = await requestModelStream(model);
+  for (const model of uniqueModels) {
+    try {
+      const response = await requestModelStream(model);
 
-        if (response.status === 429) {
-          // Model quota reached; break immediately to switch to next model!
-          await response.text().catch(() => "");
-          console.warn(`[Gemini] Model ${model} returned 429 quota, switching to next model...`);
-          lastError = new Error(`Превышен дневной лимит запросов (429) для модели ${model}`);
-          break;
-        }
+      // On auth error (invalid key, unauthenticated), stop immediately — no other model will succeed
+      if (response.status === 400 || response.status === 401 || response.status === 403) {
+        throw new GeminiAuthError(`Недействительный API-ключ Gemini (HTTP ${response.status})`);
+      }
 
-        if (response.status === 503) {
-          await response.text().catch(() => "");
-          console.warn(`[Gemini] ${model} attempt ${attempt + 1} returned 503, waiting 1s...`);
-          lastError = new Error(`Сервис временно перегружен (503)`);
-          await sleep(1000);
-          continue;
-        }
+      if (response.status === 429) {
+        await response.text().catch(() => "");
+        lastError = new Error(`Превышен лимит запросов (429) для ${model}`);
+        continue;
+      }
 
-        if (response.status === 404) {
-          await response.text().catch(() => "");
-          lastError = new Error(`Модель ${model} недоступна (404)`);
-          break;
-        }
+      if (response.status === 503) {
+        await response.text().catch(() => "");
+        lastError = new Error(`Сервис Gemini временно перегружен (503)`);
+        await sleep(600);
+        continue;
+      }
 
-        if (!response.ok || !response.body) {
-          const errText = await response.text().catch(() => "");
-          console.error(`[Gemini] ${model} returned error ${response.status}:`, errText);
-          lastError = new Error(`Ошибка ${response.status}: ${errText.slice(0, 120)}`);
-          break;
-        }
+      if (response.status === 404) {
+        await response.text().catch(() => "");
+        continue;
+      }
 
-        // Process SSE Stream
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder("utf-8");
-        let buffer = "";
-        let fullResponse = "";
+      if (!response.ok || !response.body) {
+        continue;
+      }
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+      // Process SSE Stream
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let buffer = "";
+      let fullResponse = "";
 
-          buffer += decoder.decode(value, { stream: true });
-          let newlineIndex: number;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-          while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
-            let line = buffer.slice(0, newlineIndex);
-            buffer = buffer.slice(newlineIndex + 1);
-            if (line.endsWith("\r")) line = line.slice(0, -1);
-            if (!line.startsWith("data: ")) continue;
+        buffer += decoder.decode(value, { stream: true });
+        let newlineIndex: number;
 
-            const jsonStr = line.slice(6).trim();
-            if (!jsonStr || jsonStr === "[DONE]") continue;
+        while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
+          let line = buffer.slice(0, newlineIndex);
+          buffer = buffer.slice(newlineIndex + 1);
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (!line.startsWith("data: ")) continue;
 
-            try {
-              const parsed = JSON.parse(jsonStr);
-              const candidates = parsed.candidates;
-              if (candidates && candidates.length > 0) {
-                const parts = candidates[0].content?.parts;
-                if (parts && parts.length > 0) {
-                  for (const part of parts) {
-                    if (part.text) {
-                      fullResponse += part.text;
-                      onChunk(part.text, fullResponse);
-                    }
+          const jsonStr = line.slice(6).trim();
+          if (!jsonStr || jsonStr === "[DONE]") continue;
+
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const candidates = parsed.candidates;
+            if (candidates && candidates.length > 0) {
+              const parts = candidates[0].content?.parts;
+              if (parts && parts.length > 0) {
+                for (const part of parts) {
+                  if (part.text) {
+                    fullResponse += part.text;
+                    onChunk(part.text, fullResponse);
                   }
                 }
               }
-            } catch {
-              buffer = line + "\n" + buffer;
-              break;
             }
+          } catch {
+            buffer = line + "\n" + buffer;
+            break;
           }
         }
-
-        if (fullResponse.trim().length > 0) {
-          return fullResponse;
-        }
-      } catch (streamErr) {
-        console.warn(`[Gemini] Stream attempt failed on ${model}:`, streamErr);
-        lastError = streamErr instanceof Error ? streamErr : new Error(String(streamErr));
       }
+
+      if (fullResponse.trim().length > 0) {
+        return fullResponse;
+      }
+    } catch (streamErr) {
+      if (streamErr instanceof GeminiAuthError) {
+        throw streamErr;
+      }
+      lastError = streamErr instanceof Error ? streamErr : new Error(String(streamErr));
     }
 
-    // Fallback: try non-streaming for this model before moving to next
+    // Try sync as fallback for this model
     try {
       const syncResult = await requestModelSync(model);
       if (syncResult.trim().length > 0) {
         onChunk(syncResult, syncResult);
         return syncResult;
       }
-    } catch (syncErr) {
-      if (!lastError) {
-        lastError = syncErr instanceof Error ? syncErr : new Error(String(syncErr));
-      }
-      // Proceed to next candidate model
+    } catch {
+      // Continue to next model
     }
   }
 
-  const errMsg = lastError?.message || "неизвестная ошибка";
-  throw new Error(`AI недоступен. Причина: ${errMsg}. Проверьте VITE_GEMINI_API_KEY в .env`);
+  throw lastError || new Error("Не удалось получить ответ от Gemini API");
 }

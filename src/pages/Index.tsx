@@ -70,7 +70,12 @@ function shouldShowIntro(pathname: string): boolean {
   }
 }
 
-const Index = () => {
+interface IndexProps {
+  initialCartOpen?: boolean;
+  initialProfileOpen?: boolean;
+}
+
+const Index = ({ initialCartOpen = false, initialProfileOpen = false }: IndexProps) => {
   const cart = useCart();
   const { data: products = [], isLoading, error } = useProducts();
   const { exchangeRate } = useExchangeRate();
@@ -81,7 +86,25 @@ const Index = () => {
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isProductNotFound, setIsProductNotFound] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(initialProfileOpen);
+
+  const isCartRoute = location.pathname === "/cart" || location.pathname === "/checkout" || location.pathname === "/basket" || location.pathname === "/korzina";
+  const isProfileRoute = location.pathname === "/profile";
+  const isCatalogRoute = location.pathname === "/catalog" || location.pathname === "/category" || location.pathname === "/products";
+
+  useEffect(() => {
+    if (initialCartOpen || isCartRoute) {
+      cart.setIsOpen(true);
+    }
+    if (initialProfileOpen || isProfileRoute) {
+      setIsProfileOpen(true);
+    }
+    if (isCatalogRoute && !location.pathname.includes("/category/")) {
+      setTimeout(() => {
+        document.getElementById("catalog")?.scrollIntoView({ behavior: "smooth" });
+      }, 150);
+    }
+  }, [initialCartOpen, initialProfileOpen, location.pathname, isCartRoute, isProfileRoute, isCatalogRoute]);
 
   // Extract category slug from params or direct path (e.g. /category/monitors or direct /monitors)
   const activeCategorySlug = useMemo(() => {
@@ -442,8 +465,62 @@ const Index = () => {
         </Helmet>
       )}
 
-      {/* ── 3. Default Home Page SEO Helmet ── */}
-      {!selectedProduct && !categorySeo && !isProductNotFound && (
+      {/* ── 3. Cart / Checkout SEO Helmet ── */}
+      {!selectedProduct && !categorySeo && !isProductNotFound && isCartRoute && (
+        <Helmet>
+          <title>Корзина покупок — Оформление заказа | AlfaComp</title>
+          <meta
+            name="description"
+            content="Корзина интернет-магазина AlfaComp. Оформление заказа на компьютеры, мониторы и комплектующие с доставкой по Ташкенту и Узбекистану."
+          />
+          <link rel="canonical" href="https://alfacomp.uz/cart" />
+          <meta name="robots" content="noindex, follow" />
+        </Helmet>
+      )}
+
+      {/* ── 4. Profile SEO Helmet ── */}
+      {!selectedProduct && !categorySeo && !isProductNotFound && !isCartRoute && isProfileRoute && (
+        <Helmet>
+          <title>Личный кабинет покупателя — Профиль | AlfaComp</title>
+          <meta
+            name="description"
+            content="Личный кабинет покупателя AlfaComp. Просмотр данных профиля и контактной информации."
+          />
+          <link rel="canonical" href="https://alfacomp.uz/profile" />
+          <meta name="robots" content="noindex, follow" />
+        </Helmet>
+      )}
+
+      {/* ── 5. Catalog Hub SEO Helmet (/catalog, /category, /products) ── */}
+      {!selectedProduct && !categorySeo && !isProductNotFound && !isCartRoute && !isProfileRoute && isCatalogRoute && (
+        <Helmet>
+          <title>Каталог компьютерной техники и мониторов в Ташкенте | AlfaComp</title>
+          <meta
+            name="description"
+            content="Полный каталог техники AlfaComp: игровые ПК, мониторы 144–360 Гц, комплектующие, ИБП Ion, сетевое оборудование в Ташкенте. Официальная гарантия, доставка по Узбекистану."
+          />
+          <link rel="canonical" href="https://alfacomp.uz/catalog" />
+          <meta property="og:title" content="Каталог компьютерной техники и мониторов в Ташкенте — AlfaComp" />
+          <meta
+            property="og:description"
+            content="Полный каталог техники AlfaComp: игровые ПК, мониторы 144–360 Гц, комплектующие, ИБП Ion, сетевое оборудование в Ташкенте."
+          />
+          <meta property="og:image" content="https://alfacomp.uz/banner.jpg" />
+          <meta property="og:url" content="https://alfacomp.uz/catalog" />
+          <meta property="og:type" content="website" />
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:title" content="Каталог компьютерной техники — AlfaComp" />
+          <meta
+            name="twitter:description"
+            content="Полный каталог техники AlfaComp: игровые ПК, мониторы 144–360 Гц, комплектующие, ИБП Ion, сетевое оборудование."
+          />
+          <meta name="twitter:image" content="https://alfacomp.uz/banner.jpg" />
+          <script type="application/ld+json">{JSON.stringify(catalogItemListJsonLd)}</script>
+        </Helmet>
+      )}
+
+      {/* ── 6. Default Home Page SEO Helmet ── */}
+      {!selectedProduct && !categorySeo && !isProductNotFound && !isCartRoute && !isProfileRoute && !isCatalogRoute && (
         <Helmet>
           <title>Купить компьютер и монитор в Ташкенте — Магазин ПК AlfaComp.uz</title>
           <meta
@@ -472,14 +549,14 @@ const Index = () => {
       )}
 
       {isAdmin && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] bg-[#14171E] text-white text-xs font-mono px-4 py-2 rounded-lg flex items-center gap-3 shadow-2xl border border-[#1565C0]/40">
+        <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-[100] bg-[#0c1322]/95 backdrop-blur-md text-white text-xs font-mono px-4 py-2 rounded-xl flex items-center gap-3 shadow-2xl border border-[#0066ff]/50">
           <span className="hidden sm:flex items-center gap-1.5 text-white/70">
-            <Shield className="w-3.5 h-3.5 text-[#1565C0]" />
+            <Shield className="w-3.5 h-3.5 text-[#38bdf8]" />
             Режим администратора
           </span>
           <Link
             to="/admin"
-            className="px-3 py-1 bg-[#1565C0] text-white rounded font-sans text-xs font-semibold hover:bg-[#1976D2] transition"
+            className="px-3 py-1 bg-[#0066ff] text-white rounded-lg font-sans text-xs font-semibold hover:bg-[#1a75ff] transition shadow-[0_2px_10px_rgba(0,102,255,0.4)]"
           >
             Панель управления →
           </Link>

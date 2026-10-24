@@ -59,9 +59,14 @@ const App = () => {
             {/* Cart & Checkout Routes for Google Ads */}
             <Route path="/cart" element={<Index initialCartOpen={true} />} />
             <Route path="/checkout" element={<Index initialCartOpen={true} />} />
+            <Route path="/basket" element={<Navigate to="/cart" replace />} />
+            <Route path="/korzina" element={<Navigate to="/cart" replace />} />
             <Route path="/cart/success" element={<Suspense fallback={<PageFallback />}><OrderSuccess /></Suspense>} />
             <Route path="/order-success" element={<Suspense fallback={<PageFallback />}><OrderSuccess /></Suspense>} />
             <Route path="/thank-you" element={<Suspense fallback={<PageFallback />}><OrderSuccess /></Suspense>} />
+
+            {/* Profile Route */}
+            <Route path="/profile" element={<Index initialProfileOpen={true} />} />
 
             {/* Direct category shortcuts for high commercial visibility */}
             <Route path="/monitors" element={<Index />} />

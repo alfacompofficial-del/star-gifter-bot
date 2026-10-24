@@ -82,6 +82,8 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    max-width: 100vw;
   }
 
   body {
@@ -94,6 +96,8 @@
     background-size: 56px 56px, 56px 56px;
     background-attachment: fixed;
     min-height: 100dvh;
+    overflow-x: hidden;
+    max-width: 100vw;
   }
 
   /* Precision scrollbar */

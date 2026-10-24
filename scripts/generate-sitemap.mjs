@@ -1,4 +1,4 @@
-import { writeFileSync } from "node:fs";
+import { writeFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 
 const BASE_URL = "https://alfacomp.uz";
@@ -6,6 +6,7 @@ const TODAY = new Date().toISOString().split("T")[0];
 
 const STATIC_ROUTES = [
   { path: "/", changefreq: "daily", priority: "1.0" },
+  { path: "/catalog", changefreq: "daily", priority: "0.9" },
   // Category Landing Pages
   { path: "/category/ups", changefreq: "daily", priority: "0.8" },
   { path: "/category/monitors", changefreq: "daily", priority: "0.8" },
@@ -18,6 +19,7 @@ const STATIC_ROUTES = [
   { path: "/category/deco", changefreq: "daily", priority: "0.8" },
   { path: "/category/speakers", changefreq: "daily", priority: "0.8" },
   { path: "/category/mice", changefreq: "daily", priority: "0.8" },
+  { path: "/category/videocards", changefreq: "daily", priority: "0.8" },
   { path: "/category/computers", changefreq: "daily", priority: "0.8" },
   // Informational & Content Pages
   { path: "/about", changefreq: "monthly", priority: "0.6" },

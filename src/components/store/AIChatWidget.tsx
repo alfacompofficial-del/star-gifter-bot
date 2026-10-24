@@ -22,7 +22,8 @@ import ReactMarkdown from "react-markdown";
 import type { Product } from "@/hooks/useProducts";
 import { formatPrice } from "@/lib/constants";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
-import { streamGeminiChat, type ChatMessage } from "@/services/geminiChat";
+import { streamGeminiChat, isGeminiKeyConfigured, type ChatMessage } from "@/services/geminiChat";
+import { streamLocalAssistantResponse } from "@/services/catalogAssistant";
 import { VoiceRecorder, formatDuration } from "@/utils/audioRecorder";
 
 export interface AIChatWidgetProps {
@@ -131,6 +132,9 @@ const AIChatWidget = ({ products = [], onSelectProduct, onAddToCart }: AIChatWid
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [volumeLevel, setVolumeLevel] = useState(0);
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const speechRecognitionRef = useRef<any>(null);
+  const speechTranscriptRef = useRef<string>("");
 
   // Inventory counters
   const totalCount = products.length;
@@ -194,7 +198,7 @@ const AIChatWidget = ({ products = [], onSelectProduct, onAddToCart }: AIChatWid
     openedProductsRef.current.clear();
   };
 
-  // Start voice recording
+  // Start voice recording with optional Web Speech API real-time transcription
   const startVoiceRecording = async () => {
     try {
       if (!recorderRef.current) {
@@ -202,6 +206,32 @@ const AIChatWidget = ({ products = [], onSelectProduct, onAddToCart }: AIChatWid
       }
       setRecordingDuration(0);
       setVolumeLevel(0);
+      speechTranscriptRef.current = "";
+
+      // Try browser Web Speech API for instant voice-to-text
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        try {
+          const recognition = new SpeechRecognition();
+          recognition.lang = "ru-RU";
+          recognition.interimResults = true;
+          recognition.continuous = true;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          recognition.onresult = (event: any) => {
+            let transcript = "";
+            for (let i = 0; i < event.results.length; i++) {
+              transcript += event.results[i][0].transcript + " ";
+            }
+            speechTranscriptRef.current = transcript.trim();
+          };
+          recognition.start();
+          speechRecognitionRef.current = recognition;
+        } catch {
+          // Ignore if speech recognition is not permitted or unavailable
+        }
+      }
+
       await recorderRef.current.start((vol) => setVolumeLevel(vol));
       setIsRecording(true);
 
@@ -220,13 +250,20 @@ const AIChatWidget = ({ products = [], onSelectProduct, onAddToCart }: AIChatWid
       clearInterval(timerIntervalRef.current);
       timerIntervalRef.current = null;
     }
+    if (speechRecognitionRef.current) {
+      try {
+        speechRecognitionRef.current.stop();
+      } catch {}
+      speechRecognitionRef.current = null;
+    }
     recorderRef.current?.cancel();
     setIsRecording(false);
     setRecordingDuration(0);
     setVolumeLevel(0);
+    speechTranscriptRef.current = "";
   };
 
-  // Stop voice recording and send directly to Gemini 3.8 Flash
+  // Stop voice recording and send to AI
   const stopAndSendVoice = async () => {
     if (!recorderRef.current || !isRecording) return;
     if (timerIntervalRef.current) {
@@ -234,13 +271,21 @@ const AIChatWidget = ({ products = [], onSelectProduct, onAddToCart }: AIChatWid
       timerIntervalRef.current = null;
     }
 
+    if (speechRecognitionRef.current) {
+      try {
+        speechRecognitionRef.current.stop();
+      } catch {}
+      speechRecognitionRef.current = null;
+    }
+
     try {
       const recorded = await recorderRef.current.stop();
+      const transcribedText = speechTranscriptRef.current;
       setIsRecording(false);
       setRecordingDuration(0);
       setVolumeLevel(0);
 
-      await send(undefined, {
+      await send(transcribedText || undefined, {
         data: recorded.base64,
         mimeType: recorded.mimeType,
         duration: recorded.duration,
@@ -288,7 +333,7 @@ const AIChatWidget = ({ products = [], onSelectProduct, onAddToCart }: AIChatWid
     const userMsg: ChatMessage = audioPayload
       ? {
           role: "user",
-          content: "",
+          content: textToSend,
           isAudio: true,
           audioUrl: audioPayload.audioUrl,
           audioDuration: audioPayload.duration,
@@ -318,7 +363,7 @@ const AIChatWidget = ({ products = [], onSelectProduct, onAddToCart }: AIChatWid
       })
       .join("\n");
 
-    const systemPrompt = `Ты — официальный AI-консультант магазина компьютерной техники AlfaComp (г. Ташкент, Узбекистан). Работаешь на базе модели Gemini 3.8 Flash.
+    const systemPrompt = `Ты — официальный AI-консультант магазина компьютерной техники AlfaComp (г. Ташкент, Узбекистан). Работаешь на базе модели Gemini.
 
 📊 АКТУАЛЬНЫЕ СЧЕТЧИКИ И СТАТИСТИКА СКЛАДА (ОБЯЗАТЕЛЬНО ИСПОЛЬЗУЙ ЭТИ ТОЧНЫЕ ДАННЫЕ):
 - Всего товаров на сайте: ${totalCount} шт.
@@ -347,54 +392,78 @@ ${productCatalogText}
 
     let assistantSoFar = "";
 
-    try {
-      await streamGeminiChat({
-        messages: allMessages,
-        systemPrompt,
-        audio: audioPayload
-          ? {
-              data: audioPayload.data,
-              mimeType: audioPayload.mimeType,
-              duration: audioPayload.duration,
-            }
-          : undefined,
-        onChunk: (_delta, accumulated) => {
-          assistantSoFar = accumulated;
+    const handleChunk = (_delta: string, accumulated: string) => {
+      assistantSoFar = accumulated;
 
-          // Check if AI included an ACTION_OPEN tag
-          const actionMatch = assistantSoFar.match(/\[\[ACTION_OPEN:(\d+)\]\]/);
-          if (actionMatch) {
-            const actionProductId = Number(actionMatch[1]);
-            if (actionProductId && !openedProductsRef.current.has(actionProductId)) {
-              openedProductsRef.current.add(actionProductId);
-              const found = products.find((p) => p.id === actionProductId);
-              if (found && onSelectProduct) {
-                onSelectProduct(found);
-              }
-            }
+      // Check if AI included an ACTION_OPEN tag
+      const actionMatch = assistantSoFar.match(/\[\[ACTION_OPEN:(\d+)\]\]/);
+      if (actionMatch) {
+        const actionProductId = Number(actionMatch[1]);
+        if (actionProductId && !openedProductsRef.current.has(actionProductId)) {
+          openedProductsRef.current.add(actionProductId);
+          const found = products.find((p) => p.id === actionProductId);
+          if (found && onSelectProduct) {
+            onSelectProduct(found);
           }
-
-          setMessages((prev) => {
-            const last = prev[prev.length - 1];
-            if (last?.role === "assistant") {
-              return prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: assistantSoFar } : m));
-            }
-            return [...prev, { role: "assistant", content: assistantSoFar }];
-          });
-        },
-      });
-    } catch (e) {
-      console.error("Gemini stream error:", e);
-      const realErr = e instanceof Error ? e.message : String(e);
-      let fallbackText = `⚠️ AI временно недоступен.\n\n*Причина:* ${realErr}\n\nЕсли проблема повторяется — обратитесь к администратору.`;
-      const lower = textToSend.toLowerCase();
-      if (lower.includes("сколько") || lower.includes("товар") || lower.includes("счетчик")) {
-        fallbackText = `В нашем каталоге прямо сейчас **${totalCount} товаров** (${inStockCount} в наличии)!\n\nКатегории:\n${Object.entries(categoryCounts).map(([cat, c]) => `• **${cat}**: ${c} шт.`).join("\n")}\n\nНапишите, какой товар вас интересует, и я помогу с выбором!`;
-      } else if (lastMentionedProduct && /покажи|открой/i.test(lower)) {
-        fallbackText = `Открываю карточку **${lastMentionedProduct.name}**!\n\n[PRODUCT:${lastMentionedProduct.id}]`;
-        onSelectProduct?.(lastMentionedProduct);
+        }
       }
-      setMessages((prev) => [...prev, { role: "assistant", content: fallbackText }]);
+
+      setMessages((prev) => {
+        const last = prev[prev.length - 1];
+        if (last?.role === "assistant") {
+          return prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: assistantSoFar } : m));
+        }
+        return [...prev, { role: "assistant", content: assistantSoFar }];
+      });
+    };
+
+    try {
+      if (isGeminiKeyConfigured()) {
+        await streamGeminiChat({
+          messages: allMessages,
+          systemPrompt,
+          audio: audioPayload
+            ? {
+                data: audioPayload.data,
+                mimeType: audioPayload.mimeType,
+                duration: audioPayload.duration,
+              }
+            : undefined,
+          onChunk: handleChunk,
+        });
+      } else {
+        // Run intelligent catalog assistant engine
+        await streamLocalAssistantResponse({
+          userQuery: textToSend,
+          messages: allMessages,
+          products,
+          exchangeRate,
+          lastMentionedProduct,
+          isAudio: Boolean(audioPayload),
+          onChunk: handleChunk,
+        });
+      }
+    } catch {
+      // Seamlessly fall back to intelligent local assistant
+      try {
+        await streamLocalAssistantResponse({
+          userQuery: textToSend,
+          messages: allMessages,
+          products,
+          exchangeRate,
+          lastMentionedProduct,
+          isAudio: Boolean(audioPayload),
+          onChunk: handleChunk,
+        });
+      } catch {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: "Здравствуйте! Я могу помочь вам выбрать любой товар из каталога AlfaComp. Напишите, какой компьютер или комплектующие вы ищете!",
+          },
+        ]);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -563,8 +632,8 @@ ${productCatalogText}
               <div>
                 <div className="flex items-center gap-1.5">
                   <p className="text-xs font-bold text-white">AlfaComp AI</p>
-                  <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-[#1565C0]/20 text-[#1565C0] border border-[#1565C0]/30 font-bold">
-                    GEMINI 3.8 FLASH
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-[#1565C0]/20 text-[#38bdf8] border border-[#1565C0]/30 font-bold uppercase tracking-wider">
+                    {isGeminiKeyConfigured() ? "GEMINI AI" : "ALFA SMART AI"}
                   </span>
                 </div>
                 <p className="text-[10px] font-mono text-white/50">
