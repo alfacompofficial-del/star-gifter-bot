@@ -1,7 +1,7 @@
 import { writeFileSync } from "fs";
 import { resolve } from "path";
 
-const BASE_URL = "https://star-gift-anon.lovable.app";
+const BASE_URL = "https://alfacomp.uz";
 
 interface SitemapEntry {
   path: string;
