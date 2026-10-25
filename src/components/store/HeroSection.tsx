@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
 import heroDeskImage from "@/assets/hero-desk-setup.png";
+import heroDeskWebp from "@/assets/hero-desk-setup.webp";
 
 interface HeroSectionProps {
   asSubheading?: boolean;
@@ -106,14 +107,19 @@ const HeroSection = ({ asSubheading = false }: HeroSectionProps) => {
               transition={{ duration: 0.6, delay: 0.15 }}
               className="relative w-full h-full flex items-center justify-end"
             >
-              <img
-                src={heroDeskImage}
-                alt="Игровой компьютер и рабочее место AlfaComp"
-                className="w-full h-full object-cover object-right sm:object-center"
-                loading="eager"
-                // @ts-expect-error fetchpriority
-                fetchpriority="high"
-              />
+              <picture className="w-full h-full flex items-center justify-end">
+                <source srcSet={heroDeskWebp} type="image/webp" />
+                <img
+                  src={heroDeskImage}
+                  alt="Игровой компьютер и рабочее место AlfaComp"
+                  className="w-full h-full object-cover object-right sm:object-center"
+                  loading="eager"
+                  width={1920}
+                  height={1071}
+                  // @ts-expect-error fetchpriority
+                  fetchpriority="high"
+                />
+              </picture>
               {/* Left-edge smooth fade into dark navy */}
               <div className="absolute inset-y-0 left-0 w-24 sm:w-40 bg-gradient-to-r from-[#050a16] via-[#050a16]/70 to-transparent pointer-events-none" />
               {/* Bottom subtle fade */}
