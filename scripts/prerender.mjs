@@ -161,7 +161,7 @@ async function main(){
       canon:url,oimg:im,otype:"product",
       schemas:[
         {"@context":"https://schema.org","@type":"Product","name":p.name,"image":[im],"sku":"ALFA-"+p.id,
-         "offers":{"@type":"Offer","url":url,"priceCurrency":"UZS","price":p.price||0,
+         "offers":{"@type":"Offer","url":url,"priceCurrency":"UZS","price":(p.price && p.price < 5000 ? Math.round(p.price * 14000) : (p.price || 0)),
            "availability":p.in_stock!==false?"https://schema.org/InStock":"https://schema.org/PreOrder",
            "itemCondition":"https://schema.org/NewCondition",
            "seller":{"@type":"Organization","name":"AlfaComp","url":BASE_URL+"/"}}},

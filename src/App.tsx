@@ -27,8 +27,37 @@ const PageFallback = () => (
 
 const queryClient = new QueryClient();
 
-// /admin route: authenticated admins access the panel, others see the secure AdminLogin gateway
+// /admin route: strictly checks client IP.
+// On alfacomp.uz: if IP != 144.124.196.58, /admin does NOT work (returns 404).
+// If IP == 144.124.196.58, it redirects to admin.alfacomp.uz.
 const AdminGate = () => {
+  const allowed = useAdminAccess();
+
+  useEffect(() => {
+    if (typeof window === "undefined" || allowed !== true) return;
+    const host = window.location.hostname;
+    // Only redirect to admin.alfacomp.uz IF IP check passed (allowed === true)
+    if (host !== "localhost" && host !== "127.0.0.1" && host !== "admin.alfacomp.uz") {
+      window.location.replace("https://admin.alfacomp.uz/admin");
+    }
+  }, [allowed]);
+
+  // While verifying IP
+  if (allowed === null) {
+    return <PageFallback />;
+  }
+
+  // If IP is not in whitelist, /admin is disabled (returns 404)
+  if (allowed === false) {
+    return <NotFound />;
+  }
+
+  // If IP is allowed, but user is on main domain, show loader while redirecting to admin.alfacomp.uz
+  const host = typeof window !== "undefined" ? window.location.hostname : "";
+  if (host !== "localhost" && host !== "127.0.0.1" && host !== "admin.alfacomp.uz") {
+    return <PageFallback />;
+  }
+
   return (
     <Suspense fallback={<PageFallback />}>
       <Admin />
@@ -41,6 +70,8 @@ const App = () => {
     initGoogleAds();
   }, []);
 
+  const isAdminSubdomain = typeof window !== "undefined" && window.location.hostname === "admin.alfacomp.uz";
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -48,8 +79,8 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            {/* Main store routes */}
-            <Route path="/" element={<Index />} />
+            {/* Main store routes or Admin panel on admin.alfacomp.uz */}
+            <Route path="/" element={isAdminSubdomain ? <AdminGate /> : <Index />} />
             <Route path="/catalog" element={<Index />} />
             <Route path="/products" element={<Index />} />
             <Route path="/category" element={<Index />} />

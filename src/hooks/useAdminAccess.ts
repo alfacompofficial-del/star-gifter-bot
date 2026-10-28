@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-// Список разрешённых IP
+// Список разрешённых IP для административной панели
 const ALLOWED_ADMIN_IPS: string[] = [
-  "213.230.78.107",
-  "144.124.196.27", // Новый IP
+  "144.124.196.58", // Персональный IP администратора
 ];
 
-const CACHE_KEY = "admin_ip_cache_v2";
-const CACHE_ALLOWED_KEY = "admin_allowed_v2";
+const CACHE_KEY = "admin_ip_cache_v3";
+const CACHE_ALLOWED_KEY = "admin_allowed_v3";
 const VISIT_LOGGED_KEY = "visit_logged_v1";
 
 const getPersistedResult = (): boolean | null => {
@@ -23,7 +22,8 @@ const getPersistedResult = (): boolean | null => {
 let cachedAllowed: boolean | null = getPersistedResult();
 let inflight: Promise<boolean> | null = null;
 
-const isLocalhost = (): boolean => {
+export const isLocalhost = (): boolean => {
+  if (typeof window === "undefined") return false;
   const host = window.location.hostname;
   return host === "localhost" || host === "127.0.0.1" || host === "::1";
 };
@@ -58,7 +58,6 @@ const logVisit = async (info: {
 };
 
 const fetchIpInfo = async (): Promise<{ ip: string; country?: string; country_code?: string; city?: string; region?: string } | null> => {
-  // ipapi.co даёт IP + гео за один запрос
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 5000);
@@ -75,7 +74,7 @@ const fetchIpInfo = async (): Promise<{ ip: string; country?: string; country_co
       };
     }
   } catch {}
-  // Фолбэки — только IP
+
   for (const url of ["https://api.ipify.org?format=json", "https://api64.ipify.org?format=json"]) {
     try {
       const res = await fetch(url);
@@ -90,16 +89,10 @@ const fetchIpInfo = async (): Promise<{ ip: string; country?: string; country_co
 export const isUserAdmin = (): boolean => {
   if (typeof window === "undefined") return false;
   if (isLocalhost()) return true;
-  try {
-    if (sessionStorage.getItem("alfacomp_admin_auth") === "1") return true;
-    if (localStorage.getItem("alfacomp_admin_auth") === "1") return true;
-  } catch {}
   return cachedAllowed === true;
 };
 
 const checkAccess = async (): Promise<boolean> => {
-  if (isUserAdmin()) return true;
-  // Instant access on localhost — no IP fetch needed
   if (isLocalhost()) {
     cachedAllowed = true;
     try {
@@ -113,12 +106,12 @@ const checkAccess = async (): Promise<boolean> => {
 
   inflight = (async () => {
     const info = await fetchIpInfo();
-    if (!info) return isUserAdmin() || (cachedAllowed ?? false);
+    if (!info) return cachedAllowed ?? false;
 
     // Логируем визит (одноразово за сессию)
     logVisit(info);
 
-    const result = isAllowedIp(info.ip) || isUserAdmin();
+    const result = isAllowedIp(info.ip);
     cachedAllowed = result;
     console.log(`[AdminAccess] Detected IP: ${info.ip} (${info.country || "?"}) | Allowed: ${result}`);
     try {
@@ -135,31 +128,21 @@ const checkAccess = async (): Promise<boolean> => {
 
 export const useAdminAccess = () => {
   const [allowed, setAllowed] = useState<boolean | null>(() => {
-    if (isUserAdmin()) return true;
     return isLocalhost() ? true : cachedAllowed;
   });
 
   useEffect(() => {
-    const handleAuthChange = () => {
-      setAllowed(isUserAdmin() ? true : cachedAllowed);
-    };
-
-    window.addEventListener("admin-auth-changed", handleAuthChange);
-    window.addEventListener("storage", handleAuthChange);
-
     let cancelled = false;
     checkAccess().then((result) => {
       if (!cancelled) {
-        setAllowed(isUserAdmin() ? true : result);
+        setAllowed(result);
       }
     });
 
     return () => {
       cancelled = true;
-      window.removeEventListener("admin-auth-changed", handleAuthChange);
-      window.removeEventListener("storage", handleAuthChange);
     };
   }, []);
 
-  return isUserAdmin() ? true : allowed;
+  return isLocalhost() ? true : allowed;
 };

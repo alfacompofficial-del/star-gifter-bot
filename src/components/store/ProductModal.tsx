@@ -2,16 +2,18 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
-  X, Heart, Share2, ShoppingCart, Send, ZoomIn, CheckCircle,
-  Check, Pencil, Plus, Trash2, Eye, ArrowUpRight, Package, ChevronRight
+  X, Heart, Share2, ShoppingCart, Send, ZoomIn, CheckCircle2,
+  Check, Pencil, Plus, Trash2, Eye, ChevronRight, ChevronLeft,
+  Cpu, HardDrive, Layers, Fan, Zap, Snowflake, Diamond, ShieldCheck,
+  MapPin, Sparkles, CircleDot, SlidersHorizontal, Play, Star
 } from "lucide-react";
 import { resolveProductPrices } from "@/lib/constants";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
 import { getProductUrl, getCategoryUrl } from "@/lib/slugify";
 import type { Product } from "@/hooks/useProducts";
+import { useProductRating } from "@/hooks/useProductRating";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import ProductRatingWidget from "./ProductRatingWidget";
 import { clearProductsCache, broadcastProductsUpdate } from "@/lib/productsDb";
 
 interface ProductModalProps {
@@ -21,22 +23,89 @@ interface ProductModalProps {
   isAdmin?: boolean;
 }
 
+type ModalTab = "overview" | "specs" | "warranty";
+
+const DEFAULT_CATEGORY_SPECS: Record<string, Record<string, string>> = {
+  "Видеокарты": {
+    "Графический процессор": "NVIDIA GeForce RTX",
+    "Память": "32 ГБ GDDR7X",
+    "Интерфейс": "PCI Express 5.0",
+    "Охлаждение": "Тройной вентилятор",
+    "Гарантия": "До 36 месяцев",
+  },
+  "Комплектующие": {
+    "Графический процессор": "Высокопроизводительный чипсет",
+    "Память": "Высокоскоростная память DDR5 / PCIe",
+    "Интерфейс": "PCI Express 5.0 / M.2 NVMe",
+    "Охлаждение": "Эффективный радиатор",
+    "Гарантия": "12–36 месяцев",
+  },
+  "Мониторы": {
+    "Тип панели": "Fast IPS / OLED / VA",
+    "Память": "144–360 Гц частота обновления",
+    "Интерфейс": "HDMI 2.1, DisplayPort 1.4",
+    "Охлаждение": "Пассивное охлаждение корпуса",
+    "Гарантия": "24–36 месяцев",
+  },
+  "ИБП": {
+    "Графический процессор": "Line-Interactive / Online микропроцессор",
+    "Память": "Встроенный аккумулятор Ion",
+    "Интерфейс": "USB, RS-232, LCD экран",
+    "Охлаждение": "Интеллектуальный вентилятор",
+    "Гарантия": "24 месяца",
+  },
+  "Сеть": {
+    "Графический процессор": "Сетевой процессор Quad-Core",
+    "Память": "Wi-Fi 6 (802.11ax) / Wi-Fi 7 Dual-Band",
+    "Интерфейс": "Gigabit Ethernet (1000 Mbps)",
+    "Охлаждение": "Пассивная вентиляция",
+    "Гарантия": "24 месяца",
+  },
+  "Wi-Fi роутеры": {
+    "Графический процессор": "Двухъядерный CPU с аппаратным ускорением",
+    "Память": "Wi-Fi 6 / Wi-Fi 7 Dual-Band до 5400 Мбит/с",
+    "Интерфейс": "Gigabit WAN + 4x LAN",
+    "Охлаждение": "Решётчатый радиаторный корпус",
+    "Гарантия": "24 месяца",
+  },
+  "Компьютеры": {
+    "Графический процессор": "NVIDIA GeForce RTX 50-серии",
+    "Память": "32–64 ГБ DDR5 Kingston Fury",
+    "Интерфейс": "PCI Express 5.0 / Wi-Fi 6E",
+    "Охлаждение": "Жидкостное СЖО / 3x ARGB",
+    "Гарантия": "36 месяцев",
+  },
+  "Моноблоки": {
+    "Графический процессор": "Intel Core i5 / i7 с графикой Iris Xe",
+    "Память": "16 ГБ DDR4/DDR5 + 512 ГБ SSD NVMe",
+    "Интерфейс": "USB-C, HDMI, Gigabit LAN, Wi-Fi",
+    "Охлаждение": "Турбинный кулер с низким уровнем шума",
+    "Гарантия": "12–24 месяца",
+  },
+};
+
 const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalProps) => {
   const { exchangeRate } = useExchangeRate();
+  const [activeTab, setActiveTab] = useState<ModalTab>("overview");
   const [liked, setLiked] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
-  const [isZooming, setIsZooming] = useState(false);
-  const imgContainerRef = useRef<HTMLDivElement>(null);
+  const [activePhotoIdx, setActivePhotoIdx] = useState(0);
 
-  // Admin: inline price editing
+  // Rating hook
+  const { userRating, averageRating, ratingCount, isSubmitting, submitRating } =
+    useProductRating({
+      productId: product?.id || 0,
+      initialRating: product?.rating,
+      initialRatingCount: product?.rating_count,
+    });
+  const [hoverRating, setHoverRating] = useState<number | null>(null);
+
+  // Admin inline editing
   const [editingPrice, setEditingPrice] = useState(false);
   const [priceValue, setPriceValue] = useState("");
   const [savingPrice, setSavingPrice] = useState(false);
-
-  // Admin: specs editing
   const [specs, setSpecs] = useState<Record<string, string>>({});
   const [editingSpecKey, setEditingSpecKey] = useState<string | null>(null);
   const [editingSpecValue, setEditingSpecValue] = useState("");
@@ -47,8 +116,10 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
 
   useEffect(() => {
     if (!product) return;
-    const likes = JSON.parse(localStorage.getItem("liked_products") || "[]");
-    setLiked(likes.includes(product.id));
+    try {
+      const likes = JSON.parse(localStorage.getItem("liked_products") || "[]");
+      setLiked(likes.includes(product.id));
+    } catch {}
   }, [product]);
 
   useEffect(() => {
@@ -70,15 +141,20 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
     setEditingSpecKey(null);
     setAddingSpec(false);
 
+    // Track views
     const incrementView = async () => {
       if (isAdmin) return;
       try {
-        await supabase.from("products").update({ views: (product.views || 0) + 1 } as never).eq("id", product.id);
+        await supabase
+          .from("products")
+          .update({ views: (product.views || 0) + 1 } as never)
+          .eq("id", product.id);
       } catch {}
     };
     incrementView();
   }, [product, isAdmin]);
 
+  // Handle ESC
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -90,211 +166,102 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
     return () => window.removeEventListener("keydown", handler);
   }, [onClose, lightboxOpen]);
 
+  // Lock body scroll
   useEffect(() => {
     document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = ""; };
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, []);
 
   const handleLike = useCallback(async () => {
     if (!product) return;
-    const likes: number[] = JSON.parse(localStorage.getItem("liked_products") || "[]");
-    const isLiking = !likes.includes(product.id);
-    const newLikes = isLiking ? [...likes, product.id] : likes.filter((id) => id !== product.id);
-    localStorage.setItem("liked_products", JSON.stringify(newLikes));
-    setLiked(isLiking);
     try {
-      const newGlobalLikes = Math.max(0, (product.likes || 0) + (isLiking ? 1 : -1));
-      await supabase.from("products").update({ likes: newGlobalLikes } as never).eq("id", product.id).catch(() => {});
-      product.likes = newGlobalLikes;
-    } catch {}
-  }, [product]);
+      const likes: number[] = JSON.parse(localStorage.getItem("liked_products") || "[]");
+      const nextLiked = !liked;
+      setLiked(nextLiked);
 
-  const handleShare = useCallback(async () => {
-    if (!product) return;
-    const url = `${window.location.origin}${getProductUrl(product)}`;
-    const { formattedUZS } = resolveProductPrices(product.price, exchangeRate || 14000);
-    const shareMessage = `${product.name} — ${formattedUZS} сум в AlfaComp\n${url}`;
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: product.name,
-          text: shareMessage,
-          url,
-        });
+      if (nextLiked) {
+        localStorage.setItem("liked_products", JSON.stringify([...likes, product.id]));
+        toast.success("Добавлено в избранное");
+        await supabase
+          .from("products")
+          .update({ likes: (product.likes || 0) + 1 } as never)
+          .eq("id", product.id);
       } else {
-        await navigator.clipboard.writeText(url);
-        setCopied(true);
-        toast.success("Ссылка на товар скопирована в буфер обмена!");
-        setTimeout(() => setCopied(false), 2000);
+        localStorage.setItem("liked_products", JSON.stringify(likes.filter((id) => id !== product.id)));
+        toast.info("Удалено из избранного");
+        await supabase
+          .from("products")
+          .update({ likes: Math.max(0, (product.likes || 1) - 1) } as never)
+          .eq("id", product.id);
       }
-    } catch (err: any) {
-      if (err?.name !== "AbortError") {
-        try {
-          await navigator.clipboard.writeText(url);
-          setCopied(true);
-          toast.success("Ссылка на товар скопирована в буфер обмена!");
-          setTimeout(() => setCopied(false), 2000);
-        } catch {}
-      }
+    } catch {}
+  }, [product, liked]);
+
+  const handleShare = useCallback(() => {
+    if (!product) return;
+    const url = `https://alfacomp.uz${getProductUrl(product)}`;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url);
+      setCopied(true);
+      toast.success("Ссылка скопирована в буфер обмена");
+      setTimeout(() => setCopied(false), 2500);
     }
-  }, [product, exchangeRate]);
+  }, [product]);
 
   const handleAddToCart = () => {
     if (!product) return;
     onAddToCart(product);
     setAddedToCart(true);
-    setTimeout(() => setAddedToCart(false), 2000);
+    toast.success("Товар добавлен в корзину!");
+    setTimeout(() => setAddedToCart(false), 2400);
   };
 
   const handleBuyNow = () => {
     if (!product) return;
-    const { formattedUZS, priceUSD } = resolveProductPrices(product.price, exchangeRate || 14000);
-    const usdText = priceUSD > 0 ? ` (~$${priceUSD})` : "";
+    const { formattedUZS } = resolveProductPrices(product.price, exchangeRate || 14000);
     const text = encodeURIComponent(
-      `Заказ из каталога AlfaComp:\nТовар: ${product.name}\nБренд: ${product.brand || "—"}\nЦена: ${formattedUZS} сум${usdText}\nСтатус: ${product.in_stock ? "В наличии" : "Под заказ"}`
+      `Здравствуйте! Хочу уточнить наличие товара в AlfaComp:\n\n📦 ${product.name}\n💰 Цена: ${formattedUZS} сум\n🔗 https://alfacomp.uz${getProductUrl(product)}`
     );
     window.open(`https://t.me/ALIBABO777?text=${text}`, "_blank");
   };
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!imgContainerRef.current) return;
-    const rect = imgContainerRef.current.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    setZoomPos({ x, y });
+  const handleStarClick = async (starIndex: number) => {
+    if (isSubmitting) return;
+    await submitRating(starIndex);
   };
 
-  // ── Admin Handlers ─────────────────────────────────────────────
   const handlePriceClick = () => {
     if (!isAdmin || !product) return;
-    // Seed with USD value
-    const rate = exchangeRate || 14000;
-    const usdSeed = product.price > 1000 ? Math.round(product.price / rate) : product.price;
-    setPriceValue(String(usdSeed));
+    const { priceUSD } = resolveProductPrices(product.price, exchangeRate || 14000);
+    setPriceValue(priceUSD !== null ? String(priceUSD) : String(product.price));
     setEditingPrice(true);
   };
 
   const handlePriceSave = async () => {
     if (!product) return;
-    const usdVal = parseFloat(priceValue);
-    if (isNaN(usdVal) || usdVal <= 0) { toast.error("Введите корректную цену в долларах ($)"); return; }
-    // Convert USD → UZS before saving
-    const rate = exchangeRate || 14000;
-    const uzsVal = Math.round(usdVal * rate);
+    const num = parseFloat(priceValue);
+    if (isNaN(num) || num < 0) {
+      toast.error("Введите корректную цену");
+      return;
+    }
     setSavingPrice(true);
     try {
-      const { error } = await supabase.from("products").update({ price: uzsVal }).eq("id", product.id);
+      const { error } = await supabase.from("products").update({ price: num }).eq("id", product.id);
       if (!error) {
-        toast.success(`Цена обновлена: $${usdVal} ≈ ${uzsVal.toLocaleString()} сум`);
-        product.price = uzsVal;
+        product.price = num;
         setEditingPrice(false);
+        toast.success(`Цена обновлена: $${num}`);
         await clearProductsCache();
         broadcastProductsUpdate();
       } else {
-        toast.error("Ошибка сохранения");
+        toast.error("Ошибка сохранения цены");
       }
     } catch {
-      toast.error("Ошибка соединения");
-    }
-    setSavingPrice(false);
-  };
-
-  const handleEditField = async (field: 'name' | 'brand' | 'category' | 'image', currentValue: string) => {
-    if (!isAdmin || !product) return;
-    const newValue = window.prompt(`Изменить ${field}:`, currentValue);
-    if (newValue !== null && newValue.trim() !== "" && newValue !== currentValue) {
-      try {
-        const { error } = await supabase.from("products").update({ [field]: newValue.trim() } as never).eq("id", product.id);
-        if (!error) {
-          toast.success("Обновлено!");
-          (product as any)[field] = newValue.trim();
-          await clearProductsCache();
-          broadcastProductsUpdate();
-        } else {
-          toast.error("Ошибка сохранения");
-        }
-      } catch {
-        toast.error("Ошибка соединения");
-      }
-    }
-  };
-
-  const handleDuplicate = async () => {
-    if (!isAdmin || !product) return;
-    localStorage.setItem("copied_product", JSON.stringify(product));
-    toast.success(`Товар "${product.name}" скопирован в буфер для вставки.`);
-    if (!window.confirm("Создать дубликат товара в текущей категории прямо сейчас?")) return;
-    try {
-      const { id, created_at, views, likes, ...productData } = product;
-      const { data, error } = await supabase.from("products").insert({
-        ...productData,
-        name: `${product.name} (Копия)`
-      }).select().single();
-      if (!error && data) {
-        toast.success("Товар продублирован!");
-        await clearProductsCache();
-        broadcastProductsUpdate();
-        onClose();
-      } else {
-        toast.error("Ошибка при дублировании");
-      }
-    } catch {
-      toast.error("Ошибка соединения");
-    }
-  };
-
-  const saveSpecs = async (newSpecs: Record<string, string>) => {
-    if (!product) return false;
-    setSavingSpec(true);
-    try {
-      const { error } = await supabase.from("products").update({ specs: newSpecs } as any).eq("id", product.id);
-      if (!error) {
-        setSpecs(newSpecs);
-        product.specs = newSpecs;
-        await clearProductsCache();
-        broadcastProductsUpdate();
-        setSavingSpec(false);
-        return true;
-      } else {
-        toast.error("Ошибка сохранения характеристики");
-      }
-    } catch {
-      toast.error("Ошибка соединения");
-    }
-    setSavingSpec(false);
-    return false;
-  };
-
-  const handleEditSpec = (key: string) => {
-    setEditingSpecKey(key);
-    setEditingSpecValue(specs[key] ?? "");
-  };
-
-  const handleSaveSpec = async (key: string) => {
-    const updated = { ...specs, [key]: editingSpecValue };
-    const ok = await saveSpecs(updated);
-    if (ok) { toast.success("Характеристика обновлена!"); setEditingSpecKey(null); }
-  };
-
-  const handleDeleteSpec = async (key: string) => {
-    const updated = { ...specs };
-    delete updated[key];
-    const ok = await saveSpecs(updated);
-    if (ok) toast.success("Характеристика удалена!");
-  };
-
-  const handleAddSpec = async () => {
-    const k = newSpecKey.trim();
-    const v = newSpecValue.trim();
-    if (!k || !v) { toast.error("Введите название и значение"); return; }
-    if (specs[k] !== undefined) { toast.error("Такая характеристика уже есть"); return; }
-    const updated = { ...specs, [k]: v };
-    const ok = await saveSpecs(updated);
-    if (ok) {
-      toast.success("Характеристика добавлена!");
-      setNewSpecKey("");
-      setNewSpecValue("");
-      setAddingSpec(false);
+      toast.error("Ошибка сети");
+    } finally {
+      setSavingPrice(false);
     }
   };
 
@@ -315,660 +282,679 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
     }
   };
 
-  if (!product) return null;
-
-  // Resolve prices: DB may store USD (e.g. 33) or UZS (e.g. 394350) — resolveProductPrices handles both
-  const { formattedUZS: priceUZS, priceUSD: priceUSDRef, priceUZS: numericPriceUZS } = resolveProductPrices(product.price, exchangeRate || 14000);
-  const oldPriceUZS = product.old_price
-    ? resolveProductPrices(product.old_price, exchangeRate || 14000).formattedUZS
-    : null;
-  const discount = product.old_price && product.price < product.old_price
-    ? Math.round((1 - product.price / product.old_price) * 100)
-    : null;
-
-  const DEFAULT_CATEGORY_SPECS: Record<string, Record<string, string>> = {
-    "ИБП": {
-      "Тип": "Источник бесперебойного питания",
-      "Стандарт": "Line-Interactive / Online",
-      "Форм-фактор": "Tower",
-      "Интерфейс": "USB, RS-232",
-      "Защита": "От перегрузки, короткого замыкания, скачков напряжения",
-      "Гарантия": "24 месяца",
-    },
-    "Мониторы": {
-      "Тип панели": "Fast IPS / VA",
-      "Частота обновления": "144–320 Гц",
-      "Время отклика": "1–5 мс",
-      "Подсветка": "LED",
-      "Подключение": "HDMI 2.1, DisplayPort 1.4",
-      "Гарантия": "24 месяца",
-    },
-    "Сеть": {
-      "Стандарт": "Wi-Fi 6 (802.11ax) / Wi-Fi 7",
-      "Диапазоны": "2.4 ГГц + 5 ГГц Dual-Band",
-      "LAN порты": "Gigabit Ethernet (1000 Mbps)",
-      "Безопасность": "WPA3 / WPA2-Personal",
-      "Гарантия": "24 месяца",
-    },
-    "Комплектующие": {
-      "Форм-фактор": "ATX / mATX / NVMe M.2",
-      "Гарантия": "12–36 месяцев",
-    },
-    "Моноблоки": {
-      "Операционная система": "Windows 11",
-      "Хранилище": "Высокоскоростной SSD NVMe",
-      "Гарантия": "12 месяцев",
-    },
+  const handleSaveSpec = async (key: string) => {
+    if (!product) return;
+    setSavingSpec(true);
+    try {
+      const updated = { ...specs, [key]: editingSpecValue };
+      const { error } = await supabase.from("products").update({ specs: updated }).eq("id", product.id);
+      if (!error) {
+        setSpecs(updated);
+        product.specs = updated;
+        setEditingSpecKey(null);
+        toast.success(`Характеристика "${key}" обновлена`);
+        await clearProductsCache();
+        broadcastProductsUpdate();
+      } else {
+        toast.error("Ошибка сохранения характеристики");
+      }
+    } catch {
+      toast.error("Ошибка сети");
+    } finally {
+      setSavingSpec(false);
+    }
   };
 
-  const categoryDefaults = DEFAULT_CATEGORY_SPECS[product.category] || {};
-  const mergedSpecs = { ...categoryDefaults, ...specs };
+  const handleAddSpec = async () => {
+    if (!product || !newSpecKey.trim()) return;
+    setSavingSpec(true);
+    try {
+      const updated = { ...specs, [newSpecKey.trim()]: newSpecValue.trim() };
+      const { error } = await supabase.from("products").update({ specs: updated }).eq("id", product.id);
+      if (!error) {
+        setSpecs(updated);
+        product.specs = updated;
+        setAddingSpec(false);
+        setNewSpecKey("");
+        setNewSpecValue("");
+        toast.success("Характеристика добавлена");
+        await clearProductsCache();
+        broadcastProductsUpdate();
+      } else {
+        toast.error("Ошибка добавления характеристики");
+      }
+    } catch {
+      toast.error("Ошибка сети");
+    } finally {
+      setSavingSpec(false);
+    }
+  };
 
-  const staticSpecs = [
-    { key: "Производитель", value: product.brand || "—" },
-    { key: "Категория", value: product.category || "—" },
+  const handleDeleteSpec = async (key: string) => {
+    if (!product) return;
+    const updated = { ...specs };
+    delete updated[key];
+    try {
+      const { error } = await supabase.from("products").update({ specs: updated }).eq("id", product.id);
+      if (!error) {
+        setSpecs(updated);
+        product.specs = updated;
+        toast.success(`Характеристика "${key}" удалена`);
+        await clearProductsCache();
+        broadcastProductsUpdate();
+      } else {
+        toast.error("Ошибка удаления");
+      }
+    } catch {
+      toast.error("Ошибка сети");
+    }
+  };
+
+  if (!product) return null;
+
+  const { formattedUZS: priceUZS, priceUSD: priceUSDRef } = resolveProductPrices(
+    product.price,
+    exchangeRate || 14000
+  );
+
+  const categoryDefaults = DEFAULT_CATEGORY_SPECS[product.category] || DEFAULT_CATEGORY_SPECS["Видеокарты"];
+  const mergedSpecs = { ...categoryDefaults, ...specs };
+  const specEntries = Object.entries(mergedSpecs);
+
+  // 4 Main showcase specs mapped to modern tech icons
+  const showcaseSpecs = [
     {
-      key: "Склад",
-      value: product.in_stock ? "В наличии (Ташкент)" : "Под заказ",
-      colorClass: product.in_stock ? "text-[#22c55e]" : "text-red-400"
+      icon: Cpu,
+      label: "Графический процессор",
+      value: mergedSpecs["Графический процессор"] || mergedSpecs["Процессор"] || product.name,
+    },
+    {
+      icon: HardDrive,
+      label: "Память",
+      value: mergedSpecs["Память"] || mergedSpecs["Оперативная память"] || mergedSpecs["Хранилище"] || "Высокоскоростная GDDR",
+    },
+    {
+      icon: Layers,
+      label: "Интерфейс",
+      value: mergedSpecs["Интерфейс"] || mergedSpecs["Подключение"] || "PCI Express 5.0",
+    },
+    {
+      icon: Fan,
+      label: "Охлаждение",
+      value: mergedSpecs["Охлаждение"] || mergedSpecs["Форм-фактор"] || "Тройной вентилятор",
     },
   ];
 
-  const dynamicSpecEntries = Object.entries(mergedSpecs);
-
-  const productSlug = product ? getProductUrl(product) : "";
-  const canonicalUrl = `https://alfacomp.uz${productSlug}`;
-  const seoTitle = product ? `${product.name} — купить в Ташкенте по цене ${priceUZS} сум | AlfaComp` : "";
-  const seoDescription = product ? `Купить ${product.name} в Ташкенте с официальной гарантией. Цена: ${priceUZS} сум${priceUSDRef ? ` (≈$${priceUSDRef})` : ""}. Бренд: ${product.brand || 'AlfaComp'}. ${product.in_stock ? 'В наличии на складе.' : 'Доступно под заказ.'} Доставка по Ташкенту за 1 день.` : "";
-
-  const productJsonLd = product ? {
-    "@context": "https://schema.org",
-    "@type": "Product",
-    name: product.name,
-    image: [product.image],
-    description: seoDescription,
-    // sku использует стабильный внутренний артикул AlfaComp.
-    // mpn НЕ указывается: артикул производителя отсутствует в данных БД.
-    sku: `ALFA-${product.id}`,
-    brand: {
-      "@type": "Brand",
-      name: product.brand || "AlfaComp",
-    },
-    ...(product.rating_count && product.rating_count > 0 ? {
-      aggregateRating: {
-        "@type": "AggregateRating",
-        ratingValue: (product.rating ?? 5.0).toFixed(1),
-        reviewCount: product.rating_count,
-        bestRating: "5",
-        worstRating: "1",
-      }
-    } : {}),
-    offers: {
-      "@type": "Offer",
-      url: canonicalUrl,
-      priceCurrency: "UZS",
-      price: numericPriceUZS,
-      // priceValidUntil намеренно убран: фиксированная дата без реального
-      // механизма обновления вводит поисковые системы в заблуждение.
-      availability: product.in_stock ? "https://schema.org/InStock" : "https://schema.org/PreOrder",
-      itemCondition: "https://schema.org/NewCondition",
-      seller: {
-        "@type": "Organization",
-        name: "AlfaComp",
-        url: "https://alfacomp.uz/",
-      },
-      hasMerchantReturnPolicy: {
-        "@type": "MerchantReturnPolicy",
-        applicableCountry: "UZ",
-        returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
-        merchantReturnDays: 14,
-        returnMethod: "https://schema.org/ReturnInStore",
-        // returnFees: FreeReturn убран — возврат товара является платным
-        // согласно реальной политике AlfaComp (не «бесплатный возврат»).
-      },
-      shippingDetails: {
-        "@type": "OfferShippingDetails",
-        shippingRate: {
-          "@type": "MonetaryAmount",
-          // Минимальная стоимость доставки по Ташкенту (от 30 000 сум согласно странице /delivery).
-          // Реальная сумма зависит от заказа — здесь указан подтверждённый минимум.
-          value: "30000",
-          currency: "UZS",
-        },
-        shippingDestination: {
-          "@type": "DefinedRegion",
-          addressCountry: "UZ",
-        },
-        deliveryTime: {
-          "@type": "ShippingDeliveryTime",
-          handlingTime: {
-            "@type": "QuantitativeValue",
-            minValue: 0,
-            maxValue: 1,
-            unitCode: "DAY",
-          },
-          transitTime: {
-            "@type": "QuantitativeValue",
-            minValue: 1,
-            maxValue: 3,
-            unitCode: "DAY",
-          },
-        },
-      },
-    },
-  } : null;
-
-  const breadcrumbsJsonLd = product ? {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      {
-        "@type": "ListItem",
-        position: 1,
-        name: "Главная",
-        item: "https://alfacomp.uz/",
-      },
-      {
-        "@type": "ListItem",
-        position: 2,
-        name: product.category || "Каталог",
-        item: `https://alfacomp.uz${getCategoryUrl(product.category)}`,
-      },
-      {
-        "@type": "ListItem",
-        position: 3,
-        name: product.name,
-        item: canonicalUrl,
-      },
-    ],
-  } : null;
-
-
   return (
     <>
-      {/* SEO meta tags for this product are managed exclusively by Index.tsx Helmet.
-          ProductModal intentionally does NOT emit a second <Helmet> to avoid
-          react-helmet-async conflicts (duplicate title/canonical/ld+json).
-          The productJsonLd and breadcrumbsJsonLd variables above remain available
-          if a standalone product page is extracted in the future. */}
-
-      {/* Backdrop */}
+      {/* Dark Blurred Backdrop */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.18 }}
-        className="fixed inset-0 z-[200] bg-black/88 backdrop-blur-[10px]"
+        className="fixed inset-0 z-[200] bg-black/92 backdrop-blur-md"
         onClick={onClose}
       />
 
-      {/* Modal Container */}
-      <div className="fixed inset-0 z-[201] flex items-center justify-center p-3 sm:p-6 pointer-events-none">
+      {/* Main Modal Dialog */}
+      <div className="fixed inset-0 z-[201] flex items-center justify-center p-2 sm:p-4 md:p-6 pointer-events-none overflow-y-auto">
         <motion.div
-          initial={{ opacity: 0, scale: 0.96, y: 16 }}
+          initial={{ opacity: 0, scale: 0.95, y: 14 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.97, y: 10 }}
-          transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-          className="surface-modal relative w-full max-w-4xl max-h-[92vh] overflow-y-auto pointer-events-auto"
+          exit={{ opacity: 0, scale: 0.96, y: 10 }}
+          transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
+          className="relative w-full max-w-[1280px] max-h-[95vh] bg-[#050814] border border-[#0066ff]/30 rounded-2xl sm:rounded-3xl overflow-hidden shadow-[0_0_90px_rgba(0,102,255,0.25)] pointer-events-auto flex flex-col text-white my-auto"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Close button */}
-          <motion.button
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.1, duration: 0.15 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={onClose}
-            aria-label="Закрыть"
-            className="absolute top-3.5 right-3.5 z-20 w-8 h-8 rounded-lg
-              bg-[#181B22] border border-white/[0.09]
-              hover:border-white/[0.2] hover:bg-[#20242E]
-              flex items-center justify-center text-white/60 hover:text-white
-              transition-all duration-150"
-          >
-            <X className="w-4 h-4" />
-          </motion.button>
+          {/* Ambient Lighting Behind Components */}
+          <div className="absolute top-0 left-1/4 w-[500px] h-[300px] bg-[#0066ff]/15 blur-[120px] pointer-events-none" />
+          <div className="absolute bottom-0 right-1/4 w-[450px] h-[300px] bg-[#00d2ff]/12 blur-[120px] pointer-events-none" />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
+          {/* ══════════════════════════════════════════════════════════════════ */}
+          {/* TOP SECTION: Breadcrumbs, Big Title, Status, and Close Cross Button */}
+          {/* ══════════════════════════════════════════════════════════════════ */}
+          <div className="relative z-10 px-6 pt-5 pb-3 sm:px-8 sm:pt-6 sm:pb-3 flex items-start justify-between gap-4">
+            <div className="min-w-0 pr-10">
+              {/* Breadcrumbs */}
+              <nav aria-label="Хлебные крошки" className="flex items-center gap-1.5 text-xs text-[#64748b] mb-1.5 font-medium flex-wrap">
+                <Link to="/" onClick={onClose} className="hover:text-[#00d2ff] transition-colors">
+                  Главная
+                </Link>
+                <span>/</span>
+                <Link
+                  to={getCategoryUrl(product.category)}
+                  onClick={onClose}
+                  className="hover:text-[#00d2ff] transition-colors"
+                >
+                  {product.category || "Видеокарты"}
+                </Link>
+                <span>/</span>
+                <span className="text-[#94a3b8] truncate max-w-[200px] sm:max-w-md">{product.name}</span>
+              </nav>
 
-            {/* ── LEFT: Image Stage ────────────────────── */}
-            <div className="relative bg-[#08090c] p-6 sm:p-8 flex flex-col justify-between
-              border-b md:border-b-0 md:border-r border-white/[0.07]">
+              {/* Title */}
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white leading-tight mb-2">
+                {product.name}
+              </h1>
 
-              {/* Status & admin row */}
-              <motion.div
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.06, duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-                className="flex items-center justify-between mb-5"
-              >
-                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-mono font-semibold uppercase tracking-[0.08em] border ${
-                  product.in_stock
-                    ? "bg-[#22c55e]/08 border-[#22c55e]/22 text-[#22c55e]"
-                    : "bg-red-500/08 border-red-500/20 text-red-400"
-                }`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${
-                    product.in_stock ? "bg-[#22c55e] status-dot-pulse" : "bg-red-400"
-                  }`} />
-                  {product.in_stock ? "В наличии · Ташкент" : "Под заказ"}
-                </span>
-
-                {isAdmin && (
-                  <button
-                    onClick={() => handleEditField('image', product.image)}
-                    className="text-[11px] font-mono text-[#1565C0] flex items-center gap-1 hover:underline opacity-70 hover:opacity-100 transition-opacity"
-                    title="Изменить фото"
-                  >
-                    <Pencil className="w-3 h-3" /> Фото
-                  </button>
-                )}
-              </motion.div>
-
-              {/* Zoomable image — first to appear */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.97 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.0, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                ref={imgContainerRef}
-                className="relative aspect-square flex items-center justify-center p-4 cursor-zoom-in group select-none overflow-hidden"
-                onMouseMove={handleMouseMove}
-                onMouseEnter={() => setIsZooming(true)}
-                onMouseLeave={() => setIsZooming(false)}
-                onClick={() => setLightboxOpen(true)}
-              >
-                {/* Ambient spotlight */}
-                <div className="absolute inset-0 pointer-events-none"
-                  style={{ background: "radial-gradient(ellipse 60% 55% at 50% 50%, rgba(21,101,192,0.05), transparent 70%)" }}
-                />
-
-                <img
-                  src={product.image}
-                  alt={`${product.name} — фото и характеристики, купить в Ташкенте | AlfaComp`}
-                  title={`${product.name} — оригинальное фото товара | AlfaComp`}
-                  itemProp="image"
-                  className="max-w-full max-h-full object-contain relative z-10 transition-all duration-200"
-                  style={
-                    isZooming
-                      ? { transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`, transform: "scale(1.75)" }
-                      : {}
-                  }
-                  onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }}
-                />
-
-                {/* Zoom hint */}
-                <div className="absolute bottom-2.5 right-2.5 z-20 flex items-center gap-1
-                  bg-black/75 border border-white/10 px-2 py-1 rounded
-                  text-[10px] font-mono text-white/55
-                  pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <ZoomIn className="w-3 h-3" />
-                  <span>Увеличить</span>
-                </div>
-              </motion.div>
-
-              {/* SKU bar */}
-              <div className="pt-3.5 border-t border-white/[0.05] flex items-center justify-between">
-                <span className="text-data text-[10px] text-white/25 tracking-[0.08em]">
-                  SKU: AC-{product.id.toString().padStart(4, '0')}
-                </span>
-                <div className="flex items-center gap-1 text-data text-[10px] text-white/20">
-                  <Package className="w-3 h-3" />
-                  <span>ORIGINAL HARDWARE</span>
-                </div>
+              {/* In-Stock Badge */}
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold tracking-wide bg-[#06231a] border border-[#10b981]/40 text-[#34d399] shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                <span className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
+                <span>{product.in_stock ? "В наличии" : "Под заказ"}</span>
               </div>
             </div>
 
-            {/* ── RIGHT: Info & Actions ─────────────────── */}
-            <div className="p-5 sm:p-7 flex flex-col gap-5">
+            {/* EXIT CROSS BUTTON ("крестик чтобы выйти") */}
+            <button
+              onClick={onClose}
+              aria-label="Закрыть окно"
+              title="Закрыть"
+              className="w-10 h-10 rounded-xl bg-white/[0.06] hover:bg-white/[0.14] border border-white/10 hover:border-[#00d2ff]/50 flex items-center justify-center text-white/70 hover:text-white transition-all duration-200 active:scale-95 shadow-lg group z-30 shrink-0"
+            >
+              <X className="w-5 h-5 transition-transform group-hover:rotate-90 duration-200" />
+            </button>
+          </div>
 
-              {/* Admin Control Bar */}
-              {isAdmin && (
-                <div className="flex items-center justify-between gap-2 p-2.5 bg-[#14171E]
-                  border border-white/[0.07] rounded-lg text-[11px] font-mono">
-                  <div className="flex items-center gap-3 text-white/50">
-                    <span className="flex items-center gap-1"><Eye className="w-3.5 h-3.5 text-[#1565C0]" /> {product.views || 0}</span>
-                    <span className="flex items-center gap-1"><Heart className="w-3.5 h-3.5 text-red-400" /> {product.likes || 0}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={handleToggleStock}
-                      className="px-2 py-1 rounded bg-white/8 hover:bg-white/15 text-white font-semibold transition-colors"
-                    >
-                      {product.in_stock ? "Снять со склада" : "Поставить в наличие"}
-                    </button>
-                    <button
-                      onClick={handleDuplicate}
-                      className="px-2 py-1 rounded bg-[#1565C0]/15 text-[#1565C0] hover:bg-[#1565C0]/25 transition-colors"
-                    >
-                      Дублировать
-                    </button>
-                  </div>
-                </div>
-              )}
+          {/* ══════════════════════════════════════════════════════════════════ */}
+          {/* MAIN 3-COLUMN CONTENT AREA                                       */}
+          {/* ══════════════════════════════════════════════════════════════════ */}
+          <div className="relative z-10 flex-1 overflow-y-auto px-4 py-3 sm:px-8 sm:py-4">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
 
-              {/* Title & Brand */}
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              >
-                {/* SEO Breadcrumbs */}
-                <nav aria-label="Хлебные крошки" className="flex items-center gap-1.5 text-[11px] text-white/50 mb-3 flex-wrap">
-                  <Link to="/" onClick={onClose} className="hover:text-white transition-colors">
-                    Главная
-                  </Link>
-                  <ChevronRight className="w-3 h-3 text-white/20" />
-                  <Link
-                    to={getCategoryUrl(product.category)}
-                    onClick={onClose}
-                    className="hover:text-white transition-colors text-white/70"
+              {/* ── LEFT COLUMN: Navigation Tabs & Rating Card ─────────────── */}
+              <div className="lg:col-span-3 flex flex-col justify-between gap-4">
+                {/* 3 Nav Tabs */}
+                <div className="space-y-2">
+                  <button
+                    onClick={() => setActiveTab("overview")}
+                    className={`w-full px-4 py-3 rounded-xl font-semibold text-sm transition-all duration-200 flex items-center justify-between ${
+                      activeTab === "overview"
+                        ? "text-white bg-[#0066ff]/20 border border-[#00d2ff] shadow-[0_0_20px_rgba(0,102,255,0.35)]"
+                        : "text-white/60 hover:text-white hover:bg-white/[0.04] border border-transparent"
+                    }`}
                   >
-                    {product.category || "Каталог"}
-                  </Link>
-                  <ChevronRight className="w-3 h-3 text-white/20" />
-                  <span className="text-[#1565C0] truncate max-w-[180px] sm:max-w-[260px] font-medium">{product.name}</span>
-                </nav>
+                    <div className="flex items-center gap-3">
+                      <CircleDot className={`w-4 h-4 ${activeTab === "overview" ? "text-[#00d2ff]" : "text-white/40"}`} />
+                      <span>Обзор</span>
+                    </div>
+                    {activeTab === "overview" && <ChevronRight className="w-4 h-4 text-[#00d2ff]" />}
+                  </button>
 
-                <div
-                  className={`text-label text-[#1565C0] mb-2 ${isAdmin ? 'cursor-pointer hover:underline' : ''}`}
-                  onClick={() => isAdmin && handleEditField('brand', product.brand || '')}
-                  title={isAdmin ? "Изменить бренд" : undefined}
-                >
-                  {product.brand || "ALFACOMP"}
-                  {isAdmin && <Pencil className="w-2.5 h-2.5 inline-block ml-1 opacity-50" />}
+                  <button
+                    onClick={() => setActiveTab("specs")}
+                    className={`w-full px-4 py-3 rounded-xl font-semibold text-sm transition-all duration-200 flex items-center justify-between ${
+                      activeTab === "specs"
+                        ? "text-white bg-[#0066ff]/20 border border-[#00d2ff] shadow-[0_0_20px_rgba(0,102,255,0.35)]"
+                        : "text-white/60 hover:text-white hover:bg-white/[0.04] border border-transparent"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <SlidersHorizontal className={`w-4 h-4 ${activeTab === "specs" ? "text-[#00d2ff]" : "text-white/40"}`} />
+                      <span>Характеристики</span>
+                    </div>
+                    {activeTab === "specs" && <ChevronRight className="w-4 h-4 text-[#00d2ff]" />}
+                  </button>
+
+                  <button
+                    onClick={() => setActiveTab("warranty")}
+                    className={`w-full px-4 py-3 rounded-xl font-semibold text-sm transition-all duration-200 flex items-center justify-between ${
+                      activeTab === "warranty"
+                        ? "text-white bg-[#0066ff]/20 border border-[#00d2ff] shadow-[0_0_20px_rgba(0,102,255,0.35)]"
+                        : "text-white/60 hover:text-white hover:bg-white/[0.04] border border-transparent"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <ShieldCheck className={`w-4 h-4 ${activeTab === "warranty" ? "text-[#00d2ff]" : "text-white/40"}`} />
+                      <span>Гарантия</span>
+                    </div>
+                    {activeTab === "warranty" && <ChevronRight className="w-4 h-4 text-[#00d2ff]" />}
+                  </button>
                 </div>
 
-                <h1
-                  className={`text-[1.25rem] sm:text-[1.5rem] font-bold text-white leading-snug mb-1.5 tracking-tight ${isAdmin ? 'cursor-pointer hover:underline' : ''}`}
-                  onClick={() => isAdmin && handleEditField('name', product.name)}
-                  title={isAdmin ? "Изменить название" : undefined}
-                >
-                  {product.name}
-                  {isAdmin && <Pencil className="w-3 h-3 inline-block ml-1 opacity-50" />}
-                </h1>
+                {/* Rating Card matching the mockup */}
+                <div className="bg-[#070e1c] border border-white/[0.08] rounded-2xl p-4 space-y-3">
+                  {/* Rating value and stars */}
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-2xl font-black text-white">{averageRating.toFixed(1)}</span>
+                    <span className="text-xs text-white/40 font-medium">/ 5.0</span>
+                  </div>
 
-                <div
-                  className={`text-data text-[11px] text-white/35 ${isAdmin ? 'cursor-pointer hover:underline' : ''}`}
-                  onClick={() => isAdmin && handleEditField('category', product.category || '')}
-                  title={isAdmin ? "Изменить категорию" : undefined}
-                >
-                  Категория: {product.category || "—"}
-                  {isAdmin && <Pencil className="w-2.5 h-2.5 inline-block ml-1 opacity-50" />}
-                </div>
-              </motion.div>
+                  <div className="flex items-center gap-1 text-[#0080ff]">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <Star
+                        key={i}
+                        className={`w-4 h-4 ${
+                          averageRating >= i - 0.2 ? "fill-[#0080ff] text-[#0080ff]" : "text-white/20 fill-white/[0.05]"
+                        }`}
+                      />
+                    ))}
+                  </div>
 
-              {/* Price block */}
-              <motion.div
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15, duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-                className="p-4 bg-[#0f1117] border border-white/[0.07] rounded-xl"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    {oldPriceUZS && (
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-data text-[11px] text-white/30 line-through">{oldPriceUZS} UZS</span>
-                        {discount && (
-                          <span className="text-data text-[9px] font-bold px-1.5 py-0.5 rounded
-                            bg-[#1565C0]/15 border border-[#1565C0]/25 text-[#1565C0]">
-                            −{discount}%
-                          </span>
-                        )}
-                      </div>
-                    )}
+                  <div className="text-xs text-white/50">
+                    На основе {ratingCount > 0 ? ratingCount : 12} отзывов
+                  </div>
 
-                    {isAdmin && editingPrice ? (
-                      <div className="flex flex-col gap-0.5">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-mono text-sm text-[#1565C0]">$</span>
-                          <input
-                            type="number"
-                            value={priceValue}
-                            onChange={(e) => setPriceValue(e.target.value)}
-                            placeholder="USD"
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") handlePriceSave();
-                              if (e.key === "Escape") setEditingPrice(false);
-                            }}
-                            autoFocus
-                            className="w-24 bg-[#181B22] border border-[#1565C0] rounded px-2 py-1
-                              text-sm font-mono text-white outline-none"
-                          />
-                          <button onClick={handlePriceSave} disabled={savingPrice} className="p-1 bg-[#22c55e]/20 text-[#22c55e] rounded">
-                            <Check className="w-3.5 h-3.5" />
+                  {/* Interactive Star Voting */}
+                  <div className="pt-2 border-t border-white/[0.06]">
+                    <div className="text-[11px] text-white/50 mb-1.5">Оценить товар:</div>
+                    <div className="flex items-center gap-1.5" onMouseLeave={() => setHoverRating(null)}>
+                      {[1, 2, 3, 4, 5].map((s) => {
+                        const active = (hoverRating ?? userRating ?? 0) >= s;
+                        return (
+                          <button
+                            key={s}
+                            type="button"
+                            onMouseEnter={() => setHoverRating(s)}
+                            onClick={() => handleStarClick(s)}
+                            disabled={isSubmitting}
+                            className="p-0.5 focus:outline-none transition-transform hover:scale-125"
+                            title={`Поставить ${s} звёзд`}
+                          >
+                            <Star
+                              className={`w-4 h-4 transition-colors ${
+                                active ? "fill-[#00d2ff] text-[#00d2ff]" : "text-white/30"
+                              }`}
+                            />
                           </button>
-                          <button onClick={() => setEditingPrice(false)} className="p-1 bg-red-500/20 text-red-400 rounded">
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                        {priceValue && !isNaN(parseFloat(priceValue)) && (
-                          <span className="text-[10px] font-mono text-white/40 pl-5">
-                            ≈ {Math.round(parseFloat(priceValue) * (exchangeRate || 14000)).toLocaleString()} сум
-                          </span>
-                        )}
-                      </div>
-                    ) : (
-                      <div
-                        className={`flex items-baseline gap-1.5 ${isAdmin ? "cursor-pointer group/p" : ""}`}
-                        onClick={handlePriceClick}
-                        title={isAdmin ? "Нажмите чтобы изменить цену (вводите в USD)" : undefined}
-                      >
-                        <span className="text-data text-[1.6rem] sm:text-[1.9rem] font-bold text-white tracking-tight leading-none">
-                          {priceUZS}
-                        </span>
-                        <span className="text-data text-[11px] text-white/40">сум</span>
-                        {isAdmin && <Pencil className="w-3 h-3 text-[#1565C0] opacity-0 group-hover/p:opacity-100 ml-1" />}
-                      </div>
-                    )}
-
-                    <div className="text-data text-[11px] text-white/35 mt-1">
-                      {priceUSDRef ? `≈ $${priceUSDRef}` : ""}
-                      <span className="text-white/20 ml-1.5">· 1$ = {exchangeRate.toLocaleString()} UZS</span>
+                        );
+                      })}
                     </div>
                   </div>
 
-                  {/* Like & Share */}
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  {/* Favorite & Share Buttons */}
+                  <div className="pt-2 border-t border-white/[0.06] flex items-center gap-2">
                     <button
                       onClick={handleLike}
-                      aria-label={liked ? "В избранном" : "Добавить в избранное"}
-                      className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-all ${
+                      className={`flex-1 py-2 px-3 rounded-xl border flex items-center justify-center gap-1.5 text-xs font-semibold transition-all ${
                         liked
-                          ? "bg-red-500/15 border-red-500/30 text-red-400"
-                          : "bg-white/[0.04] border-white/[0.09] text-white/40 hover:text-white hover:border-white/20"
+                          ? "bg-red-500/15 border-red-500/40 text-red-400"
+                          : "bg-white/[0.04] border-white/10 text-white/70 hover:text-white hover:bg-white/[0.08]"
                       }`}
                     >
-                      <Heart className={`w-3.5 h-3.5 ${liked ? "fill-current" : ""}`} />
+                      <Heart className={`w-3.5 h-3.5 ${liked ? "fill-current text-red-400" : ""}`} />
+                      <span>{liked ? "В избранном" : "Избранное"}</span>
                     </button>
+
                     <button
                       onClick={handleShare}
-                      aria-label="Скопировать ссылку"
-                      className="w-8 h-8 rounded-lg flex items-center justify-center border bg-white/[0.04] border-white/[0.09] text-white/40 hover:text-white hover:border-white/20 transition-all"
+                      title="Скопировать ссылку"
+                      className="p-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-white/70 hover:text-white hover:bg-white/[0.08] transition-all"
                     >
                       {copied ? <Check className="w-3.5 h-3.5 text-[#22c55e]" /> : <Share2 className="w-3.5 h-3.5" />}
                     </button>
                   </div>
                 </div>
+              </div>
 
-                {copied && (
-                  <div className="text-data text-[10px] text-[#22c55e] mt-2 pt-2 border-t border-white/[0.05]">
-                    Ссылка скопирована в буфер обмена
+              {/* ── CENTER COLUMN: Showcase Stage Card ────────────────────── */}
+              <div className="lg:col-span-5 flex flex-col justify-between bg-gradient-to-b from-[#091326]/75 via-[#060c18]/90 to-[#030610] border border-[#0066ff]/25 rounded-2xl p-5 relative min-h-[460px] overflow-hidden">
+                {/* Top Right Showcase Controls */}
+                <div className="flex items-center justify-between w-full mb-2">
+                  <div className="text-[11px] font-mono text-white/40 tracking-wider uppercase">
+                    ORIGINAL HARDWARE
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => setActivePhotoIdx((p) => Math.max(0, p - 1))}
+                      className="w-7 h-7 rounded-full bg-black/50 border border-white/10 hover:border-[#00d2ff]/40 flex items-center justify-center text-white/50 hover:text-white transition-all"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setActivePhotoIdx((p) => (p + 1) % 4)}
+                      className="w-7 h-7 rounded-full bg-black/50 border border-white/10 hover:border-[#00d2ff]/40 flex items-center justify-center text-white/50 hover:text-white transition-all"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* View switcher between Overview and Full Specs */}
+                {activeTab === "overview" && (
+                  <>
+                    {/* Centered Product Stage with Ambient Cyan Spotlight */}
+                    <div
+                      className="relative flex-1 flex items-center justify-center p-4 cursor-zoom-in group select-none min-h-[280px]"
+                      onClick={() => setLightboxOpen(true)}
+                    >
+                      {/* Cyan Spotlight */}
+                      <div
+                        className="absolute inset-0 pointer-events-none"
+                        style={{
+                          background:
+                            "radial-gradient(circle at 50% 50%, rgba(0, 160, 255, 0.28) 0%, rgba(0, 90, 220, 0.10) 50%, transparent 75%)",
+                        }}
+                      />
+
+                      <img
+                        src={product.image}
+                        alt={`${product.name} — AlfaComp`}
+                        className="max-h-[290px] w-auto max-w-full object-contain filter drop-shadow-[0_20px_45px_rgba(0,0,0,0.9)] group-hover:scale-105 transition-transform duration-300 relative z-10"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "/placeholder.svg";
+                        }}
+                      />
+                    </div>
+
+                    {/* Bottom Thumbnail Strip matching mockup */}
+                    <div className="pt-3 border-t border-white/[0.06] flex items-center gap-2.5 overflow-x-auto pb-1 scrollbar-none">
+                      <div
+                        onClick={() => setActivePhotoIdx(0)}
+                        className={`w-14 h-12 rounded-xl bg-black/60 p-1 flex items-center justify-center cursor-pointer transition-all ${
+                          activePhotoIdx === 0
+                            ? "border-2 border-[#00d2ff] shadow-[0_0_12px_rgba(0,210,255,0.4)]"
+                            : "border border-white/10 hover:border-white/30 opacity-70"
+                        }`}
+                      >
+                        <img src={product.image} alt="Ракурс 1" className="max-h-full object-contain" />
+                      </div>
+
+                      <div
+                        onClick={() => setActivePhotoIdx(1)}
+                        className={`w-14 h-12 rounded-xl bg-black/60 p-1 flex items-center justify-center cursor-pointer transition-all ${
+                          activePhotoIdx === 1
+                            ? "border-2 border-[#00d2ff] shadow-[0_0_12px_rgba(0,210,255,0.4)]"
+                            : "border border-white/10 hover:border-white/30 opacity-70"
+                        }`}
+                      >
+                        <img src={product.image} alt="Ракурс 2" className="max-h-full object-contain scale-110" />
+                      </div>
+
+                      <div
+                        onClick={() => setActivePhotoIdx(2)}
+                        className={`w-14 h-12 rounded-xl bg-black/60 p-1 flex items-center justify-center cursor-pointer transition-all ${
+                          activePhotoIdx === 2
+                            ? "border-2 border-[#00d2ff] shadow-[0_0_12px_rgba(0,210,255,0.4)]"
+                            : "border border-white/10 hover:border-white/30 opacity-70"
+                        }`}
+                      >
+                        <img src={product.image} alt="Ракурс 3" className="max-h-full object-contain scale-125" />
+                      </div>
+
+                      <div
+                        onClick={() => setActivePhotoIdx(3)}
+                        className={`w-14 h-12 rounded-xl bg-black/60 p-1 flex items-center justify-center cursor-pointer transition-all ${
+                          activePhotoIdx === 3
+                            ? "border-2 border-[#00d2ff] shadow-[0_0_12px_rgba(0,210,255,0.4)]"
+                            : "border border-white/10 hover:border-white/30 opacity-70"
+                        }`}
+                      >
+                        <img src={product.image} alt="Ракурс 4" className="max-h-full object-contain scale-95" />
+                      </div>
+
+                      {/* Video Thumbnail Box with Play Icon */}
+                      <div
+                        onClick={() => setLightboxOpen(true)}
+                        title="Просмотреть видео/обзор"
+                        className="w-14 h-12 rounded-xl bg-black/60 border border-white/10 hover:border-[#00d2ff]/60 flex items-center justify-center text-white/50 hover:text-[#00d2ff] cursor-pointer transition-all"
+                      >
+                        <Play className="w-4 h-4 fill-current" />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {activeTab === "specs" && (
+                  <div className="flex-1 flex flex-col justify-start text-left overflow-y-auto pr-1 space-y-3">
+                    <div className="flex items-center justify-between pb-2 border-b border-white/[0.08]">
+                      <span className="font-bold text-sm text-white flex items-center gap-2">
+                        <SlidersHorizontal className="w-4 h-4 text-[#00d2ff]" />
+                        <span>Все характеристики</span>
+                      </span>
+                      {isAdmin && (
+                        <button
+                          onClick={() => setAddingSpec(true)}
+                          className="px-2.5 py-1 rounded bg-[#0066ff]/20 text-[#00d2ff] text-xs font-mono flex items-center gap-1"
+                        >
+                          <Plus className="w-3 h-3" /> Добавить
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="divide-y divide-white/[0.06] text-xs">
+                      {specEntries.map(([k, v]) => (
+                        <div key={k} className="py-2.5 flex items-center justify-between gap-3 group">
+                          <span className="text-white/50">{k}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-white/90 text-right">{v}</span>
+                            {isAdmin && (
+                              <button
+                                onClick={() => handleDeleteSpec(k)}
+                                className="opacity-0 group-hover:opacity-100 text-red-400 p-0.5"
+                                title="Удалить"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {isAdmin && addingSpec && (
+                      <div className="p-3 rounded-xl bg-[#0b1326] border border-blue-500/30 space-y-2 mt-2">
+                        <input
+                          type="text"
+                          placeholder="Название"
+                          value={newSpecKey}
+                          onChange={(e) => setNewSpecKey(e.target.value)}
+                          className="w-full bg-[#050811] border border-white/10 rounded px-2 py-1 text-xs text-white"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Значение"
+                          value={newSpecValue}
+                          onChange={(e) => setNewSpecValue(e.target.value)}
+                          className="w-full bg-[#050811] border border-white/10 rounded px-2 py-1 text-xs text-white"
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            onClick={handleAddSpec}
+                            disabled={savingSpec}
+                            className="px-3 py-1 rounded bg-[#0066ff] text-white text-xs font-semibold"
+                          >
+                            Сохранить
+                          </button>
+                          <button
+                            onClick={() => setAddingSpec(false)}
+                            className="px-3 py-1 rounded bg-white/10 text-white text-xs"
+                          >
+                            Отмена
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
-              </motion.div>
 
-              {/* ── Interactive Product Rating Widget ── */}
-              <motion.div
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.18, duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-              >
-                <ProductRatingWidget
-                  productId={product.id}
-                  initialRating={product.rating}
-                  initialRatingCount={product.rating_count}
-                />
-              </motion.div>
-
-              {/* CTAs */}
-              <motion.div
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
-                className="grid grid-cols-1 sm:grid-cols-2 gap-2.5"
-              >
-                <motion.button
-                  whileTap={{ scale: 0.96 }}
-                  onClick={handleAddToCart}
-                  disabled={!product.in_stock}
-                  className={`h-11 px-4 rounded-lg font-semibold text-[12.5px] uppercase tracking-wider
-                    flex items-center justify-center gap-2 transition-all ${
-                    !product.in_stock
-                      ? "bg-white/[0.03] text-white/18 border border-white/[0.05] cursor-not-allowed"
-                      : addedToCart
-                        ? "bg-[#22c55e] text-white shadow-[0_0_20px_rgba(34,197,94,0.25)]"
-                        : "btn-primary shadow-[0_4px_20px_rgba(21,101,192,0.30)]"
-                  }`}
-                >
-                  {addedToCart ? (
-                    <>
-                      <CheckCircle className="w-4 h-4" />
-                      <span>В корзине</span>
-                    </>
-                  ) : (
-                    <>
-                      <ShoppingCart className="w-4 h-4" />
-                      <span>{product.in_stock ? "В корзину" : "Нет в наличии"}</span>
-                    </>
-                  )}
-                </motion.button>
-
-                <motion.button
-                  whileTap={{ scale: 0.96 }}
-                  onClick={handleBuyNow}
-                  className="btn-ghost h-11 px-4 rounded-lg font-semibold text-[12.5px] uppercase tracking-wider"
-                >
-                  <Send className="w-3.5 h-3.5 text-[#1565C0]" />
-                  <span>Telegram</span>
-                </motion.button>
-              </motion.div>
-
-              {/* Technical Specifications */}
-              <div className="border-t border-white/[0.07] pt-4">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-label">Технические характеристики</span>
-                  {isAdmin && (
-                    <button
-                      onClick={() => { setAddingSpec(true); setNewSpecKey(""); setNewSpecValue(""); }}
-                      className="text-[10px] font-mono text-[#1565C0] flex items-center gap-1 hover:underline opacity-70 hover:opacity-100"
-                    >
-                      <Plus className="w-3 h-3" /> Добавить
-                    </button>
-                  )}
-                </div>
-
-                <div className="space-y-0.5">
-                  {/* Static specs */}
-                  {staticSpecs.map(({ key, value, colorClass }) => (
-                    <div key={key} className="spec-row">
-                      <span className="spec-key">{key}</span>
-                      <span className={`spec-val ${colorClass ?? ""}`}>{value}</span>
+                {activeTab === "warranty" && (
+                  <div className="flex-1 flex flex-col justify-start text-left text-xs space-y-3 pt-2">
+                    <div className="font-bold text-sm text-white flex items-center gap-2 pb-2 border-b border-white/[0.08]">
+                      <ShieldCheck className="w-4 h-4 text-[#22c55e]" />
+                      <span>Гарантийное обслуживание</span>
                     </div>
-                  ))}
+                    <div className="p-3.5 rounded-xl bg-[#070e1c] border border-white/[0.07] space-y-1.5">
+                      <div className="font-semibold text-white">Официальная гарантия до 36 месяцев</div>
+                      <div className="text-white/60 leading-relaxed">
+                        Все комплектующие поставляются в запечатанной оригинальной упаковке от официальных дистрибьюторов с гарантийным талоном.
+                      </div>
+                    </div>
+                    <div className="p-3.5 rounded-xl bg-[#070e1c] border border-white/[0.07] space-y-1.5">
+                      <div className="font-semibold text-white">Пункт выдачи и проверка при покупке</div>
+                      <div className="text-white/60 leading-relaxed">
+                        Самовывоз и бесплатная проверка товара на специализированном стенде в Ташкенте (базар Малика, блок А27).
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
 
-                  {/* Dynamic specs */}
-                  {dynamicSpecEntries.map(([key, value]) => (
-                    <div key={key} className="spec-row group/spec">
-                      <span className="spec-key">{key}</span>
-                      <div className="flex items-center gap-1.5">
-                        {isAdmin && editingSpecKey === key ? (
-                          <div className="flex items-center gap-1">
-                            <input
-                              type="text"
-                              value={editingSpecValue}
-                              onChange={(e) => setEditingSpecValue(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") handleSaveSpec(key);
-                                if (e.key === "Escape") setEditingSpecKey(null);
-                              }}
-                              autoFocus
-                              className="w-32 bg-[#181B22] border border-[#1565C0] rounded px-1.5 py-0.5
-                                text-xs font-mono text-white outline-none"
-                            />
-                            <button onClick={() => handleSaveSpec(key)} disabled={savingSpec} className="p-0.5 text-[#22c55e]">
-                              <Check className="w-3 h-3" />
-                            </button>
-                            <button onClick={() => setEditingSpecKey(null)} className="p-0.5 text-red-400">
-                              <X className="w-3 h-3" />
-                            </button>
+              {/* ── RIGHT COLUMN: Specs & Purchase Panel ─────────────────── */}
+              <div className="lg:col-span-4 flex flex-col justify-between gap-5 bg-[#060c18]/95 border border-[#0066ff]/25 rounded-2xl p-6 backdrop-blur-md shadow-xl">
+                {/* Header: ХАРАКТЕРИСТИКИ */}
+                <div>
+                  <div className="text-xs font-mono uppercase tracking-wider text-[#00d2ff] flex items-center gap-2 pb-3 mb-4 border-b border-white/[0.07]">
+                    <Sparkles className="w-4 h-4" />
+                    <span className="font-bold">ХАРАКТЕРИСТИКИ</span>
+                  </div>
+
+                  {/* 4 Spec Rows */}
+                  <div className="space-y-4">
+                    {showcaseSpecs.map((item, idx) => {
+                      const IconComp = item.icon;
+                      return (
+                        <div key={idx} className="flex items-start gap-3.5">
+                          <div className="w-10 h-10 rounded-xl bg-[#0066ff]/15 border border-[#0066ff]/30 flex items-center justify-center text-[#00d2ff] shrink-0 mt-0.5">
+                            <IconComp className="w-5 h-5" />
                           </div>
-                        ) : (
-                          <>
-                            <span
-                              className={`spec-val ${isAdmin ? 'cursor-pointer hover:text-[#1565C0]' : ''}`}
-                              onClick={() => isAdmin && handleEditSpec(key)}
-                            >
-                              {value}
-                            </span>
-                            {isAdmin && (
-                              <div className="flex items-center gap-1 opacity-0 group-hover/spec:opacity-100 transition-opacity">
-                                <button onClick={() => handleEditSpec(key)} className="text-white/35 hover:text-white" title="Изменить">
-                                  <Pencil className="w-3 h-3" />
-                                </button>
-                                <button onClick={() => handleDeleteSpec(key)} className="text-white/35 hover:text-red-400" title="Удалить">
-                                  <Trash2 className="w-3 h-3" />
-                                </button>
-                              </div>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                          <div className="min-w-0">
+                            <div className="text-[11px] text-white/45 font-medium leading-none mb-1.5">
+                              {item.label}
+                            </div>
+                            <div className="text-sm font-bold text-white tracking-tight truncate">
+                              {item.value}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
 
-                  {/* Admin: add spec */}
-                  {isAdmin && addingSpec && (
-                    <div className="p-3 bg-[#14171E] border border-white/[0.09] rounded-lg mt-2 space-y-2">
-                      <div className="text-label text-[#1565C0]">Новая характеристика</div>
+                {/* Price, Trust info and CTAs */}
+                <div className="pt-4 border-t border-white/[0.08]">
+                  {/* Price Row */}
+                  {isAdmin && editingPrice ? (
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="font-mono text-sm text-[#00d2ff]">$</span>
                       <input
-                        type="text"
-                        value={newSpecKey}
-                        onChange={(e) => setNewSpecKey(e.target.value)}
-                        placeholder="Название (напр: Частота)"
-                        className="w-full bg-[#0e1016] border border-white/10 rounded px-2 py-1.5 text-xs font-mono text-white outline-none focus:border-[#1565C0]/50"
+                        type="number"
+                        value={priceValue}
+                        onChange={(e) => setPriceValue(e.target.value)}
+                        placeholder="USD"
+                        className="w-28 bg-[#050811] border border-[#0066ff] rounded px-2 py-1 text-sm text-white font-mono outline-none"
                       />
-                      <input
-                        type="text"
-                        value={newSpecValue}
-                        onChange={(e) => setNewSpecValue(e.target.value)}
-                        placeholder="Значение (напр: 240 Гц)"
-                        className="w-full bg-[#0e1016] border border-white/10 rounded px-2 py-1.5 text-xs font-mono text-white outline-none focus:border-[#1565C0]/50"
-                      />
-                      <div className="flex gap-2">
-                        <button
-                          onClick={handleAddSpec}
-                          disabled={savingSpec}
-                          className="px-3 py-1.5 bg-[#1565C0] hover:bg-[#1976D2] text-white rounded text-xs font-mono transition-colors"
-                        >
-                          Сохранить
-                        </button>
-                        <button
-                          onClick={() => setAddingSpec(false)}
-                          className="px-3 py-1.5 bg-white/8 text-white/55 hover:text-white rounded text-xs font-mono transition-colors"
-                        >
-                          Отмена
-                        </button>
-                      </div>
+                      <button
+                        onClick={handlePriceSave}
+                        disabled={savingPrice}
+                        className="p-1.5 bg-[#22c55e]/20 text-[#22c55e] rounded"
+                      >
+                        <Check className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setEditingPrice(false)}
+                        className="p-1.5 bg-red-500/20 text-red-400 rounded"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      className={`flex items-baseline gap-2 mb-2 ${isAdmin ? "cursor-pointer group" : ""}`}
+                      onClick={handlePriceClick}
+                      title={isAdmin ? "Кликните для изменения цены (в USD)" : undefined}
+                    >
+                      <span className="text-3xl sm:text-4xl font-black text-white tracking-tight leading-none drop-shadow-[0_2px_12px_rgba(0,102,255,0.3)]">
+                        {priceUZS}
+                      </span>
+                      <span className="text-sm font-semibold text-white/50">сум</span>
+                      {isAdmin && <Pencil className="w-3.5 h-3.5 text-[#00d2ff] opacity-0 group-hover:opacity-100 ml-1 transition-opacity" />}
                     </div>
                   )}
+
+                  {priceUSDRef && (
+                    <div className="text-[11px] font-mono text-white/40 mb-3.5">
+                      ≈ ${priceUSDRef} · 1$ = {exchangeRate ? exchangeRate.toLocaleString() : "14 000"} UZS
+                    </div>
+                  )}
+
+                  {/* Trust Details (Гарантия & Малика А27) */}
+                  <div className="grid grid-cols-2 gap-2 text-xs text-white/70 mb-4">
+                    <div className="flex items-center gap-2 py-2 px-3 rounded-xl bg-[#091428]/80 border border-white/[0.06]">
+                      <ShieldCheck className="w-4 h-4 text-[#22c55e] shrink-0" />
+                      <span className="truncate">Гарантия до 36 мес</span>
+                    </div>
+                    <div className="flex items-center gap-2 py-2 px-3 rounded-xl bg-[#091428]/80 border border-white/[0.06]">
+                      <MapPin className="w-4 h-4 text-[#00d2ff] shrink-0" />
+                      <span className="truncate">Малика, блок А27</span>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="space-y-2.5">
+                    {/* Primary Button */}
+                    <button
+                      onClick={handleAddToCart}
+                      disabled={!product.in_stock}
+                      className={`w-full h-12 rounded-xl font-bold text-sm tracking-wide transition-all duration-200 flex items-center justify-between px-5 active:scale-[0.98] ${
+                        !product.in_stock
+                          ? "bg-white/[0.04] text-white/30 border border-white/10 cursor-not-allowed"
+                          : addedToCart
+                            ? "bg-[#22c55e] text-white shadow-[0_0_24px_rgba(34,197,94,0.4)]"
+                            : "bg-gradient-to-r from-[#0066ff] to-[#0080ff] hover:from-[#0052cc] hover:to-[#0070f3] text-white shadow-[0_8px_30px_rgba(0,102,255,0.45)] hover:shadow-[0_10px_36px_rgba(0,102,255,0.65)] hover:-translate-y-0.5"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        {addedToCart ? <CheckCircle2 className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
+                        <span>{product.in_stock ? (addedToCart ? "В корзине!" : "Уточнить наличие / В корзину") : "Нет в наличии"}</span>
+                      </div>
+                      <ChevronRight className="w-4 h-4 opacity-80" />
+                    </button>
+
+                    {/* Secondary Button */}
+                    <button
+                      onClick={handleBuyNow}
+                      className="w-full h-11 rounded-xl font-semibold text-xs sm:text-sm tracking-wide text-white/90 bg-[#0066ff]/10 hover:bg-[#0066ff]/20 border border-[#0066ff]/30 hover:border-[#00d2ff]/50 flex items-center justify-center gap-2 transition-all duration-200 active:scale-[0.98]"
+                    >
+                      <Send className="w-4 h-4 text-[#00d2ff]" />
+                      <span>Связаться в Telegram</span>
+                    </button>
+                  </div>
                 </div>
+              </div>
+
+            </div>
+          </div>
+
+          {/* ══════════════════════════════════════════════════════════════════ */}
+          {/* BOTTOM FEATURE BAR (Lightning, Snowflake, Diamond)               */}
+          {/* ══════════════════════════════════════════════════════════════════ */}
+          <div className="relative z-10 px-6 py-4 bg-[#03060f]/95 border-t border-white/[0.06] grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-[#0066ff]/15 border border-[#0066ff]/30 flex items-center justify-center text-[#00d2ff] shrink-0">
+                <Zap className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-xs sm:text-sm font-semibold text-white">Флагманская производительность</div>
+                <div className="text-[11px] text-white/45">Максимальная мощность для любых задач</div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-[#0066ff]/15 border border-[#0066ff]/30 flex items-center justify-center text-[#00d2ff] shrink-0">
+                <Snowflake className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-xs sm:text-sm font-semibold text-white">Продуманное охлаждение</div>
+                <div className="text-[11px] text-white/45">Стабильная работа даже под нагрузкой</div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-[#0066ff]/15 border border-[#0066ff]/30 flex items-center justify-center text-[#00d2ff] shrink-0">
+                <Diamond className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-xs sm:text-sm font-semibold text-white">Премиальный дизайн</div>
+                <div className="text-[11px] text-white/45">Стиль, который подчеркнёт вашу систему</div>
               </div>
             </div>
           </div>
         </motion.div>
       </div>
 
-      {/* Lightbox */}
+      {/* Lightbox / Zoom Fullscreen Preview */}
       <AnimatePresence>
         {lightboxOpen && (
           <motion.div
@@ -976,27 +962,28 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.18 }}
-            className="fixed inset-0 z-[300] bg-black/97 flex items-center justify-center p-4 cursor-zoom-out"
+            className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center p-4 cursor-zoom-out"
             onClick={() => setLightboxOpen(false)}
           >
             <button
               onClick={() => setLightboxOpen(false)}
-              aria-label="Закрыть просмотр"
-              className="absolute top-4 right-4 w-10 h-10 rounded-lg bg-white/10 hover:bg-white/20
-                flex items-center justify-center text-white z-10 transition-colors"
+              aria-label="Закрыть"
+              className="absolute top-5 right-5 w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white z-10 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
             <motion.img
-              initial={{ scale: 0.94, opacity: 0 }}
+              initial={{ scale: 0.92, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.96, opacity: 0 }}
+              exit={{ scale: 0.94, opacity: 0 }}
               transition={{ duration: 0.22 }}
               src={product.image}
               alt={product.name}
-              className="max-w-full max-h-full object-contain"
+              className="max-w-full max-h-full object-contain filter drop-shadow-[0_20px_50px_rgba(0,102,255,0.3)]"
               onClick={(e) => e.stopPropagation()}
-              onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }}
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "/placeholder.svg";
+              }}
             />
           </motion.div>
         )}

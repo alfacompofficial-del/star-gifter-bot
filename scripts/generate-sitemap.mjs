@@ -70,7 +70,7 @@ function escapeXml(str) {
 function normalizeImageUrl(img) {
   if (!img) return null;
   const trimmed = String(img).trim();
-  if (!trimmed) return null;
+  if (!trimmed || trimmed.startsWith("data:")) return null;
   if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed;
   if (trimmed.startsWith("/")) return `${BASE_URL}${trimmed}`;
   return `${BASE_URL}/${trimmed}`;
