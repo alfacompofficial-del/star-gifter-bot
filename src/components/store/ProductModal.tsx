@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import {
   X, Heart, Share2, ShoppingCart, Send, ZoomIn, CheckCircle2,
   Check, Pencil, Plus, Trash2, Eye, ChevronRight, ChevronLeft,
-  Cpu, HardDrive, Layers, Fan, Zap, Snowflake, Diamond, ShieldCheck,
+  Cpu, HardDrive, Layers, Fan, ShieldCheck,
   MapPin, Sparkles, CircleDot, SlidersHorizontal, Play, Star
 } from "lucide-react";
 import { resolveProductPrices } from "@/lib/constants";
@@ -914,41 +914,6 @@ const ProductModal = ({ product, onClose, onAddToCart, isAdmin }: ProductModalPr
                 </div>
               </div>
 
-            </div>
-          </div>
-
-          {/* ══════════════════════════════════════════════════════════════════ */}
-          {/* BOTTOM FEATURE BAR (Lightning, Snowflake, Diamond)               */}
-          {/* ══════════════════════════════════════════════════════════════════ */}
-          <div className="relative z-10 px-6 py-4 bg-[#03060f]/95 border-t border-white/[0.06] grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#0066ff]/15 border border-[#0066ff]/30 flex items-center justify-center text-[#00d2ff] shrink-0">
-                <Zap className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="text-xs sm:text-sm font-semibold text-white">Флагманская производительность</div>
-                <div className="text-[11px] text-white/45">Максимальная мощность для любых задач</div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#0066ff]/15 border border-[#0066ff]/30 flex items-center justify-center text-[#00d2ff] shrink-0">
-                <Snowflake className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="text-xs sm:text-sm font-semibold text-white">Продуманное охлаждение</div>
-                <div className="text-[11px] text-white/45">Стабильная работа даже под нагрузкой</div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#0066ff]/15 border border-[#0066ff]/30 flex items-center justify-center text-[#00d2ff] shrink-0">
-                <Diamond className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="text-xs sm:text-sm font-semibold text-white">Премиальный дизайн</div>
-                <div className="text-[11px] text-white/45">Стиль, который подчеркнёт вашу систему</div>
-              </div>
             </div>
           </div>
         </motion.div>
