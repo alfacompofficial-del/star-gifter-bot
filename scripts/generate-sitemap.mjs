@@ -67,10 +67,14 @@ function escapeXml(str) {
     .replace(/'/g, "&apos;");
 }
 
-function normalizeImageUrl(img) {
+function normalizeImageUrl(img, id) {
   if (!img) return null;
   const trimmed = String(img).trim();
-  if (!trimmed || trimmed.startsWith("data:")) return null;
+  if (!trimmed) return null;
+  if (trimmed.startsWith("data:")) {
+    if (id === 97) return `${BASE_URL}/products/097_Hopestar_A6_CLUB_%2B_Microphone.png`;
+    return null;
+  }
   if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed;
   if (trimmed.startsWith("/")) return `${BASE_URL}${trimmed}`;
   return `${BASE_URL}/${trimmed}`;
@@ -141,7 +145,7 @@ async function generate() {
     }
     seenSlugs.add(slug);
 
-    const imageUrl = normalizeImageUrl(product.image);
+    const imageUrl = normalizeImageUrl(product.image, product.id);
 
     entries.push({
       path: `/product/${slug}`,

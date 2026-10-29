@@ -14,7 +14,7 @@ function slugify(t){if(!t)return"";return t.toLowerCase().split("").map(c=>MAP[c
 function slug(p){return slugify(p.name)+"-"+p.id;}
 function eh(s){if(!s)return"";return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
 function ej(o){return JSON.stringify(o).replace(/<\/script>/gi,"<\\/script>");}
-function img(i){if(!i)return BASE_URL+"/banner.jpg";const t=String(i).trim();if(t.startsWith("data:"))return BASE_URL+"/banner.jpg";if(t.match(/^https?:/))return t;if(t.startsWith("/"))return BASE_URL+t;return BASE_URL+"/"+t;}
+function img(i,id){if(!i)return BASE_URL+"/banner.jpg";const t=String(i).trim();if(t.startsWith("data:")){if(id===97)return BASE_URL+"/products/097_Hopestar_A6_CLUB_%2B_Microphone.png";return BASE_URL+"/banner.jpg";}if(t.match(/^https?:/))return t;if(t.startsWith("/"))return BASE_URL+t;return BASE_URL+"/"+t;}
 const CSLUGS={"\u0418\u0411\u041f":"ups","\u041c\u043e\u043d\u0438\u0442\u043e\u0440\u044b":"monitors","\u0421\u0435\u0442\u044c":"networking","\u041a\u043e\u043c\u043f\u043b\u0435\u043a\u0442\u0443\u044e\u0449\u0438\u0435":"components","\u041c\u043e\u043d\u043e\u0431\u043b\u043e\u043a\u0438":"all-in-one","\u0410\u043a\u0441\u0435\u0441\u0441\u0443\u0430\u0440\u044b":"accessories","\u041a\u043e\u043b\u043e\u043d\u043a\u0438":"speakers","\u041a\u0440\u043e\u043d\u0448\u0442\u0435\u0439\u043d\u044b":"mounts","Deco":"deco","Wi-Fi \u0440\u043e\u0443\u0442\u0435\u0440\u044b":"wifi-routers","\u041c\u044b\u0448\u043a\u0438":"mice","\u0412\u0438\u0434\u0435\u043e\u043a\u0430\u0440\u0442\u044b":"videocards","\u041a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440\u044b":"computers","\u041f\u041a":"computers"};
 function cs(c){return CSLUGS[c]??slugify(c);}
 
@@ -43,7 +43,7 @@ if (existsSync(KEYWORDS_FILE)) {
   try {
     const rawK = JSON.parse(readFileSync(KEYWORDS_FILE, "utf-8"));
     KEYWORDS_MAP = rawK.category_keywords || {};
-    HOME_KEYWORDS_STR = (rawK.home_keywords || []).slice(0, 60).join(", ");
+    HOME_KEYWORDS_STR = (rawK.home_keywords || []).slice(0, 15).join(", ");
   } catch (e) {
     console.warn("[prerender] Could not read category_keywords_map.json:", e.message);
   }
@@ -81,6 +81,7 @@ function inj(raw, { title, desc, canon, oimg, otype, noindex, schemas, keywords,
   h = h.replace(/<meta\s+property="og:description"\s+content="[^"]*"\s*\/>/g, "");
   h = h.replace(/<meta\s+property="og:url"\s+content="[^"]*"\s*\/>/g, "");
   h = h.replace(/<meta\s+property="og:type"\s+content="[^"]*"\s*\/>/g, "");
+  h = h.replace(/<meta\s+property="og:locale[^"]*"\s+content="[^"]*"\s*\/?>/gi, "");
   h = h.replace(/<meta\s+property="og:image"\s+content="[^"]*"\s*\/>/g, "");
   h = h.replace(/<meta\s+property="og:image:width"\s+content="[^"]*"\s*\/>/g, "");
   h = h.replace(/<meta\s+property="og:image:height"\s+content="[^"]*"\s*\/>/g, "");
@@ -92,7 +93,7 @@ function inj(raw, { title, desc, canon, oimg, otype, noindex, schemas, keywords,
   h = h.replace(/<meta\s+name="twitter:image"\s+content="[^"]*"\s*\/>/g, "");
 
   // --- 6. Strip existing robots tag; will restore correctly below ---
-  h = h.replace(/<meta\s+name="robots"\s+content="[^"]*"\s*\/?>/gi, "");
+  h = h.replace(/<meta\s+[^>]*name=["']robots["'][^>]*\/?>/gi, "");
 
   // Determine og:image alt text
   const imgAlt = oalt || title || "AlfaComp — компьютеры, мониторы и комплектующие в Ташкенте";
@@ -108,6 +109,7 @@ function inj(raw, { title, desc, canon, oimg, otype, noindex, schemas, keywords,
       : '<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />',
     // Canonical — always inject (fixes missing canonical on home page)
     '<link rel="canonical" href="' + eh(canon) + '" />',
+    '<meta property="og:locale" content="ru_RU" />',
     // OG tags with proper width/height/alt
     '<meta property="og:title" content="' + eh(title) + '" />',
     '<meta property="og:description" content="' + eh(desc) + '" />',
@@ -149,20 +151,24 @@ async function main(){
   console.log("[prerender] Got "+prods.length+" products");
   for(const p of prods){
     if(!p.id||!p.name)continue;
-    const s=slug(p);const url=BASE_URL+"/product/"+s;const im=img(p.image);const cat=cs(p.category||"");
+    const s=slug(p);const url=BASE_URL+"/product/"+s;const im=img(p.image, p.id);const cat=cs(p.category||"");
+    const priceUZS = (p.price && p.price < 5000) ? Math.round(p.price * 14000) : (p.price || 0);
+    const priceFormatted = priceUZS > 0 ? String(priceUZS).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') : '';
+    const priceStr = priceFormatted ? ` Цена: ${priceFormatted} сум.` : '';
+    const pDesc = `Купить ${p.name} в Ташкенте.${priceStr} Официальная гарантия и доставка по Узбекистану — AlfaComp.uz.`;
     const pKeywords = `${p.name}, купить ${p.name} в Ташкенте, ${p.category || ""}, цена ${p.name}, характеристики, магазин электроники Ташкент, AlfaComp, доставка по Узбекистану`;
     wp("product/"+s,inj(base,{
       title:p.name+" — купить в Ташкенте | AlfaComp",
-      desc:"Купить "+p.name+" в Ташкенте с гарантией и доставкой по Узбекистану. Оригинальный товар по лучшей цене в AlfaComp.",
+      desc: pDesc,
       keywords: pKeywords,
       subject: `${p.name} — купить в Ташкенте`,
       topic: p.category || "Компьютерная техника",
       oalt: `${p.name} — купить в Ташкенте | AlfaComp`,
       canon:url,oimg:im,otype:"product",
       schemas:[
-        {"@context":"https://schema.org","@type":"Product","name":p.name,"image":[im],"sku":"ALFA-"+p.id,
-         "offers":{"@type":"Offer","url":url,"priceCurrency":"UZS","price":(p.price && p.price < 5000 ? Math.round(p.price * 14000) : (p.price || 0)),
-           "availability":p.in_stock!==false?"https://schema.org/InStock":"https://schema.org/PreOrder",
+        {"@context":"https://schema.org","@type":"Product","name":p.name,"description":pDesc,"image":[im],"sku":"ALFA-"+p.id,
+         "offers":{"@type":"Offer","url":url,"priceCurrency":"UZS","price":priceUZS,
+           "availability":p.in_stock!==false?"https://schema.org/InStock":"https://schema.org/OutOfStock",
            "itemCondition":"https://schema.org/NewCondition",
            "seller":{"@type":"Organization","name":"AlfaComp","url":BASE_URL+"/"}}},
         {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
@@ -178,7 +184,8 @@ async function main(){
   let cc=0;
   for(const[cs2,seo]of Object.entries(CATS)){
     const url=BASE_URL+"/category/"+cs2;
-    const catKw = KEYWORDS_MAP[cs2] || HOME_KEYWORDS_STR;
+    const catKwArr = KEYWORDS_MAP[cs2] || [];
+    const catKw = Array.isArray(catKwArr) && catKwArr.length > 0 ? catKwArr.slice(0, 15).join(", ") : (HOME_KEYWORDS_STR.split(", ").slice(0, 15).join(", "));
     const catHtml=inj(base,{
       title:seo.t,
       desc:seo.d,
