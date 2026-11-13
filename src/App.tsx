@@ -28,8 +28,8 @@ const PageFallback = () => (
 const queryClient = new QueryClient();
 
 // /admin route: strictly checks client IP.
-// On alfacomp.uz: if IP != 144.124.196.58, /admin does NOT work (returns 404).
-// If IP == 144.124.196.58, it redirects to admin.alfacomp.uz.
+// On alfacomp.uz: if IP != 213.230.78.112, /admin does NOT work (returns 404).
+// If IP == 213.230.78.112, it redirects to admin.alfacomp.uz.
 const AdminGate = () => {
   const allowed = useAdminAccess();
 
