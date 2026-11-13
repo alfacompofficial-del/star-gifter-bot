@@ -1,4 +1,6 @@
-// Google Gemini Chat & Multimodal Audio Service
+// Google Gemini Chat & Multimodal Audio Service for AlfaComp
+// Токены и секретные ключи подтягиваются исключительно через переменные окружения VITE_GEMINI_API_KEY.
+// Никакие реальные ключи НЕ сохраняются в открытом виде в коде репозитория.
 
 export interface ChatMessage {
   role: "user" | "assistant" | "system";
@@ -26,26 +28,122 @@ export class GeminiAuthError extends Error {
   }
 }
 
-// Check if a valid Google AI Studio Gemini API key is configured
-export function isGeminiKeyConfigured(): boolean {
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-  if (!apiKey || typeof apiKey !== "string") return false;
-  const trimmed = apiKey.trim();
-  // Valid Google AI Studio keys start with AIzaSy and are at least 30 chars
-  if (trimmed.startsWith("AQ.") || trimmed.startsWith("your-") || trimmed.length < 25) {
+/**
+ * Проверка разрешенного домена:
+ * Защищает ваш API-ключ Gemini от несанкционированного использования и списания квоты на чужих доменах,
+ * зеркалах или сторонних iframe.
+ *
+ * Разрешены:
+ * - alfacomp.uz и любые его поддомены (*.alfacomp.uz)
+ * - Стейджинг / Preview на Render (*.onrender.com)
+ * - Локальная разработка: localhost, 127.0.0.1, [::1], 0.0.0.0
+ */
+export function isAllowedDomain(): boolean {
+  if (typeof window === "undefined") return true;
+
+  try {
+    const host = (window.location.hostname || "").toLowerCase();
+    if (!host) return false;
+
+    // Защита от встраивания в чужие iframe (clickjacking / proxy)
+    if (window.top !== window.self) {
+      try {
+        const topHost = (window.top?.location.hostname || "").toLowerCase();
+        if (
+          topHost &&
+          topHost !== "alfacomp.uz" &&
+          !topHost.endsWith(".alfacomp.uz") &&
+          !topHost.endsWith(".onrender.com") &&
+          topHost !== "localhost" &&
+          topHost !== "127.0.0.1"
+        ) {
+          return false;
+        }
+      } catch {
+        // Cross-origin iframe доступ заблокирован браузером — значит сайт открыт внутри чужого фрейма
+        return false;
+      }
+    }
+
+    if (
+      host === "alfacomp.uz" ||
+      host.endsWith(".alfacomp.uz") ||
+      host === "localhost" ||
+      host === "127.0.0.1" ||
+      host === "[::1]" ||
+      host === "0.0.0.0" ||
+      host.endsWith(".onrender.com")
+    ) {
+      return true;
+    }
+  } catch {
     return false;
   }
-  return true;
+
+  return false;
 }
 
-// Real Gemini API model IDs from Google AI Studio
-const CANDIDATE_MODELS = [
-  import.meta.env.VITE_GEMINI_MODEL || "gemini-2.0-flash",
-  "gemini-2.0-flash",
-  "gemini-1.5-flash",
-  "gemini-1.5-flash-8b",
-  "gemini-1.5-pro",
-];
+/**
+ * Безопасное получение API-ключа Gemini.
+ * Возвращает ключ только на разрешенных доменах.
+ */
+export function getGeminiApiKey(): string {
+  if (!isAllowedDomain()) return "";
+
+  const envKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (envKey && typeof envKey === "string") {
+    const trimmed = envKey.trim();
+    if (!trimmed.startsWith("your-") && trimmed.length >= 25) {
+      return trimmed;
+    }
+  }
+  return "";
+}
+
+/**
+ * Проверяет, настроен ли валидный API-ключ Gemini и открыт ли сайт на разрешенном домене
+ */
+export function isGeminiKeyConfigured(): boolean {
+  if (!isAllowedDomain()) return false;
+  const apiKey = getGeminiApiKey();
+  return Boolean(apiKey && apiKey.length >= 25 && !apiKey.startsWith("your-"));
+}
+
+/**
+ * Нормализация имени модели.
+ * Google AI Studio вывел из эксплуатации gemini-2.5-flash, gemini-2.0-flash и 1.5 для новых пользователей (HTTP 404).
+ * Если в Render Environment Variables указан gemini-2.5-flash, автоматически направляем на рабочую gemini-3.5-flash-lite.
+ */
+export function normalizeModelName(rawModel?: string): string {
+  if (!rawModel) return "gemini-3.5-flash-lite";
+  const trimmed = rawModel.trim();
+  if (
+    trimmed === "gemini-2.5-flash" ||
+    trimmed === "gemini-2.0-flash" ||
+    trimmed === "gemini-1.5-flash" ||
+    trimmed.startsWith("gemini-2.") ||
+    trimmed.startsWith("gemini-1.")
+  ) {
+    return "gemini-3.5-flash-lite";
+  }
+  return trimmed;
+}
+
+/**
+ * Список кандидатов моделей в порядке приоритета
+ */
+export function getCandidateModels(): string[] {
+  const configured = normalizeModelName(import.meta.env.VITE_GEMINI_MODEL);
+  return Array.from(
+    new Set([
+      configured,
+      "gemini-3.5-flash-lite",
+      "gemini-3.5-flash",
+      "gemini-flash-latest",
+      "gemini-3.8-flash",
+    ])
+  );
+}
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -55,9 +153,13 @@ export async function streamGeminiChat({
   audio,
   onChunk,
 }: SendChatOptions): Promise<string> {
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (!isAllowedDomain()) {
+    throw new GeminiAuthError("AI-консультант доступен только на официальном домене alfacomp.uz");
+  }
+
+  const apiKey = getGeminiApiKey();
   if (!apiKey || !isGeminiKeyConfigured()) {
-    throw new GeminiAuthError("VITE_GEMINI_API_KEY не задан или содержит недействительный токен");
+    throw new GeminiAuthError("VITE_GEMINI_API_KEY не задан или не настроен для текущего домена");
   }
 
   // Build Gemini contents
@@ -155,10 +257,10 @@ export async function streamGeminiChat({
   }
 
   let lastError: Error | null = null;
-  const uniqueModels = Array.from(new Set(CANDIDATE_MODELS));
+  const candidateModels = getCandidateModels();
 
   // Try candidate models in order, with automatic fallback if quota (429) or 503 is encountered
-  for (const model of uniqueModels) {
+  for (const model of candidateModels) {
     try {
       const response = await requestModelStream(model);
 

@@ -185,7 +185,6 @@ export const GuidesPage = () => {
           </Link>
           <div className="flex items-center gap-4 text-xs text-white/40">
             <Link to="/about" className="hover:text-white transition-colors">О нас</Link>
-            <Link to="/delivery" className="hover:text-white transition-colors">Доставка</Link>
             <Link to="/warranty" className="hover:text-white transition-colors">Гарантия</Link>
             <Link to="/contacts" className="hover:text-white transition-colors">Контакты</Link>
           </div>

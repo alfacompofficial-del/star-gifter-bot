@@ -7,11 +7,17 @@ services:
       - key: NODE_ENV
         value: production
       - key: VITE_SUPABASE_URL
-        value: https://vtlzfcjxpnrsqlsrvyer.supabase.co
+        sync: false
       - key: VITE_SUPABASE_PUBLISHABLE_KEY
-        value: sb_publishable_Ieiof0ojLifGDUpgD6ldVA_utmqM2nZ
+        sync: false
       - key: VITE_SUPABASE_PROJECT_ID
-        value: vtlzfcjxpnrsqlsrvyer
+        sync: false
+      - key: VITE_GEMINI_API_KEY
+        sync: false
+      - key: VITE_GEMINI_MODEL
+        sync: false
+      - key: BOT_TOKEN
+        sync: false
     routes:
       - type: rewrite
         source: /*

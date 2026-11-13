@@ -1,4 +1,4 @@
-import { ShieldCheck, CreditCard, Truck, Headphones } from "lucide-react";
+import { ShieldCheck, CreditCard, MapPin, Headphones } from "lucide-react";
 import { motion } from "framer-motion";
 
 const BENEFITS = [
@@ -10,12 +10,12 @@ const BENEFITS = [
   {
     icon: CreditCard,
     title: "Удобная оплата",
-    desc: "Наличные, карты и в рассрочку",
+    desc: "Наличные, карты Click, Payme и перечисление",
   },
   {
-    icon: Truck,
-    title: "Доставка по Узбекистану",
-    desc: "Быстро и надежно",
+    icon: MapPin,
+    title: "Самовывоз из магазина",
+    desc: "г. Ташкент, базар «Малика», блок А27",
   },
   {
     icon: Headphones,

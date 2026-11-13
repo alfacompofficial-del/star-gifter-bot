@@ -709,7 +709,7 @@ const CatalogSection = ({
               {categorySeo.seoDescription}
             </p>
             <div className="flex flex-wrap gap-4 pt-2 text-[11px] text-white/45 border-t border-white/[0.05]">
-              <span>✓ Экспресс-доставка по Ташкенту за 24 часа</span>
+              <span>✓ Самовывоз из магазина: базар «Малика», А27</span>
               <span>✓ Официальная гарантия сервисного центра</span>
               <span>✓ Оплата Click / Payme / Наличные / Перечисление</span>
             </div>

@@ -155,10 +155,20 @@ async function main(){
     const priceUZS = (p.price && p.price < 5000) ? Math.round(p.price * 14000) : (p.price || 0);
     const priceFormatted = priceUZS > 0 ? String(priceUZS).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') : '';
     const priceStr = priceFormatted ? ` Цена: ${priceFormatted} сум.` : '';
-    const pDesc = `Купить ${p.name} в Ташкенте.${priceStr} Официальная гарантия и доставка по Узбекистану — AlfaComp.uz.`;
-    const pKeywords = `${p.name}, купить ${p.name} в Ташкенте, ${p.category || ""}, цена ${p.name}, характеристики, магазин электроники Ташкент, AlfaComp, доставка по Узбекистану`;
+    // Category-specific rich description for better keyword match per product page
+    const catSlug = cat;
+    let pDescSuffix = '';
+    if (catSlug === 'ups') pDescSuffix = ' Линейно-интерактивный ИБП Ion с защитой от перепадов и АКБ. Гарантия, самовывоз в Ташкенте — AlfaComp.uz.';
+    else if (catSlug === 'monitors') pDescSuffix = ' Игровой и офисный монитор с гарантией. Купить монитор в Ташкенте — AlfaComp.uz.';
+    else if (catSlug === 'computers') pDescSuffix = ' Игровой ПК и системный блок в Ташкенте. Сборка ПК на заказ, гарантия 3 года — AlfaComp.uz.';
+    else if (catSlug === 'videocards') pDescSuffix = ' Видеокарта NVIDIA GeForce RTX в наличии. Купить видеокарту в Ташкенте с гарантией — AlfaComp.uz.';
+    else if (catSlug === 'components') pDescSuffix = ' Комплектующие для сборки ПК: DDR5, NVMe SSD, процессоры. Самовывоз в Ташкенте — AlfaComp.uz.';
+    else if (catSlug === 'wifi-routers') pDescSuffix = ' Wi-Fi роутер с поддержкой Wi-Fi 6/Wi-Fi 7. Купить в Ташкенте — AlfaComp.uz.';
+    else pDescSuffix = ` Официальная гарантия, самовывоз (базар «Малика», А27) — AlfaComp.uz.`;
+    const pDesc = `Купить ${p.name} в Ташкенте.${priceStr}${pDescSuffix}`;
+    const pKeywords = `${p.name}, купить ${p.name} в Ташкенте, ${p.name} цена, ${p.category || ""}, ${p.category ? `купить ${p.category} в Ташкенте, ` : ""}компьютерный магазин Ташкент, AlfaComp, alfacomp.uz, самовывоз Малика`;
     wp("product/"+s,inj(base,{
-      title:p.name+" — купить в Ташкенте | AlfaComp",
+      title:priceFormatted ? p.name+" — купить в Ташкенте по цене "+priceFormatted+" сум | AlfaComp" : p.name+" — купить в Ташкенте | AlfaComp",
       desc: pDesc,
       keywords: pKeywords,
       subject: `${p.name} — купить в Ташкенте`,
@@ -167,10 +177,13 @@ async function main(){
       canon:url,oimg:im,otype:"product",
       schemas:[
         {"@context":"https://schema.org","@type":"Product","name":p.name,"description":pDesc,"image":[im],"sku":"ALFA-"+p.id,
+         ...(p.brand ? {"brand":{"@type":"Brand","name":p.brand}} : {}),
+         "category": p.category || "Компьютерная техника",
          "offers":{"@type":"Offer","url":url,"priceCurrency":"UZS","price":priceUZS,
            "availability":p.in_stock!==false?"https://schema.org/InStock":"https://schema.org/OutOfStock",
            "itemCondition":"https://schema.org/NewCondition",
-           "seller":{"@type":"Organization","name":"AlfaComp","url":BASE_URL+"/"}}},
+           "seller":{"@type":"Organization","name":"AlfaComp","url":BASE_URL+"/"},
+           "hasMerchantReturnPolicy":{"@type":"MerchantReturnPolicy","applicableCountry":"UZ","returnPolicyCategory":"https://schema.org/MerchantReturnFiniteReturnWindow","merchantReturnDays":14,"returnMethod":"https://schema.org/ReturnInStore"}}},
         {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
           {"@type":"ListItem","position":1,"name":"Главная","item":BASE_URL+"/"},
           {"@type":"ListItem","position":2,"name":p.category||"Каталог","item":BASE_URL+"/category/"+cat},
@@ -231,7 +244,6 @@ async function main(){
 
   const SP=[
     {p:"about",t:"\u041e \u043a\u043e\u043c\u043f\u0430\u043d\u0438\u0438 AlfaComp \u2014 \u043c\u0430\u0433\u0430\u0437\u0438\u043d \u043a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440\u043e\u0432 \u0432 \u0422\u0430\u0448\u043a\u0435\u043d\u0442\u0435",d:"AlfaComp \u2014 \u043e\u0444\u0438\u0446\u0438\u0430\u043b\u044c\u043d\u044b\u0439 \u0434\u0438\u043b\u0435\u0440 MSI, ASUS, Dell, LG \u0432 \u0422\u0430\u0448\u043a\u0435\u043d\u0442\u0435. \u041f\u0440\u043e\u0434\u0430\u0436\u0430 \u041f\u041a, \u043c\u043e\u043d\u0438\u0442\u043e\u0440\u043e\u0432, \u0418\u0411\u041f \u0441 \u0433\u0430\u0440\u0430\u043d\u0442\u0438\u0435\u0439 \u0434\u043e 3 \u043b\u0435\u0442.",c:BASE_URL+"/about"},
-    {p:"delivery",t:"\u0414\u043e\u0441\u0442\u0430\u0432\u043a\u0430 \u0438 \u043e\u043f\u043b\u0430\u0442\u0430 \u2014 AlfaComp \u0422\u0430\u0448\u043a\u0435\u043d\u0442",d:"\u0423\u0441\u043b\u043e\u0432\u0438\u044f \u0434\u043e\u0441\u0442\u0430\u0432\u043a\u0438 AlfaComp: \u043a\u0443\u0440\u044c\u0435\u0440, \u0441\u0430\u043c\u043e\u0432\u044b\u0432\u043e\u0437, Payme, Click. \u0414\u043e\u0441\u0442\u0430\u0432\u043a\u0430 \u043f\u043e \u0423\u0437\u0431\u0435\u043a\u0438\u0441\u0442\u0430\u043d\u0443.",c:BASE_URL+"/delivery"},
     {p:"warranty",t:"\u0413\u0430\u0440\u0430\u043d\u0442\u0438\u044f \u0438 \u0432\u043e\u0437\u0432\u0440\u0430\u0442 \u2014 AlfaComp \u0422\u0430\u0448\u043a\u0435\u043d\u0442",d:"\u041e\u0444\u0438\u0446\u0438\u0430\u043b\u044c\u043d\u0430\u044f \u0433\u0430\u0440\u0430\u043d\u0442\u0438\u044f \u0432 AlfaComp \u2014 \u043e\u0442 1 \u0434\u043e 3 \u043b\u0435\u0442. \u0423\u0441\u043b\u043e\u0432\u0438\u044f \u0432\u043e\u0437\u0432\u0440\u0430\u0442\u0430 \u0438 \u043e\u0431\u043c\u0435\u043d\u0430.",c:BASE_URL+"/warranty"},
     {p:"contacts",t:"\u041a\u043e\u043d\u0442\u0430\u043a\u0442\u044b AlfaComp \u2014 \u0430\u0434\u0440\u0435\u0441 \u0438 \u0442\u0435\u043b\u0435\u0444\u043e\u043d",d:"\u041c\u0430\u0433\u0430\u0437\u0438\u043d AlfaComp: \u0431\u0430\u0437\u0430\u0440 \u00ab\u041c\u0430\u043b\u0438\u043a\u0430\u00bb, \u0431\u043b\u043e\u043a \u042127, \u0422\u0430\u0448\u043a\u0435\u043d\u0442. \u0422\u0435\u043b: +998 88 320 33 33. \u0420\u0430\u0431\u043e\u0442\u0430: 09:00\u201319:00.",c:BASE_URL+"/contacts"},
     {p:"guides",t:"\u0420\u0443\u043a\u043e\u0432\u043e\u0434\u0441\u0442\u0432\u0430 \u043f\u043e \u0432\u044b\u0431\u043e\u0440\u0443 \u041f\u041a \u2014 AlfaComp \u0431\u043b\u043e\u0433",d:"\u041f\u043e\u043b\u0435\u0437\u043d\u044b\u0435 \u0441\u0442\u0430\u0442\u044c\u0438 \u0438 \u0433\u0430\u0439\u0434\u044b \u043f\u043e \u0432\u044b\u0431\u043e\u0440\u0443 \u043a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440\u043e\u0432, \u043c\u043e\u043d\u0438\u0442\u043e\u0440\u043e\u0432 \u0438 \u0418\u0411\u041f \u043e\u0442 \u044d\u043a\u0441\u043f\u0435\u0440\u0442\u043e\u0432 AlfaComp.",c:BASE_URL+"/guides"},
@@ -257,13 +269,26 @@ async function main(){
   console.log("[prerender] OK "+userPages.length+" user pages with noindex");
 
   // --- HOME PAGE: inject canonical + robots (keep hreflang since isHome=true keeps them) ---
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {"@type":"Question","name":"Как оформить заказ?","acceptedAnswer":{"@type":"Answer","text":"1. Добавьте товары в корзину. 2. Нажмите на иконку корзины. 3. Нажмите «Оформить в Telegram». 4. Отправьте сообщение менеджеру."}},
+      {"@type":"Question","name":"Какие способы оплаты?","acceptedAnswer":{"@type":"Answer","text":"Наличные при получении, перевод на карту, Click, Payme, Uzumbank. Для юридических лиц — безналичный расчет."}},
+      {"@type":"Question","name":"Есть гарантия?","acceptedAnswer":{"@type":"Answer","text":"Да, официальная гарантия производителя + наш сервисный центр. Срок гарантии от 12 до 36 месяцев в зависимости от товара."}},
+      {"@type":"Question","name":"Есть ли доставка?","acceptedAnswer":{"@type":"Answer","text":"Доставки нет — покупка и выдача заказов осуществляется самовывозом из нашего магазина в Ташкенте: базар «Малика», блок А27."}},
+      {"@type":"Question","name":"Можно ли вернуть товар?","acceptedAnswer":{"@type":"Answer","text":"Да, в течение 14 дней с момента покупки при сохранении товарного вида и упаковки."}},
+    ]
+  };
   const homeHtml = inj(base, {
     title: "Купить компьютер и монитор в Ташкенте — Магазин ПК AlfaComp.uz",
-    desc: "Купить мощный игровой компьютер, мониторы MSI, ASUS, Dell, LG и комплектующие в Ташкенте. Сборка ПК на заказ, ИБП Ion, гарантия до 3 лет и доставка по Узбекистану — AlfaComp.uz",
+    desc: "Купить мощный игровой компьютер, мониторы MSI, ASUS, Dell, LG и комплектующие в Ташкенте. Сборка ПК на заказ, ИБП Ion, гарантия до 3 лет, самовывоз на Малике (А27) — AlfaComp.uz",
+    keywords: "купить компьютер в Ташкенте, купить ПК в Ташкенте, компьютерный магазин Ташкент, kompyuterlar, kompyuter sotib olish Toshkent, kompyuter narxi, gaming PC sotib olish, o'yin kompyuteri, купить игровой ПК, мониторы в Ташкенте, сборка ПК Ташкент, ИБП Ion, AlfaComp, alfacomp.uz",
     canon: BASE_URL + "/",
     oimg: BASE_URL + "/banner.jpg",
     oalt: "AlfaComp — компьютеры, мониторы и комплектующие в Ташкенте",
     isHome: true,
+    schemas: [faqSchema],
   });
   writeFileSync(resolve(DIST, "index.html"), homeHtml, "utf-8");
   console.log("[prerender] OK home page (canonical + robots injected)");

@@ -158,7 +158,7 @@ const CartModal = ({
                   <span className="text-data text-[10px] text-white/35 mt-0.5 block">
                     {step === "cart"
                       ? `${items.length} позиц${items.length === 1 ? "ия" : items.length >= 2 && items.length <= 4 ? "ии" : "ий"} в заказе`
-                      : "Укажите данные для доставки"}
+                      : "Укажите контактные данные для оформления"}
                   </span>
                 </div>
               </div>
@@ -438,7 +438,7 @@ const CartModal = ({
                       )}
                     </button>
                     <p className="text-data text-[10px] text-center text-white/28 leading-relaxed">
-                      Менеджер свяжется в Telegram и согласует доставку и оплату
+                      Менеджер свяжется в Telegram для подтверждения заказа и самовывоза
                     </p>
                   </div>
                 </motion.div>

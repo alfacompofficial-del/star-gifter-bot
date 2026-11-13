@@ -117,7 +117,7 @@ const App = () => {
 
             {/* Informational SEO pages */}
             <Route path="/about" element={<Suspense fallback={<PageFallback />}><InfoPage type="about" /></Suspense>} />
-            <Route path="/delivery" element={<Suspense fallback={<PageFallback />}><InfoPage type="delivery" /></Suspense>} />
+            <Route path="/delivery" element={<Navigate to="/contacts" replace />} />
             <Route path="/warranty" element={<Suspense fallback={<PageFallback />}><InfoPage type="warranty" /></Suspense>} />
             <Route path="/contacts" element={<Suspense fallback={<PageFallback />}><InfoPage type="contacts" /></Suspense>} />
 

@@ -12,6 +12,17 @@ export default defineConfig({
     },
   },
   plugins: [react()],
+  define: {
+    "import.meta.env.VITE_BOT_TOKEN": JSON.stringify(
+      process.env.VITE_BOT_TOKEN || process.env.BOT_TOKEN || ""
+    ),
+    "import.meta.env.VITE_GEMINI_API_KEY": JSON.stringify(
+      process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || ""
+    ),
+    "import.meta.env.VITE_GEMINI_MODEL": JSON.stringify(
+      process.env.VITE_GEMINI_MODEL || process.env.GEMINI_MODEL || "gemini-3.5-flash-lite"
+    ),
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

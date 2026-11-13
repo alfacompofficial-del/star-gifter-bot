@@ -23,7 +23,6 @@ const STATIC_ROUTES = [
   { path: "/category/computers", changefreq: "daily", priority: "0.8" },
   // Informational & Content Pages
   { path: "/about", changefreq: "monthly", priority: "0.6" },
-  { path: "/delivery", changefreq: "monthly", priority: "0.6" },
   { path: "/warranty", changefreq: "monthly", priority: "0.6" },
   { path: "/contacts", changefreq: "monthly", priority: "0.7" },
   { path: "/guides", changefreq: "weekly", priority: "0.7" },
@@ -89,7 +88,7 @@ async function fetchProducts() {
   let lastErr = null;
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      const res = await fetch(`${supabaseUrl}/rest/v1/products?select=id,name,category,created_at,image&order=id.asc`, {
+      const res = await fetch(`${supabaseUrl}/rest/v1/products?select=id,name,category,created_at,updated_at,image&order=id.asc`, {
         headers: {
           apikey: supabaseKey,
           Authorization: `Bearer ${supabaseKey}`,
@@ -151,7 +150,7 @@ async function generate() {
       path: `/product/${slug}`,
       changefreq: "weekly",
       priority: "0.9",
-      lastmod: TODAY,
+      lastmod: product.updated_at ? product.updated_at.split("T")[0] : (product.created_at ? product.created_at.split("T")[0] : TODAY),
       image: imageUrl,
       imageTitle: `${product.name} — купить в Ташкенте | AlfaComp`,
       imageCaption: `Оригинальный ${product.name} в Ташкенте по выгодной цене с официальной гарантией и быстрой доставкой по Узбекистану в AlfaComp.uz`,

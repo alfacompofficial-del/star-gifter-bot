@@ -294,7 +294,7 @@ const Index = ({ initialCartOpen = false, initialProfileOpen = false }: IndexPro
         image: [selectedProduct.image],
         description: `Купить ${selectedProduct.name} в Ташкенте по цене ${formatPrice(
           selectedPrices.priceUZS
-        )} сум с официальной гарантией и доставкой по Узбекистану в интернет-магазине AlfaComp.`,
+        )} сум с официальной гарантией и самовывозом из магазина в Ташкенте (базар «Малика», блок А27) — AlfaComp.`,
         // sku: стабильный внутренний артикул AlfaComp.
         // mpn намеренно убран: артикул производителя отсутствует в данных БД.
         sku: `ALFA-${selectedProduct.id}`,
@@ -326,36 +326,6 @@ const Index = ({ initialCartOpen = false, initialProfileOpen = false }: IndexPro
             returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
             merchantReturnDays: 14,
             returnMethod: "https://schema.org/ReturnInStore",
-            // returnFees: FreeReturn убран — возврат является платным согласно
-            // реальной политике AlfaComp.
-          },
-          shippingDetails: {
-            "@type": "OfferShippingDetails",
-            shippingRate: {
-              "@type": "MonetaryAmount",
-              // Минимальная стоимость доставки по Ташкенту (от 30 000 сум).
-              value: "30000",
-              currency: "UZS",
-            },
-            shippingDestination: {
-              "@type": "DefinedRegion",
-              addressCountry: "UZ",
-            },
-            deliveryTime: {
-              "@type": "ShippingDeliveryTime",
-              handlingTime: {
-                "@type": "QuantitativeValue",
-                minValue: 0,
-                maxValue: 1,
-                unitCode: "DAY",
-              },
-              transitTime: {
-                "@type": "QuantitativeValue",
-                minValue: 1,
-                maxValue: 3,
-                unitCode: "DAY",
-              },
-            },
           },
         },
       }
@@ -410,13 +380,13 @@ const Index = ({ initialCartOpen = false, initialProfileOpen = false }: IndexPro
           )} сум | AlfaComp`}</title>
           <meta
             name="description"
-            content={`Купить ${selectedProduct.name} в Ташкенте с гарантией и быстрой доставкой по Узбекистану в AlfaComp. Цена: ${formatPrice(
+            content={`Купить ${selectedProduct.name} в Ташкенте с гарантией и самовывозом из магазина (базар «Малика», блок А27) — AlfaComp. Цена: ${formatPrice(
               selectedPrices ? selectedPrices.priceUZS : selectedProduct.price
             )} сум${selectedPrices && selectedPrices.priceUSD > 0 ? ` (≈$${selectedPrices.priceUSD})` : ""}.`}
           />
           <meta
             name="keywords"
-            content={`${selectedProduct.name}, купить ${selectedProduct.name} в Ташкенте, цена ${selectedProduct.name}, ${selectedProduct.category}, компьютерный магазин Ташкент, AlfaComp, alfacomp.uz, доставка по Узбекистану`}
+            content={`${selectedProduct.name}, купить ${selectedProduct.name} в Ташкенте, цена ${selectedProduct.name}, ${selectedProduct.category}, компьютерный магазин Ташкент, AlfaComp, alfacomp.uz, самовывоз Малика А27`}
           />
           <meta name="subject" content={`${selectedProduct.name} — купить в Ташкенте по лучшей цене`} />
           <meta name="topic" content={selectedProduct.category || "Компьютерная техника"} />
@@ -427,9 +397,9 @@ const Index = ({ initialCartOpen = false, initialProfileOpen = false }: IndexPro
           />
           <meta
             property="og:description"
-            content={`Оригинальный ${selectedProduct.name} в наличии и под заказ с гарантией. Доставка по Ташкенту и всему Узбекистану.`}
+            content={`Оригинальный ${selectedProduct.name} в наличии и под заказ с гарантией. Самовывоз из магазина в Ташкенте (базар «Малика», блок А27).`}
           />
-          <meta property="og:image" content={selectedProduct.image} />
+          <meta property="og:image" content={selectedProduct.image && !selectedProduct.image.startsWith("data:") ? (selectedProduct.image.startsWith("http") ? selectedProduct.image : `https://alfacomp.uz${selectedProduct.image.startsWith("/") ? "" : "/"}${selectedProduct.image}`) : "https://alfacomp.uz/banner.jpg"} />
           <meta property="og:image:alt" content={`${selectedProduct.name} — купить в Ташкенте AlfaComp`} />
           <meta property="og:url" content={`https://alfacomp.uz${getProductUrl(selectedProduct)}`} />
           <meta property="og:type" content="product" />
@@ -444,9 +414,9 @@ const Index = ({ initialCartOpen = false, initialProfileOpen = false }: IndexPro
             name="twitter:description"
             content={`Купить ${selectedProduct.name} в Ташкенте по цене ${formatPrice(
               selectedPrices ? selectedPrices.priceUZS : selectedProduct.price
-            )} сум с доставкой по Узбекистану.`}
+            )} сум с самовывозом из магазина (базар «Малика», блок А27).`}
           />
-          <meta name="twitter:image" content={selectedProduct.image} />
+          <meta name="twitter:image" content={selectedProduct.image && !selectedProduct.image.startsWith("data:") ? (selectedProduct.image.startsWith("http") ? selectedProduct.image : `https://alfacomp.uz${selectedProduct.image.startsWith("/") ? "" : "/"}${selectedProduct.image}`) : "https://alfacomp.uz/banner.jpg"} />
           <script type="application/ld+json">{JSON.stringify(productJsonLd)}</script>
           <script type="application/ld+json">{JSON.stringify(productBreadcrumbsJsonLd)}</script>
         </Helmet>
@@ -481,7 +451,7 @@ const Index = ({ initialCartOpen = false, initialProfileOpen = false }: IndexPro
           <title>Корзина покупок — Оформление заказа | AlfaComp</title>
           <meta
             name="description"
-            content="Корзина интернет-магазина AlfaComp. Оформление заказа на компьютеры, мониторы и комплектующие с доставкой по Ташкенту и Узбекистану."
+            content="Корзина интернет-магазина AlfaComp. Оформление заказа на компьютеры, мониторы и комплектующие с самовывозом из магазина в Ташкенте (базар «Малика», блок А27)."
           />
           <link rel="canonical" href="https://alfacomp.uz/cart" />
           <meta name="robots" content="noindex, follow" />
@@ -507,7 +477,7 @@ const Index = ({ initialCartOpen = false, initialProfileOpen = false }: IndexPro
           <title>Каталог компьютерной техники и мониторов в Ташкенте | AlfaComp</title>
           <meta
             name="description"
-            content="Полный каталог техники AlfaComp: игровые ПК, мониторы 144–360 Гц, комплектующие, ИБП Ion, сетевое оборудование в Ташкенте. Официальная гарантия, доставка по Узбекистану."
+            content="Полный каталог техники AlfaComp: игровые ПК, мониторы 144–360 Гц, комплектующие, ИБП Ion, сетевое оборудование в Ташкенте. Официальная гарантия, самовывоз из магазина (базар «Малика», блок А27)."
           />
           <meta name="keywords" content={CATALOG_SEO_KEYWORDS} />
           <meta name="subject" content="Каталог компьютерной техники и мониторов в Ташкенте" />
@@ -538,7 +508,7 @@ const Index = ({ initialCartOpen = false, initialProfileOpen = false }: IndexPro
           <title>Купить компьютер и монитор в Ташкенте — Магазин ПК AlfaComp.uz</title>
           <meta
             name="description"
-            content="Купить мощный игровой компьютер, мониторы MSI, ASUS, Dell, LG и комплектующие в Ташкенте. Сборка ПК на заказ, ИБП Ion, гарантия до 3 лет и доставка по Узбекистану — AlfaComp.uz"
+            content="Купить мощный игровой компьютер, мониторы MSI, ASUS, Dell, LG и комплектующие в Ташкенте. Сборка ПК на заказ, ИБП Ion, гарантия до 3 лет, самовывоз на Малике (А27) — AlfaComp.uz"
           />
           <meta name="keywords" content={HOME_SEO_KEYWORDS} />
           <meta name="subject" content="Компьютерный интернет-магазин в Ташкенте: игровые ПК, мониторы, комплектующие, ИБП" />
@@ -551,7 +521,7 @@ const Index = ({ initialCartOpen = false, initialProfileOpen = false }: IndexPro
           <meta property="og:title" content="Купить компьютер и монитор в Ташкенте — AlfaComp.uz" />
           <meta
             property="og:description"
-            content="Игровые ПК, мониторы 2K/4K/OLED, комплектующие и ИБП в Ташкенте. Официальная гарантия и быстрая доставка по Узбекистану."
+            content="Игровые ПК, мониторы 2K/4K/OLED, комплектующие и ИБП в Ташкенте. Официальная гарантия, самовывоз на Малике (А27)."
           />
           <meta property="og:image" content="https://alfacomp.uz/banner.jpg" />
           <meta property="og:url" content="https://alfacomp.uz/" />
@@ -560,7 +530,7 @@ const Index = ({ initialCartOpen = false, initialProfileOpen = false }: IndexPro
           <meta name="twitter:title" content="Купить компьютер и монитор в Ташкенте — AlfaComp.uz" />
           <meta
             name="twitter:description"
-            content="Игровые ПК, мониторы 2K/4K/OLED, комплектующие и ИБП в Ташкенте. Официальная гарантия и быстрая доставка по Узбекистану."
+            content="Игровые ПК, мониторы 2K/4K/OLED, комплектующие и ИБП в Ташкенте. Официальная гарантия, самовывоз на Малике (А27)."
           />
           <meta name="twitter:image" content="https://alfacomp.uz/banner.jpg" />
           <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>

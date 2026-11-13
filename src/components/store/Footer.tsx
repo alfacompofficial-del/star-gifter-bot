@@ -145,7 +145,6 @@ const Footer = () => {
               {[
                 { to: "/", label: "Главная" },
                 { to: "/about", label: "О компании" },
-                { to: "/delivery", label: "Доставка и оплата" },
                 { to: "/warranty", label: "Гарантия и возврат" },
                 { to: "/contacts", label: "Контакты" },
                 { to: "/guides", label: "База знаний и гайды" },
