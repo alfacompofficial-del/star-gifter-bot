@@ -147,7 +147,7 @@ async function generate() {
     const imageUrl = normalizeImageUrl(product.image, product.id);
 
     entries.push({
-      path: `/product/${slug}`,
+      path: `/product/${slug}/`,
       changefreq: "weekly",
       priority: "0.9",
       lastmod: product.updated_at ? product.updated_at.split("T")[0] : (product.created_at ? product.created_at.split("T")[0] : TODAY),

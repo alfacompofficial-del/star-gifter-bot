@@ -65,12 +65,17 @@
     <!-- PRECONNECT & PRELOAD — ускорение загрузки шрифтов и LCP -->
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Preconnect to Supabase (product data, images) -->
+    <link rel="dns-prefetch" href="//vtlzfcjxpnrsqlsrvyer.supabase.co" />
+    <link rel="preconnect" href="https://vtlzfcjxpnrsqlsrvyer.supabase.co" crossorigin />
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'" />
+    <!-- Referrer policy — лучшая практика для SEO и безопасности -->
+    <meta name="referrer" content="origin-when-cross-origin" />
 
     <!-- OPEN GRAPH -->
     <meta property="og:title" content="Купить компьютер и мониторы в Ташкенте | AlfaComp.uz" />
-    <meta property="og:description" content="Игровые ПК, мониторы 2K/4K/OLED и комплектующие в Ташкенте. Гарантия, доставка по Узбекистану — AlfaComp.uz" />
+    <meta property="og:description" content="Купить мощный игровой компьютер, мониторы MSI, ASUS, Dell, LG и комплектующие в Ташкенте. Сборка ПК на заказ, ИБП Ion, гарантия до 3 лет, самовывоз на Малике (А27) — AlfaComp.uz" />
     <meta property="og:url" content="https://alfacomp.uz/" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="ru_RU" />
@@ -80,6 +85,7 @@
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="AlfaComp — компьютеры, мониторы и комплектующие в Ташкенте" />
     <meta property="og:site_name" content="AlfaComp" />
+    <meta property="article:publisher" content="https://t.me/alfacomp_computers" />
 
     <!-- TWITTER -->
     <meta name="twitter:card" content="summary_large_image" />
@@ -195,6 +201,45 @@
       "itemListElement": [
         { "@type": "ListItem", "position": 1, "name": "Главная", "item": "https://alfacomp.uz/" }
       ]
+    }
+    </script>
+
+    <!-- LOCAL BUSINESS SCHEMA — для Google Maps и локальной выдачи -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "LocalBusiness",
+      "@id": "https://alfacomp.uz/#localbusiness",
+      "name": "AlfaComp",
+      "image": "https://alfacomp.uz/banner.jpg",
+      "url": "https://alfacomp.uz/",
+      "telephone": "+998883203333",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "базар «Малика», блок А27",
+        "addressLocality": "Ташкент",
+        "addressRegion": "Ташкентская область",
+        "postalCode": "100000",
+        "addressCountry": "UZ"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 41.3388889,
+        "longitude": 69.2718204
+      },
+      "openingHoursSpecification": [
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],
+          "opens": "09:00",
+          "closes": "19:00"
+        }
+      ],
+      "priceRange": "$$",
+      "currenciesAccepted": "UZS, USD",
+      "paymentAccepted": "Cash, Credit Card, Payme, Click, Uzumbank",
+      "servesCuisine": null,
+      "hasMap": "https://www.google.com/maps/place/Alfacomp/@41.338707,69.2720058,20.32z"
     }
     </script>
   </head>

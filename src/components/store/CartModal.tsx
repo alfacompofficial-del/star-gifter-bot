@@ -8,6 +8,7 @@ import { trackGoogleAdsPageView } from "@/utils/googleAds";
 import type { CartItem } from "@/hooks/useCart";
 import { loadProfile, type ProfileData } from "./ProfileModal";
 import { sendOrderToAdmin } from "@/services/telegramBot";
+import { createOrderFromCart } from "@/services/ordersService";
 
 interface CartModalProps {
   isOpen: boolean;
@@ -79,6 +80,28 @@ const CartModal = ({
     try {
       localStorage.setItem("alfacomp_profile_v1", JSON.stringify(customer));
     } catch {}
+
+    // Save to CRM & Orders database (real-time sync to admin)
+    try {
+      createOrderFromCart({
+        firstName: customer.firstName,
+        lastName: customer.lastName,
+        phone: customer.phone,
+        telegramUsername: customer.telegramUsername,
+        items: items.map((i) => ({
+          id: i.id,
+          name: i.name,
+          price: i.price,
+          quantity: i.quantity,
+          image: i.image,
+        })),
+        totalUZS,
+        exchangeRate,
+        source: "telegram_bot",
+      });
+    } catch (e) {
+      console.error("[CartModal] Failed to record order in CRM:", e);
+    }
 
     // Build order message for Telegram
     const checkoutMessage = items

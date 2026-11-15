@@ -15,7 +15,7 @@ const getPersistedResult = (): boolean | null => {
     const ip = localStorage.getItem(CACHE_KEY);
     const allowed = localStorage.getItem(CACHE_ALLOWED_KEY);
     if (ip && allowed !== null) return allowed === "1";
-  } catch {}
+  } catch { }
   return null;
 };
 
@@ -54,7 +54,7 @@ const logVisit = async (info: {
       path: window.location.pathname + window.location.hash,
       referrer: document.referrer || null,
     });
-  } catch {}
+  } catch { }
 };
 
 const fetchIpInfo = async (): Promise<{ ip: string; country?: string; country_code?: string; city?: string; region?: string } | null> => {
@@ -73,7 +73,7 @@ const fetchIpInfo = async (): Promise<{ ip: string; country?: string; country_co
         region: d.region,
       };
     }
-  } catch {}
+  } catch { }
 
   for (const url of ["https://api.ipify.org?format=json", "https://api64.ipify.org?format=json"]) {
     try {
@@ -81,7 +81,7 @@ const fetchIpInfo = async (): Promise<{ ip: string; country?: string; country_co
       if (!res.ok) continue;
       const d = await res.json();
       if (d.ip) return { ip: d.ip };
-    } catch {}
+    } catch { }
   }
   return null;
 };
@@ -98,7 +98,7 @@ const checkAccess = async (): Promise<boolean> => {
     try {
       localStorage.setItem(CACHE_KEY, "localhost");
       localStorage.setItem(CACHE_ALLOWED_KEY, "1");
-    } catch {}
+    } catch { }
     return true;
   }
 
@@ -117,7 +117,7 @@ const checkAccess = async (): Promise<boolean> => {
     try {
       localStorage.setItem(CACHE_KEY, info.ip);
       localStorage.setItem(CACHE_ALLOWED_KEY, result ? "1" : "0");
-    } catch {}
+    } catch { }
     return result;
   })();
 

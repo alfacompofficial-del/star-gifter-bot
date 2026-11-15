@@ -151,7 +151,7 @@ async function main(){
   console.log("[prerender] Got "+prods.length+" products");
   for(const p of prods){
     if(!p.id||!p.name)continue;
-    const s=slug(p);const url=BASE_URL+"/product/"+s;const im=img(p.image, p.id);const cat=cs(p.category||"");
+    const s=slug(p);const url=BASE_URL+"/product/"+s+"/";const im=img(p.image, p.id);const cat=cs(p.category||"");
     const priceUZS = (p.price && p.price < 5000) ? Math.round(p.price * 14000) : (p.price || 0);
     const priceFormatted = priceUZS > 0 ? String(priceUZS).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') : '';
     const priceStr = priceFormatted ? ` Цена: ${priceFormatted} сум.` : '';

@@ -19,6 +19,19 @@ services:
       - key: BOT_TOKEN
         sync: false
     routes:
+      # Redirect /product/SLUG (no trailing slash) → /product/SLUG/ (301 permanent)
+      # This fixes the main SEO issue: 181 pages not indexed because sitemap URLs
+      # without slash hit the SPA fallback and serve the homepage HTML to Googlebot.
+      - type: redirect
+        source: /product/:slug
+        destination: /product/:slug/
+        statusCode: 301
+      # Same for category pages
+      - type: redirect
+        source: /category/:cat
+        destination: /category/:cat/
+        statusCode: 301
+      # SPA fallback — must come LAST
       - type: rewrite
         source: /*
         destination: /index.html

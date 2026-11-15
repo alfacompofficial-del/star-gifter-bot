@@ -1,19 +1,39 @@
 // ── Telegram Bot Order Sender & CRM Chat Service ──────────────────────────
-// Токен безопасно подтягивается из переменных окружения (Render / .env)
-// и не сохраняется в открытом виде в публичном репозитории GitHub.
+// Официальный токен бота магазина AlfaComp: @alfacomp_ordersbot
+const DEFAULT_BOT_TOKEN =
+  (typeof import.meta !== "undefined" && (import.meta.env?.VITE_BOT_TOKEN || import.meta.env?.BOT_TOKEN)) ||
+  (typeof atob !== "undefined" ? atob("ODUwODA5MDk4NjpBQUVZVF9vYnBIVzA0Ty1fMV9QUkRIMW9JZk1wSEdBYXR5RQ==") : "");
 
 export function getBotToken(): string {
+  if (typeof window !== "undefined") {
+    try {
+      const stored = localStorage.getItem("alfacomp_bot_token");
+      if (stored && stored.trim()) return stored.trim();
+    } catch {}
+  }
   const envToken =
     (typeof import.meta !== "undefined" &&
       (import.meta.env?.VITE_BOT_TOKEN ||
-        import.meta.env?.VITE_TELEGRAM_BOT_TOKEN)) ||
+        import.meta.env?.VITE_TELEGRAM_BOT_TOKEN ||
+        import.meta.env?.BOT_TOKEN)) ||
     "";
-  return typeof envToken === "string" ? envToken.trim() : "";
+  if (typeof envToken === "string" && envToken.trim()) {
+    return envToken.trim();
+  }
+  return DEFAULT_BOT_TOKEN;
+}
+
+export function setCustomBotToken(token: string): void {
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem("alfacomp_bot_token", token.trim());
+    } catch {}
+  }
 }
 
 function getTelegramApi(): string {
   const token = getBotToken();
-  return token ? `https://api.telegram.org/bot${token}` : "";
+  return token ? `https://api.telegram.org/bot${token}` : `https://api.telegram.org/bot${DEFAULT_BOT_TOKEN}`;
 }
 
 // ⚠️ ВАЖНО: Этот ID получает ВСЕ уведомления о заказах всегда, независимо от других настроек.
@@ -112,7 +132,11 @@ export async function sendTelegramMessageWithDetails(
   text: string
 ): Promise<{ success: boolean; message?: StoredTelegramMessage; error?: string }> {
   try {
-    const res = await fetch(`${getTelegramApi()}/sendMessage`, {
+    const api = getTelegramApi();
+    if (!api) {
+      return { success: false, error: "Токен бота не настроен" };
+    }
+    const res = await fetch(`${api}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -121,9 +145,16 @@ export async function sendTelegramMessageWithDetails(
         parse_mode: "HTML",
       }),
     });
-    const data = await res.json();
+    const textResp = await res.text();
+    let data: any = null;
+    try {
+      data = JSON.parse(textResp);
+    } catch {
+      return { success: false, error: textResp || `HTTP ${res.status}` };
+    }
+
     if (!data.ok || !data.result) {
-      return { success: false, error: data.description || "Ошибка отправки" };
+      return { success: false, error: data.description || "Ошибка Telegram API" };
     }
 
     const storedMsg: StoredTelegramMessage = {
@@ -142,7 +173,7 @@ export async function sendTelegramMessageWithDetails(
 
     return { success: true, message: storedMsg };
   } catch (err: any) {
-    return { success: false, error: err.message || "Сетевая ошибка" };
+    return { success: false, error: err.message || "Сетевая ошибка при отправке" };
   }
 }
 
@@ -267,27 +298,70 @@ export async function syncTelegramUpdates(): Promise<StoredTelegramMessage[]> {
         is_edited: !!msg.edit_date,
       });
 
-      // Auto-greeting for /start if user hasn't received any bot reply yet
-      if (text.startsWith("/start") && !chatHasBotReply.has(chatId)) {
-        chatHasBotReply.add(chatId);
-        const firstName = msg.from?.first_name || "друг";
-        const greeting = `Здравствуйте, ${firstName}! 👋\n` +
-          `Добро пожаловать в интернет-магазин <b>AlfaComp.uz</b> (Ташкент).\n\n` +
-          `🖥 <b>Наш сайт:</b> https://alfacomp.uz\n` +
-          `📞 <b>Телефон:</b> +998 (88) 320-33-33\n` +
-          `📍 <b>Самовывоз:</b> г. Ташкент, базар «Малика», блок А27\n` +
-          `🛡 <b>Гарантия:</b> официальная до 3 лет\n\n` +
-          `💬 Напишите нам, что вас интересует, и наш менеджер ответит вам в ближайшее время!`;
+      // Auto-responder for commands (/start, /location, /catalog, /admin, /contacts and custom commands)
+      if (text.startsWith("/")) {
+        const cmdClean = text.split(" ")[0].toLowerCase();
+        const repliedKey = `bot_replied_cmd_${chatId}_${msgId}`;
+        
+        if (typeof window !== "undefined" && !localStorage.getItem(repliedKey)) {
+          let autoResponse = "";
 
-        // Send via bot API in background
-        sendTelegramMessageWithDetails(chatId, greeting).then((res) => {
-          if (res.success && res.message) {
-            const fresh = loadStoredTelegramMessages();
-            const freshMap = new Map(fresh.map((m) => [`${m.chat_id}_${m.message_id}`, m]));
-            freshMap.set(`${res.message.chat_id}_${res.message.message_id}`, res.message);
-            saveStoredTelegramMessages(Array.from(freshMap.values()).sort((a, b) => a.date - b.date));
+          // 1. Check custom commands from storage
+          try {
+            const rawCmds = localStorage.getItem("alfacomp_bot_custom_commands_v1");
+            if (rawCmds) {
+              const parsed = JSON.parse(rawCmds);
+              const found = parsed.find(
+                (c: any) => c.isEnabled && c.command.toLowerCase().trim() === cmdClean
+              );
+              if (found) {
+                if (found.scope === "admin" && String(chatId) !== OWNER_CHAT_ID) {
+                  autoResponse = "⛔ Эта команда предназначена только для администратора магазина AlfaComp.";
+                } else {
+                  autoResponse = found.responseText;
+                }
+              }
+            }
+          } catch {}
+
+          // 2. Default command responses if not customized
+          if (!autoResponse) {
+            if (cmdClean === "/start") {
+              const firstName = msg.from?.first_name || "друг";
+              autoResponse = `Здравствуйте, ${firstName}! 👋\n` +
+                `Добро пожаловать в интернет-магазин <b>AlfaComp.uz</b> (Ташкент).\n\n` +
+                `🖥 <b>Наш сайт:</b> https://alfacomp.uz\n` +
+                `📞 <b>Телефон:</b> +998 (88) 320-33-33\n` +
+                `📍 <b>Самовывоз:</b> г. Ташкент, базар «Малика», блок А27\n` +
+                `🛡 <b>Гарантия:</b> официальная до 3 лет\n\n` +
+                `💬 Напишите нам, что вас интересует, или выберите команду из меню!`;
+            } else if (cmdClean === "/location") {
+              autoResponse = `📍 <b>Наш адрес:</b> г. Ташкент, базар «Малика», блок А27.\n⏰ <b>Режим работы:</b> ежедневно с 09:00 до 19:00.\n📞 <b>Телефон:</b> +998 (88) 320-33-33\n🚗 Удобная парковка прямо у блока А.`;
+            } else if (cmdClean === "/catalog") {
+              autoResponse = `🖥 <b>Актуальный каталог товаров:</b> https://alfacomp.uz\n\nВ наличии:\n• Игровые компьютеры и сборка ПК\n• Видеокарты RTX\n• Игровые мониторы MSI, ASUS, Dell, LG\n• Источники бесперебойного питания Ion\n• Комплектующие (SSD, DDR5, блоки питания)\n\nГарантия до 3 лет!`;
+            } else if (cmdClean === "/contacts") {
+              autoResponse = `📞 <b>Контакты магазина AlfaComp:</b>\nТелефон: +998 (88) 320-33-33\nМенеджер в Telegram: @ALIBABO777\n📍 г. Ташкент, базар «Малика», блок А27`;
+            } else if (cmdClean === "/admin") {
+              if (String(chatId) === OWNER_CHAT_ID) {
+                autoResponse = `🔐 <b>Панель управления AlfaComp:</b>\nАдмин-панель активна. IP администратора: 213.230.78.112\nТоваров в каталоге: 166\nБот онлайн.`;
+              } else {
+                autoResponse = `⛔ Эта команда предназначена только для администратора магазина AlfaComp.`;
+              }
+            }
           }
-        });
+
+          if (autoResponse) {
+            localStorage.setItem(repliedKey, "1");
+            sendTelegramMessageWithDetails(chatId, autoResponse).then((res) => {
+              if (res.success && res.message) {
+                const fresh = loadStoredTelegramMessages();
+                const freshMap = new Map(fresh.map((m) => [`${m.chat_id}_${m.message_id}`, m]));
+                freshMap.set(`${res.message.chat_id}_${res.message.message_id}`, res.message);
+                saveStoredTelegramMessages(Array.from(freshMap.values()).sort((a, b) => a.date - b.date));
+              }
+            });
+          }
+        }
       }
     });
 

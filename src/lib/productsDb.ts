@@ -73,9 +73,40 @@ function readLocalStorageCache(): CachedProductsPayload | null {
 function writeLocalStorageCache(payload: CachedProductsPayload): void {
   try {
     if (typeof window === "undefined") return;
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(payload));
-  } catch (e) {
-    console.warn("[Cache] LocalStorage quota or write error:", e);
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(payload));
+    } catch (quotaErr) {
+      // Очищаем старые ключи если переполнена квота 5MB
+      try {
+        localStorage.removeItem("alfacomp_products_cache");
+        localStorage.removeItem("alfacomp_products_cache_v1");
+      } catch (_) {}
+
+      // Пробуем сохранить компактную версию без тяжелых описаний для быстрого старта
+      try {
+        const compactPayload: CachedProductsPayload = {
+          ...payload,
+          products: payload.products.map((p) => ({
+            id: p.id,
+            name: p.name,
+            price: p.price,
+            category: p.category,
+            image_url: p.image_url,
+            in_stock: p.in_stock,
+            rating: p.rating,
+          } as Product)),
+        };
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(compactPayload));
+      } catch (_) {
+        // Если все равно не помещается в localStorage, очищаем ключ.
+        // IndexedDB надежно сохраняет полный каталог до гигабайт без ограничений квоты.
+        try {
+          localStorage.removeItem(LOCAL_STORAGE_KEY);
+        } catch (_) {}
+      }
+    }
+  } catch (_) {
+    // Безопасное подавление
   }
 }
 
