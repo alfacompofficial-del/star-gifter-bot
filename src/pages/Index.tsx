@@ -268,6 +268,17 @@ const Index = ({ initialCartOpen = false, initialProfileOpen = false }: IndexPro
     return products.slice(0, 24);
   }, [products, activeCategorySlug]);
 
+  // Безопасное формирование URL изображений для Schema.org и OpenGraph
+  // Google строго запрещает data: URIs в structured data (вызывает ошибку парсинга)
+  const getSafeSeoImageUrl = (img?: string | null): string => {
+    if (!img) return "https://alfacomp.uz/banner.jpg";
+    const trimmed = String(img).trim();
+    if (!trimmed || trimmed.startsWith("data:")) return "https://alfacomp.uz/banner.jpg";
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed;
+    if (trimmed.startsWith("/")) return `https://alfacomp.uz${trimmed}`;
+    return `https://alfacomp.uz/${trimmed}`;
+  };
+
   const catalogItemListJsonLd = {
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -278,7 +289,7 @@ const Index = ({ initialCartOpen = false, initialProfileOpen = false }: IndexPro
       position: idx + 1,
       name: p.name,
       url: `https://alfacomp.uz${getProductUrl(p)}`,
-      image: p.image,
+      image: getSafeSeoImageUrl(p.image),
     })),
   };
 
@@ -291,7 +302,7 @@ const Index = ({ initialCartOpen = false, initialProfileOpen = false }: IndexPro
         "@context": "https://schema.org",
         "@type": "Product",
         name: selectedProduct.name,
-        image: [selectedProduct.image],
+        image: [getSafeSeoImageUrl(selectedProduct.image)],
         description: `Купить ${selectedProduct.name} в Ташкенте по цене ${formatPrice(
           selectedPrices.priceUZS
         )} сум с официальной гарантией и самовывозом из магазина в Ташкенте (базар «Малика», блок А27) — AlfaComp.`,
@@ -399,7 +410,7 @@ const Index = ({ initialCartOpen = false, initialProfileOpen = false }: IndexPro
             property="og:description"
             content={`Оригинальный ${selectedProduct.name} в наличии и под заказ с гарантией. Самовывоз из магазина в Ташкенте (базар «Малика», блок А27).`}
           />
-          <meta property="og:image" content={selectedProduct.image && !selectedProduct.image.startsWith("data:") ? (selectedProduct.image.startsWith("http") ? selectedProduct.image : `https://alfacomp.uz${selectedProduct.image.startsWith("/") ? "" : "/"}${selectedProduct.image}`) : "https://alfacomp.uz/banner.jpg"} />
+          <meta property="og:image" content={getSafeSeoImageUrl(selectedProduct.image)} />
           <meta property="og:image:alt" content={`${selectedProduct.name} — купить в Ташкенте AlfaComp`} />
           <meta property="og:url" content={`https://alfacomp.uz${getProductUrl(selectedProduct)}`} />
           <meta property="og:type" content="product" />
@@ -416,7 +427,7 @@ const Index = ({ initialCartOpen = false, initialProfileOpen = false }: IndexPro
               selectedPrices ? selectedPrices.priceUZS : selectedProduct.price
             )} сум с самовывозом из магазина (базар «Малика», блок А27).`}
           />
-          <meta name="twitter:image" content={selectedProduct.image && !selectedProduct.image.startsWith("data:") ? (selectedProduct.image.startsWith("http") ? selectedProduct.image : `https://alfacomp.uz${selectedProduct.image.startsWith("/") ? "" : "/"}${selectedProduct.image}`) : "https://alfacomp.uz/banner.jpg"} />
+          <meta name="twitter:image" content={getSafeSeoImageUrl(selectedProduct.image)} />
           <script type="application/ld+json">{JSON.stringify(productJsonLd)}</script>
           <script type="application/ld+json">{JSON.stringify(productBreadcrumbsJsonLd)}</script>
         </Helmet>

@@ -71,8 +71,11 @@ function normalizeImageUrl(img, id) {
   const trimmed = String(img).trim();
   if (!trimmed) return null;
   if (trimmed.startsWith("data:")) {
-    if (id === 97) return `${BASE_URL}/products/097_Hopestar_A6_CLUB_%2B_Microphone.png`;
-    return null;
+    if (id === 97) return `${BASE_URL}/products/prod_97.png`;
+    if (id === 168) return `${BASE_URL}/products/prod_168.png`;
+    if (id === 169) return `${BASE_URL}/products/prod_169.png`;
+    if (id === 170) return `${BASE_URL}/products/prod_170.png`;
+    return `${BASE_URL}/banner.jpg`;
   }
   if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed;
   if (trimmed.startsWith("/")) return `${BASE_URL}${trimmed}`;
