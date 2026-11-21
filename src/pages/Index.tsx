@@ -494,14 +494,14 @@ const Index = ({ initialCartOpen = false, initialProfileOpen = false }: IndexPro
           <meta name="keywords" content={CATALOG_SEO_KEYWORDS} />
           <meta name="subject" content="Каталог компьютерной техники и мониторов в Ташкенте" />
           <meta name="topic" content="Компьютерная техника" />
-          <link rel="canonical" href="https://alfacomp.uz/catalog" />
+          <link rel="canonical" href="https://alfacomp.uz/catalog/" />
           <meta property="og:title" content="Каталог компьютерной техники и мониторов в Ташкенте — AlfaComp" />
           <meta
             property="og:description"
             content="Полный каталог техники AlfaComp: игровые ПК, мониторы 144–360 Гц, комплектующие, ИБП Ion, сетевое оборудование в Ташкенте."
           />
           <meta property="og:image" content="https://alfacomp.uz/banner.jpg" />
-          <meta property="og:url" content="https://alfacomp.uz/catalog" />
+          <meta property="og:url" content="https://alfacomp.uz/catalog/" />
           <meta property="og:type" content="website" />
           <meta name="twitter:card" content="summary_large_image" />
           <meta name="twitter:title" content="Каталог компьютерной техники — AlfaComp" />

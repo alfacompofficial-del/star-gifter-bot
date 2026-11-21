@@ -1,4 +1,4 @@
-﻿import type { Product } from "@/hooks/useProducts";
+import type { Product } from "@/hooks/useProducts";
 
 const DB_NAME = "alfacomp_cache_db";
 const DB_VERSION = 1;
@@ -50,7 +50,7 @@ function getDb(): Promise<IDBDatabase> {
 const LOCAL_STORAGE_KEY = "alfacomp_products_cache_v2";
 
 /**
- * Р§С‚РµРЅРёРµ РєСЌС€Р° РёР· localStorage (СЃРёРЅС…СЂРѕРЅРЅРѕ, 0 РјСЃ)
+ * Чтение кэша из localStorage (синхронно, 0 мс)
  */
 function readLocalStorageCache(): CachedProductsPayload | null {
   try {
@@ -68,41 +68,53 @@ function readLocalStorageCache(): CachedProductsPayload | null {
 }
 
 /**
- * РЎРѕС…СЂР°РЅРµРЅРёРµ РєСЌС€Р° РІ localStorage
+ * Сохранение кэша в localStorage
  */
 function writeLocalStorageCache(payload: CachedProductsPayload): void {
   try {
     if (typeof window === "undefined") return;
-    // Strip base64 image_url values before saving to avoid QuotaExceededError
-    const safePayload: CachedProductsPayload = {
-      ...payload,
-      products: payload.products.map((p) => ({
-        id: p.id,
-        name: p.name,
-        price: p.price,
-        category: p.category,
-        image_url: p.image_url && p.image_url.startsWith("data:") ? "" : p.image_url,
-        in_stock: p.in_stock,
-        rating: p.rating,
-      } as Product)),
-    };
     try {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(safePayload));
-    } catch (_) {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(payload));
+    } catch (quotaErr) {
+      // Очищаем старые ключи если переполнена квота 5MB
       try {
         localStorage.removeItem("alfacomp_products_cache");
         localStorage.removeItem("alfacomp_products_cache_v1");
-        localStorage.removeItem(LOCAL_STORAGE_KEY);
-      } catch ($_) {}
+      } catch (_) {}
+
+      // Пробуем сохранить компактную версию без тяжелых описаний для быстрого старта
+      try {
+        const compactPayload: CachedProductsPayload = {
+          ...payload,
+          products: payload.products.map((p) => ({
+            id: p.id,
+            name: p.name,
+            price: p.price,
+            category: p.category,
+            image_url: p.image_url && p.image_url.startsWith("data:") ? "" : p.image_url,
+            in_stock: p.in_stock,
+            rating: p.rating,
+          } as Product)),
+        };
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(compactPayload));
+      } catch (_) {
+        // Если все равно не помещается в localStorage, очищаем ключ.
+        // IndexedDB надежно сохраняет полный каталог до гигабайт без ограничений квоты.
+        try {
+          localStorage.removeItem(LOCAL_STORAGE_KEY);
+        } catch (_) {}
+      }
     }
-  } catch (_) {}
+  } catch (_) {
+    // Безопасное подавление
+  }
 }
 
 /**
- * Р§С‚РµРЅРёРµ РєСЌС€РёСЂРѕРІР°РЅРЅРѕРіРѕ РєР°С‚Р°Р»РѕРіР° С‚РѕРІР°СЂРѕРІ РёР· IndexedDB
+ * Чтение кэшированного каталога товаров из IndexedDB
  */
 export async function getCachedProducts(): Promise<CachedProductsPayload | null> {
-  // 1. РњРіРЅРѕРІРµРЅРЅР°СЏ РѕС‚РґР°С‡Р° РёР· РїР°РјСЏС‚Рё / localStorage
+  // 1. Мгновенная отдача из памяти / localStorage
   if (memoryPreload && memoryPreload.products.length > 0) {
     return memoryPreload;
   }
@@ -112,7 +124,7 @@ export async function getCachedProducts(): Promise<CachedProductsPayload | null>
     return local;
   }
 
-  // 2. Р§С‚РµРЅРёРµ РёР· IndexedDB
+  // 2. Чтение из IndexedDB
   try {
     const db = await getDb();
     return await new Promise((resolve, reject) => {
@@ -140,7 +152,7 @@ export async function getCachedProducts(): Promise<CachedProductsPayload | null>
 }
 
 /**
- * РЎРѕС…СЂР°РЅРµРЅРёРµ РєР°С‚Р°Р»РѕРіР° С‚РѕРІР°СЂРѕРІ РІ РєСЌС€ (РїР°РјСЏС‚СЊ + localStorage + IndexedDB)
+ * Сохранение каталога товаров в кэш (память + localStorage + IndexedDB)
  */
 export async function setCachedProducts(products: Product[]): Promise<void> {
   if (!products || products.length === 0) return;
@@ -150,11 +162,11 @@ export async function setCachedProducts(products: Product[]): Promise<void> {
     version: 2,
   };
 
-  // 1. РќРµРјРµРґР»РµРЅРЅРѕ РІ РїР°РјСЏС‚СЊ Рё localStorage (0 РјСЃ РґРѕСЃС‚СѓРї)
+  // 1. Немедленно в память и localStorage (0 мс доступ)
   memoryPreload = payload;
   writeLocalStorageCache(payload);
 
-  // 2. Р’ IndexedDB РІ С„РѕРЅРµ
+  // 2. В IndexedDB в фоне
   try {
     const db = await getDb();
     await new Promise<void>((resolve, reject) => {
@@ -171,7 +183,7 @@ export async function setCachedProducts(products: Product[]): Promise<void> {
 }
 
 /**
- * РћС‡РёСЃС‚РєР° РєСЌС€Р° С‚РѕРІР°СЂРѕРІ РІРѕ РІСЃРµС… СЃР»РѕСЏС…
+ * Очистка кэша товаров во всех слоях
  */
 export async function clearProductsCache(): Promise<void> {
   memoryPreload = null;
@@ -195,13 +207,13 @@ export async function clearProductsCache(): Promise<void> {
     console.warn("[IndexedDB] Could not clear products cache:", error);
   }
 
-  // РћРїРѕРІРµС‰Р°РµРј РІСЃРµ РІРєР»Р°РґРєРё Рё РєРѕРјРїРѕРЅРµРЅС‚С‹ РѕР± РѕС‡РёСЃС‚РєРµ
+  // Оповещаем все вкладки и компоненты об очистке
   broadcastProductsUpdate();
 }
 
-// в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
-// РЎРёРЅС…СЂРѕРЅРёР·Р°С†РёСЏ РјРµР¶РґСѓ РІРєР»Р°РґРєР°РјРё Р±СЂР°СѓР·РµСЂР° (BroadcastChannel)
-// в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+// ─────────────────────────────────────────────────────────────
+// Синхронизация между вкладками браузера (BroadcastChannel)
+// ─────────────────────────────────────────────────────────────
 
 const CHANNEL_NAME = "alfacomp_products_sync";
 let broadcastChannel: BroadcastChannel | null = null;
@@ -215,15 +227,15 @@ if (typeof window !== "undefined" && "BroadcastChannel" in window) {
 }
 
 /**
- * РћС‚РїСЂР°РІР»СЏРµС‚ СЃРёРіРЅР°Р» РѕР±РЅРѕРІР»РµРЅРёСЏ С‚РѕРІР°СЂРѕРІ РІРѕ РІСЃРµ РІРєР»Р°РґРєРё Рё Р»РѕРєР°Р»СЊРЅС‹Рµ РєРѕРјРїРѕРЅРµРЅС‚С‹
+ * Отправляет сигнал обновления товаров во все вкладки и локальные компоненты
  */
 export function broadcastProductsUpdate(): void {
-  // 1. Р›РѕРєР°Р»СЊРЅРѕРµ СЃРѕР±С‹С‚РёРµ РІ С‚РµРєСѓС‰РµРј РѕРєРЅРµ
+  // 1. Локальное событие в текущем окне
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("products-updated"));
   }
 
-  // 2. РњРµР¶РІРєР»Р°РґРѕС‡РЅРѕРµ СЃРѕР±С‹С‚РёРµ С‡РµСЂРµР· BroadcastChannel
+  // 2. Межвкладочное событие через BroadcastChannel
   if (broadcastChannel) {
     try {
       broadcastChannel.postMessage({ type: "PRODUCTS_UPDATED", timestamp: Date.now() });
@@ -234,7 +246,7 @@ export function broadcastProductsUpdate(): void {
 }
 
 /**
- * РџРѕРґРїРёСЃРєР° РЅР° РѕР±РЅРѕРІР»РµРЅРёРµ С‚РѕРІР°СЂРѕРІ РёР· РґСЂСѓРіРёС… РІРєР»Р°РґРѕРє Рё Р»РѕРєР°Р»СЊРЅС‹С… СЃРѕР±С‹С‚РёР№
+ * Подписка на обновление товаров из других вкладок и локальных событий
  */
 export function subscribeToProductsUpdate(callback: () => void): () => void {
   const handleLocal = () => callback();
@@ -262,9 +274,9 @@ export function subscribeToProductsUpdate(callback: () => void): () => void {
   };
 }
 
-// в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
-// РќРµРјРµРґР»РµРЅРЅС‹Р№ Р·Р°РїСѓСЃРє С‡С‚РµРЅРёСЏ РєСЌС€Р° РїСЂРё РїР°СЂСЃРёРЅРіРµ Р±Р°РЅРґР»Р° (0 РјСЃ)
-// в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+// ─────────────────────────────────────────────────────────────
+// Немедленный запуск чтения кэша при парсинге бандла (0 мс)
+// ─────────────────────────────────────────────────────────────
 let memoryPreload: CachedProductsPayload | null = readLocalStorageCache();
 let preloadPromise: Promise<CachedProductsPayload | null> | null = null;
 
@@ -291,7 +303,7 @@ export function waitForPreload(): Promise<CachedProductsPayload | null> {
   return preloadPromise ?? Promise.resolve(readLocalStorageCache());
 }
 
-// Р”РѕР±Р°РІР»СЏРµРј РіР»РѕР±Р°Р»СЊРЅСѓСЋ С„СѓРЅРєС†РёСЋ РІ window РґР»СЏ РѕС‚Р»Р°РґРєРё Рё СЂСѓС‡РЅРѕР№ РѕС‡РёСЃС‚РєРё РєСЌС€Р° РёР· РєРѕРЅСЃРѕР»Рё
+// Добавляем глобальную функцию в window для отладки и ручной очистки кэша из консоли
 if (typeof window !== "undefined") {
   (window as any).alfaClearCache = clearProductsCache;
 }
