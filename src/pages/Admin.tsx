@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+﻿import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft, Trash2, Search, Upload, Check, X, Pencil,
@@ -8,7 +8,7 @@ import {
   Layers, ArrowUpDown, ChevronDown, Sparkles, Star, Send, Bot, MessageSquare,
   LayoutDashboard, Compass, Settings, Bell, ChevronLeft, ChevronRight, Menu,
   CheckSquare, Square, Smartphone, Monitor, ShieldCheck, CheckCircle2,
-  ExternalLink, Filter, History, ShoppingCart
+  ExternalLink, Filter, History as HistoryIcon, ShoppingCart
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -52,7 +52,7 @@ type VisitorRow = {
 };
 
 const flagEmoji = (code?: string | null) => {
-  if (!code || code.length !== 2) return "🌐";
+  if (!code || code.length !== 2) return "рџЊђ";
   const cc = code.toUpperCase();
   return String.fromCodePoint(...[...cc].map((c) => 127397 + c.charCodeAt(0)));
 };
@@ -62,7 +62,7 @@ type AdminTab = "products" | "orders" | "seo" | "history" | "stats" | "telegram"
 export const Admin = () => {
   const navigate = useNavigate();
 
-  // ── Admin PWA Manifest (dynamically injected) ─────────────
+  // в”Ђв”Ђ Admin PWA Manifest (dynamically injected) в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   useEffect(() => {
     const prev = document.querySelector('link[rel="manifest"]') as HTMLLinkElement | null;
     const prevHref = prev?.href || "";
@@ -80,7 +80,7 @@ export const Admin = () => {
     };
   }, []);
 
-  // ── Authentication State ──────────────────────────────────
+  // в”Ђв”Ђ Authentication State в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     try {
       return (
@@ -92,11 +92,11 @@ export const Admin = () => {
     }
   });
 
-  // ── Core Navigation Tabs ──────────────────────────────────
+  // в”Ђв”Ђ Core Navigation Tabs в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   const [tab, setTab] = useState<AdminTab>("products");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
-  // ── Product States ────────────────────────────────────────
+  // в”Ђв”Ђ Product States в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -112,40 +112,40 @@ export const Admin = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(15);
 
-  // ── Inline Editing States ─────────────────────────────────
+  // в”Ђв”Ђ Inline Editing States в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   const [editingPriceId, setEditingPriceId] = useState<number | null>(null);
   const [editingPriceValue, setEditingPriceValue] = useState<string>("");
   const [editingNameId, setEditingNameId] = useState<number | null>(null);
   const [editingNameValue, setEditingNameValue] = useState<string>("");
 
-  // ── Image Upload Ref ──────────────────────────────────────
+  // в”Ђв”Ђ Image Upload Ref в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   const [uploadingImageId, setUploadingImageId] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const currentUploadProductId = useRef<number | null>(null);
 
-  // ── Drag & Drop Reorder ───────────────────────────────────
+  // в”Ђв”Ђ Drag & Drop Reorder в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   const [draggedId, setDraggedId] = useState<number | null>(null);
   const [dragOverId, setDragOverId] = useState<number | null>(null);
 
-  // ── Drawer Editor State ───────────────────────────────────
+  // в”Ђв”Ђ Drawer Editor State в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerProduct, setDrawerProduct] = useState<Product | null>(null);
 
-  // ── Bulk Edit & Export Modal States ───────────────────────
+  // в”Ђв”Ђ Bulk Edit & Export Modal States в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
   const [exportModalOpen, setExportModalOpen] = useState(false);
 
-  // ── Exchange Rate State ───────────────────────────────────
+  // в”Ђв”Ђ Exchange Rate State в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   const { exchangeRate, isUpdating: rateUpdating, updateExchangeRate } = useExchangeRate();
   const [editingRate, setEditingRate] = useState(false);
   const [rateInputValue, setRateInputValue] = useState("");
 
-  // ── Visitor Telemetry ─────────────────────────────────────
+  // в”Ђв”Ђ Visitor Telemetry в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   const [visitors, setVisitors] = useState<VisitorRow[]>([]);
   const [visitorsLoading, setVisitorsLoading] = useState(false);
   const [visitorSearch, setVisitorSearch] = useState("");
 
-  // ── Telegram Bot CRM State ────────────────────────────────
+  // в”Ђв”Ђ Telegram Bot CRM State в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   const [allTgMessages, setAllTgMessages] = useState<StoredTelegramMessage[]>(() => loadStoredTelegramMessages());
   const [tgUsers, setTgUsers] = useState<TelegramUser[]>(() => extractTelegramUsers(loadStoredTelegramMessages()));
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
@@ -170,7 +170,7 @@ export const Admin = () => {
     "/order": true,
   });
 
-  // ── Fetch Products from Supabase ──────────────────────────
+  // в”Ђв”Ђ Fetch Products from Supabase в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   const fetchProducts = useCallback(async (showRefresh = false) => {
     if (showRefresh) setIsRefreshing(true);
     else setLoading(true);
@@ -184,7 +184,7 @@ export const Admin = () => {
     if (!error) {
       setProducts((data as Product[]) || []);
     } else {
-      toast.error("Ошибка загрузки данных из Supabase");
+      toast.error("РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё РґР°РЅРЅС‹С… РёР· Supabase");
     }
 
     if (showRefresh) setIsRefreshing(false);
@@ -197,7 +197,7 @@ export const Admin = () => {
     }
   }, [isAuthenticated, fetchProducts]);
 
-  // ── Fetch Visitors for Telemetry Tab ──────────────────────
+  // в”Ђв”Ђ Fetch Visitors for Telemetry Tab в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   const fetchVisitors = useCallback(async () => {
     setVisitorsLoading(true);
     const { data, error } = await supabase
@@ -212,7 +212,7 @@ export const Admin = () => {
     setVisitorsLoading(false);
   }, []);
 
-  // ── Sync Telegram Updates ──────────────────────────────────
+  // в”Ђв”Ђ Sync Telegram Updates в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   const syncTgMessages = useCallback(async () => {
     setTgSyncing(true);
     const merged = await syncTelegramUpdates();
@@ -252,17 +252,17 @@ export const Admin = () => {
     }
   }, [allTgMessages, selectedUserId]);
 
-  // ── Categories List ───────────────────────────────────────
+  // в”Ђв”Ђ Categories List в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   const allCategories = useMemo(() => {
     const defaultCats = [
-      "ИБП", "Мониторы", "Сеть", "Комплектующие", "Моноблоки",
-      "Аксессуары", "Колонки", "Кронштейны", "Deco", "Wi-Fi роутеры", "Видеокарты"
+      "РР‘Рџ", "РњРѕРЅРёС‚РѕСЂС‹", "РЎРµС‚СЊ", "РљРѕРјРїР»РµРєС‚СѓСЋС‰РёРµ", "РњРѕРЅРѕР±Р»РѕРєРё",
+      "РђРєСЃРµСЃСЃСѓР°СЂС‹", "РљРѕР»РѕРЅРєРё", "РљСЂРѕРЅС€С‚РµР№РЅС‹", "Deco", "Wi-Fi СЂРѕСѓС‚РµСЂС‹", "Р’РёРґРµРѕРєР°СЂС‚С‹"
     ];
     const found = [...new Set(products.map((p) => p.category).filter(Boolean))];
     return [...new Set([...defaultCats, ...found])];
   }, [products]);
 
-  // ── Filtered & Sorted Products ────────────────────────────
+  // в”Ђв”Ђ Filtered & Sorted Products в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   const filteredProducts = useMemo(() => {
     let list = [...products];
 
@@ -312,7 +312,7 @@ export const Admin = () => {
     return Math.ceil(filteredProducts.length / pageSize);
   }, [filteredProducts, pageSize]);
 
-  // ── Metrics & Analytics ───────────────────────────────────
+  // в”Ђв”Ђ Metrics & Analytics в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   const metrics = useMemo(() => {
     const totalCount = products.length;
     const inStockCount = products.filter((p) => p.in_stock).length;
@@ -340,7 +340,7 @@ export const Admin = () => {
     };
   }, [products]);
 
-  // ── Visitor Statistics ────────────────────────────────────
+  // в”Ђв”Ђ Visitor Statistics в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   const visitorStats = useMemo(() => {
     const q = visitorSearch.trim().toLowerCase();
     const filtered = q
@@ -355,7 +355,7 @@ export const Admin = () => {
     const uniqueIps = new Set(visitors.map((v) => v.ip)).size;
     const countryCounts: Record<string, number> = {};
     for (const v of visitors) {
-      const k = v.country || "Неизвестно";
+      const k = v.country || "РќРµРёР·РІРµСЃС‚РЅРѕ";
       countryCounts[k] = (countryCounts[k] || 0) + 1;
     }
     const topCountries = Object.entries(countryCounts)
@@ -367,74 +367,74 @@ export const Admin = () => {
     return { filtered, uniqueIps, topCountries, todayCount };
   }, [visitors, visitorSearch]);
 
-  // ── Product CRUD Handlers ─────────────────────────────────
+  // в”Ђв”Ђ Product CRUD Handlers в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   const handleSaveDrawerProduct = async (productData: Partial<Product>, isNew: boolean): Promise<boolean> => {
     try {
       if (isNew) {
         const { error } = await supabase.from("products").insert([productData as any]);
         if (error) throw error;
-        toast.success("Товар успешно создан!");
+        toast.success("РўРѕРІР°СЂ СѓСЃРїРµС€РЅРѕ СЃРѕР·РґР°РЅ!");
       } else if (drawerProduct) {
         const { error } = await supabase.from("products").update(productData as any).eq("id", drawerProduct.id);
         if (error) throw error;
-        toast.success("Товар успешно обновлен!");
+        toast.success("РўРѕРІР°СЂ СѓСЃРїРµС€РЅРѕ РѕР±РЅРѕРІР»РµРЅ!");
       }
       await clearProductsCache();
       fetchProducts();
       broadcastProductsUpdate();
       return true;
     } catch (err: any) {
-      toast.error(`Ошибка: ${err.message || "Не удалось сохранить"}`);
+      toast.error(`РћС€РёР±РєР°: ${err.message || "РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕС…СЂР°РЅРёС‚СЊ"}`);
       return false;
     }
   };
 
   const handleDeleteProduct = async (id: number, name: string) => {
-    if (!window.confirm(`Удалить товар «${name}» (#${id})?`)) return;
+    if (!window.confirm(`РЈРґР°Р»РёС‚СЊ С‚РѕРІР°СЂ В«${name}В» (#${id})?`)) return;
     try {
       const { error } = await supabase.from("products").delete().eq("id", id);
       if (error) throw error;
-      toast.success("Товар удален");
+      toast.success("РўРѕРІР°СЂ СѓРґР°Р»РµРЅ");
       setProducts((prev) => prev.filter((p) => p.id !== id));
       await clearProductsCache();
       broadcastProductsUpdate();
       logAdminAction({
-        action: "Удаление товара",
+        action: "РЈРґР°Р»РµРЅРёРµ С‚РѕРІР°СЂР°",
         actionType: "delete",
         targetId: id,
         targetName: name,
-        details: `Товар «${name}» (#${id}) удален из каталога`,
+        details: `РўРѕРІР°СЂ В«${name}В» (#${id}) СѓРґР°Р»РµРЅ РёР· РєР°С‚Р°Р»РѕРіР°`,
       });
     } catch {
-      toast.error("Ошибка при удалении товара");
+      toast.error("РћС€РёР±РєР° РїСЂРё СѓРґР°Р»РµРЅРёРё С‚РѕРІР°СЂР°");
     }
   };
 
   const handleBulkDelete = async () => {
     if (selectedProductIds.length === 0) return;
-    if (!window.confirm(`Вы уверены, что хотите удалить ${selectedProductIds.length} выбранных товаров?`)) return;
+    if (!window.confirm(`Р’С‹ СѓРІРµСЂРµРЅС‹, С‡С‚Рѕ С…РѕС‚РёС‚Рµ СѓРґР°Р»РёС‚СЊ ${selectedProductIds.length} РІС‹Р±СЂР°РЅРЅС‹С… С‚РѕРІР°СЂРѕРІ?`)) return;
     try {
       const { error } = await supabase.from("products").delete().in("id", selectedProductIds);
       if (error) throw error;
-      toast.success(`Удалено ${selectedProductIds.length} товаров`);
+      toast.success(`РЈРґР°Р»РµРЅРѕ ${selectedProductIds.length} С‚РѕРІР°СЂРѕРІ`);
       logAdminAction({
-        action: "Массовое удаление",
+        action: "РњР°СЃСЃРѕРІРѕРµ СѓРґР°Р»РµРЅРёРµ",
         actionType: "delete",
-        details: `Удалено ${selectedProductIds.length} товаров с ID: ${selectedProductIds.join(", ")}`,
+        details: `РЈРґР°Р»РµРЅРѕ ${selectedProductIds.length} С‚РѕРІР°СЂРѕРІ СЃ ID: ${selectedProductIds.join(", ")}`,
       });
       setSelectedProductIds([]);
       await clearProductsCache();
       broadcastProductsUpdate();
       fetchProducts();
     } catch (err: any) {
-      toast.error("Ошибка при удалении товаров: " + (err.message || ""));
+      toast.error("РћС€РёР±РєР° РїСЂРё СѓРґР°Р»РµРЅРёРё С‚РѕРІР°СЂРѕРІ: " + (err.message || ""));
     }
   };
 
   const handleDuplicateProduct = async (p: Product) => {
     try {
       const duplicateData = {
-        name: `${p.name} (Копия)`,
+        name: `${p.name} (РљРѕРїРёСЏ)`,
         category: p.category,
         brand: p.brand || "AlfaComp",
         price: p.price,
@@ -446,18 +446,18 @@ export const Admin = () => {
       };
       const { error } = await supabase.from("products").insert([duplicateData as any]);
       if (error) throw error;
-      toast.success(`Товар продублирован: ${duplicateData.name}`);
+      toast.success(`РўРѕРІР°СЂ РїСЂРѕРґСѓР±Р»РёСЂРѕРІР°РЅ: ${duplicateData.name}`);
       await clearProductsCache();
       fetchProducts();
       broadcastProductsUpdate();
       logAdminAction({
-        action: "Дублирование товара",
+        action: "Р”СѓР±Р»РёСЂРѕРІР°РЅРёРµ С‚РѕРІР°СЂР°",
         actionType: "create",
         targetName: duplicateData.name,
-        details: `Создана копия товара «${p.name}» (#${p.id})`,
+        details: `РЎРѕР·РґР°РЅР° РєРѕРїРёСЏ С‚РѕРІР°СЂР° В«${p.name}В» (#${p.id})`,
       });
     } catch {
-      toast.error("Не удалось продублировать товар");
+      toast.error("РќРµ СѓРґР°Р»РѕСЃСЊ РїСЂРѕРґСѓР±Р»РёСЂРѕРІР°С‚СЊ С‚РѕРІР°СЂ");
     }
   };
 
@@ -465,22 +465,22 @@ export const Admin = () => {
     try {
       const { error } = await supabase.from("products").update({ in_stock: !current }).eq("id", id);
       if (error) throw error;
-      toast.success(!current ? "Товар переведен в наличие!" : "Товар снят с продажи");
+      toast.success(!current ? "РўРѕРІР°СЂ РїРµСЂРµРІРµРґРµРЅ РІ РЅР°Р»РёС‡РёРµ!" : "РўРѕРІР°СЂ СЃРЅСЏС‚ СЃ РїСЂРѕРґР°Р¶Рё");
       setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, in_stock: !current } : p)));
       await clearProductsCache();
       broadcastProductsUpdate();
       logAdminAction({
-        action: "Смена статуса наличия",
+        action: "РЎРјРµРЅР° СЃС‚Р°С‚СѓСЃР° РЅР°Р»РёС‡РёСЏ",
         actionType: "stock",
         targetId: id,
-        details: `Товар #${id} переведен в статус «${!current ? "В наличии" : "Не в наличии"}»`,
+        details: `РўРѕРІР°СЂ #${id} РїРµСЂРµРІРµРґРµРЅ РІ СЃС‚Р°С‚СѓСЃ В«${!current ? "Р’ РЅР°Р»РёС‡РёРё" : "РќРµ РІ РЅР°Р»РёС‡РёРё"}В»`,
       });
     } catch {
-      toast.error("Ошибка переключения статуса наличия");
+      toast.error("РћС€РёР±РєР° РїРµСЂРµРєР»СЋС‡РµРЅРёСЏ СЃС‚Р°С‚СѓСЃР° РЅР°Р»РёС‡РёСЏ");
     }
   };
 
-  // ── Inline Price & Name Editing (USD Primary) ────────────
+  // в”Ђв”Ђ Inline Price & Name Editing (USD Primary) в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   const startEditPrice = (p: Product) => {
     setEditingPriceId(p.id);
     const { priceUSD } = resolveProductPrices(p.price, exchangeRate || 14000);
@@ -493,7 +493,7 @@ export const Admin = () => {
   const saveEditPrice = async (id: number) => {
     const usdVal = parseFloat(editingPriceValue);
     if (isNaN(usdVal) || usdVal <= 0) {
-      toast.error("Введите корректную цену в USD ($)");
+      toast.error("Р’РІРµРґРёС‚Рµ РєРѕСЂСЂРµРєС‚РЅСѓСЋ С†РµРЅСѓ РІ USD ($)");
       return;
     }
     const currentRate = exchangeRate > 0 ? exchangeRate : 11858;
@@ -501,13 +501,13 @@ export const Admin = () => {
 
     const { error } = await supabase.from("products").update({ price: finalUZS }).eq("id", id);
     if (!error) {
-      toast.success(`Цена обновлена: $${usdVal} (${formatPrice(finalUZS)} сум)`);
+      toast.success(`Р¦РµРЅР° РѕР±РЅРѕРІР»РµРЅР°: $${usdVal} (${formatPrice(finalUZS)} СЃСѓРј)`);
       setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, price: finalUZS } : p)));
       cancelEditPrice();
       await clearProductsCache();
       broadcastProductsUpdate();
     } else {
-      toast.error("Ошибка сохранения цены");
+      toast.error("РћС€РёР±РєР° СЃРѕС…СЂР°РЅРµРЅРёСЏ С†РµРЅС‹");
     }
   };
 
@@ -522,22 +522,22 @@ export const Admin = () => {
   const saveEditName = async (id: number) => {
     const val = editingNameValue.trim();
     if (!val) {
-      toast.error("Название не может быть пустым");
+      toast.error("РќР°Р·РІР°РЅРёРµ РЅРµ РјРѕР¶РµС‚ Р±С‹С‚СЊ РїСѓСЃС‚С‹Рј");
       return;
     }
     const { error } = await supabase.from("products").update({ name: val }).eq("id", id);
     if (!error) {
-      toast.success("Название обновлено!");
+      toast.success("РќР°Р·РІР°РЅРёРµ РѕР±РЅРѕРІР»РµРЅРѕ!");
       setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, name: val } : p)));
       cancelEditName();
       await clearProductsCache();
       broadcastProductsUpdate();
     } else {
-      toast.error("Ошибка сохранения названия");
+      toast.error("РћС€РёР±РєР° СЃРѕС…СЂР°РЅРµРЅРёСЏ РЅР°Р·РІР°РЅРёСЏ");
     }
   };
 
-  // ── Image Upload Handling ─────────────────────────────────
+  // в”Ђв”Ђ Image Upload Handling в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   const handleImageClick = (productId: number) => {
     currentUploadProductId.current = productId;
     fileInputRef.current?.click();
@@ -550,11 +550,11 @@ export const Admin = () => {
     e.target.value = "";
 
     if (!file.type.startsWith("image/")) {
-      toast.error("Выберите файл изображения");
+      toast.error("Р’С‹Р±РµСЂРёС‚Рµ С„Р°Р№Р» РёР·РѕР±СЂР°Р¶РµРЅРёСЏ");
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("Файл слишком большой (макс. 5MB)");
+      toast.error("Р¤Р°Р№Р» СЃР»РёС€РєРѕРј Р±РѕР»СЊС€РѕР№ (РјР°РєСЃ. 5MB)");
       return;
     }
 
@@ -565,24 +565,24 @@ export const Admin = () => {
         const dataUrl = ev.target?.result as string;
         const { error } = await supabase.from("products").update({ image: dataUrl }).eq("id", productId);
         if (!error) {
-          toast.success("Фото обновлено!");
+          toast.success("Р¤РѕС‚Рѕ РѕР±РЅРѕРІР»РµРЅРѕ!");
           setProducts((prev) => prev.map((p) => (p.id === productId ? { ...p, image: dataUrl } : p)));
           await clearProductsCache();
           broadcastProductsUpdate();
         } else {
-          toast.error("Ошибка загрузки фото в базу");
+          toast.error("РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё С„РѕС‚Рѕ РІ Р±Р°Р·Сѓ");
         }
         setUploadingImageId(null);
         currentUploadProductId.current = null;
       };
       reader.readAsDataURL(file);
     } catch {
-      toast.error("Ошибка при обработке файла");
+      toast.error("РћС€РёР±РєР° РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ С„Р°Р№Р»Р°");
       setUploadingImageId(null);
     }
   };
 
-  // ── Drag & Drop Priority Sorting ──────────────────────────
+  // в”Ђв”Ђ Drag & Drop Priority Sorting в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   const handleDragStart = (e: React.DragEvent, id: number) => {
     setDraggedId(id);
     e.dataTransfer.effectAllowed = "move";
@@ -617,11 +617,11 @@ export const Admin = () => {
       await Promise.all(
         updates.map(({ id, priority }) => supabase.from("products").update({ priority }).eq("id", id))
       );
-      toast.success("Порядок товаров сохранен!");
+      toast.success("РџРѕСЂСЏРґРѕРє С‚РѕРІР°СЂРѕРІ СЃРѕС…СЂР°РЅРµРЅ!");
       await clearProductsCache();
       broadcastProductsUpdate();
     } catch {
-      toast.error("Ошибка при сохранении порядка");
+      toast.error("РћС€РёР±РєР° РїСЂРё СЃРѕС…СЂР°РЅРµРЅРёРё РїРѕСЂСЏРґРєР°");
       fetchProducts();
     }
   };
@@ -630,16 +630,16 @@ export const Admin = () => {
     setDragOverId(null);
   };
 
-  // ── CSV Export ────────────────────────────────────────────
+  // в”Ђв”Ђ CSV Export в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   const handleExportCSV = () => {
     if (!products || products.length === 0) {
-      toast.error("Товары для экспорта не найдены");
+      toast.error("РўРѕРІР°СЂС‹ РґР»СЏ СЌРєСЃРїРѕСЂС‚Р° РЅРµ РЅР°Р№РґРµРЅС‹");
       return;
     }
     const headers = [
-      "ID", "Название", "Бренд", "Категория", "Цена (сум)",
-      "Старая цена (сум)", "Цена (≈$USD)", "В наличии", "Приоритет",
-      "Просмотры", "Лайки", "Ссылка на фото", "Характеристики"
+      "ID", "РќР°Р·РІР°РЅРёРµ", "Р‘СЂРµРЅРґ", "РљР°С‚РµРіРѕСЂРёСЏ", "Р¦РµРЅР° (СЃСѓРј)",
+      "РЎС‚Р°СЂР°СЏ С†РµРЅР° (СЃСѓРј)", "Р¦РµРЅР° (в‰€$USD)", "Р’ РЅР°Р»РёС‡РёРё", "РџСЂРёРѕСЂРёС‚РµС‚",
+      "РџСЂРѕСЃРјРѕС‚СЂС‹", "Р›Р°Р№РєРё", "РЎСЃС‹Р»РєР° РЅР° С„РѕС‚Рѕ", "РҐР°СЂР°РєС‚РµСЂРёСЃС‚РёРєРё"
     ];
     const escapeCsv = (val: any) => `"${String(val ?? "").replace(/"/g, '""')}"`;
     const rows = products.map((p) => [
@@ -650,7 +650,7 @@ export const Admin = () => {
       p.price,
       p.old_price ?? "",
       exchangeRate > 0 ? Math.round(p.price / exchangeRate) : "",
-      p.in_stock ? "Да" : "Нет",
+      p.in_stock ? "Р”Р°" : "РќРµС‚",
       p.priority ?? "",
       p.views || 0,
       p.likes || 0,
@@ -673,10 +673,10 @@ export const Admin = () => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    toast.success(`Скачано ${products.length} товаров в формате CSV!`);
+    toast.success(`РЎРєР°С‡Р°РЅРѕ ${products.length} С‚РѕРІР°СЂРѕРІ РІ С„РѕСЂРјР°С‚Рµ CSV!`);
   };
 
-  // ── Logout ────────────────────────────────────────────────
+  // в”Ђв”Ђ Logout в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   const handleLogout = () => {
     try {
       sessionStorage.removeItem("alfacomp_admin_auth");
@@ -687,22 +687,22 @@ export const Admin = () => {
       window.dispatchEvent(new CustomEvent("admin-auth-changed"));
     } catch {}
     setIsAuthenticated(false);
-    toast.success("Сессия оператора завершена");
+    toast.success("РЎРµСЃСЃРёСЏ РѕРїРµСЂР°С‚РѕСЂР° Р·Р°РІРµСЂС€РµРЅР°");
   };
 
-  // ── Navigation Menu Definition ────────────────────────────
+  // в”Ђв”Ђ Navigation Menu Definition в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   const NAV_ITEMS = [
-    { id: "products" as AdminTab, label: "Товары и каталог", icon: Package },
-    { id: "orders" as AdminTab, label: "Заказы & CRM", icon: ShoppingCart },
-    { id: "seo" as AdminTab, label: "SEO Центр", icon: Search },
-    { id: "history" as AdminTab, label: "История изменений", icon: History },
-    { id: "stats" as AdminTab, label: "Откуда пользователи", icon: Compass },
-    { id: "telegram" as AdminTab, label: "Telegram / Бот", icon: Send },
-    { id: "analytics" as AdminTab, label: "Аналитика витрины", icon: BarChart3 },
-    { id: "settings" as AdminTab, label: "Настройки & Курс", icon: Settings },
+    { id: "products" as AdminTab, label: "РўРѕРІР°СЂС‹ Рё РєР°С‚Р°Р»РѕРі", icon: Package },
+    { id: "orders" as AdminTab, label: "Р—Р°РєР°Р·С‹ & CRM", icon: ShoppingCart },
+    { id: "seo" as AdminTab, label: "SEO Р¦РµРЅС‚СЂ", icon: Search },
+    { id: "history" as AdminTab, label: "История изменений", icon: HistoryIcon },
+    { id: "stats" as AdminTab, label: "РћС‚РєСѓРґР° РїРѕР»СЊР·РѕРІР°С‚РµР»Рё", icon: Compass },
+    { id: "telegram" as AdminTab, label: "Telegram / Р‘РѕС‚", icon: Send },
+    { id: "analytics" as AdminTab, label: "РђРЅР°Р»РёС‚РёРєР° РІРёС‚СЂРёРЅС‹", icon: BarChart3 },
+    { id: "settings" as AdminTab, label: "РќР°СЃС‚СЂРѕР№РєРё & РљСѓСЂСЃ", icon: Settings },
   ];
 
-  // ── Traffic Sources Analytics Data ────────────────────────
+  // в”Ђв”Ђ Traffic Sources Analytics Data в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   const trafficData = useMemo(() => {
     const refMap: Record<string, number> = {};
     for (const v of visitors) {
@@ -710,25 +710,25 @@ export const Admin = () => {
       const ref = (v.referrer || "").toLowerCase();
       const ua = (v.user_agent || "").toLowerCase();
 
-      if (ref.includes("google.")) src = "Google Поиск";
-      else if (ref.includes("yandex.") || ref.includes("ya.ru")) src = "Яндекс Поиск";
-      else if (ref.includes("bing.")) src = "Bing Поиск";
+      if (ref.includes("google.")) src = "Google РџРѕРёСЃРє";
+      else if (ref.includes("yandex.") || ref.includes("ya.ru")) src = "РЇРЅРґРµРєСЃ РџРѕРёСЃРє";
+      else if (ref.includes("bing.")) src = "Bing РџРѕРёСЃРє";
       else if (ref.includes("duckduckgo.")) src = "DuckDuckGo";
-      else if (ref.includes("t.me") || ref.includes("telegram")) src = "Telegram (Канал/Ссылки)";
+      else if (ref.includes("t.me") || ref.includes("telegram")) src = "Telegram (РљР°РЅР°Р»/РЎСЃС‹Р»РєРё)";
       else if (ref.includes("instagram.")) src = "Instagram";
       else if (ref.includes("facebook.") || ref.includes("fb.com")) src = "Facebook";
       else if (ref && !ref.includes("alfacomp.uz") && !ref.includes("localhost")) {
         try {
           src = new URL(v.referrer!).hostname.replace(/^www\./, "");
         } catch {
-          src = "Внешний переход";
+          src = "Р’РЅРµС€РЅРёР№ РїРµСЂРµС…РѕРґ";
         }
       } else {
-        if (ua.includes("telegram") || ua.includes("tg-")) src = "Telegram WebApp / Бот";
-        else if (ua.includes("; wv)") || (ua.includes("version/4.0") && ua.includes("chrome") && ua.includes("mobile"))) src = "In-App браузер";
-        else if (ua.includes("android") || ua.includes("iphone") || ua.includes("mobile")) src = "Прямой переход (Смартфоны)";
-        else if (ua.includes("windows") || ua.includes("macintosh") || ua.includes("linux")) src = "Прямой переход (ПК)";
-        else src = "Прямой переход";
+        if (ua.includes("telegram") || ua.includes("tg-")) src = "Telegram WebApp / Р‘РѕС‚";
+        else if (ua.includes("; wv)") || (ua.includes("version/4.0") && ua.includes("chrome") && ua.includes("mobile"))) src = "In-App Р±СЂР°СѓР·РµСЂ";
+        else if (ua.includes("android") || ua.includes("iphone") || ua.includes("mobile")) src = "РџСЂСЏРјРѕР№ РїРµСЂРµС…РѕРґ (РЎРјР°СЂС‚С„РѕРЅС‹)";
+        else if (ua.includes("windows") || ua.includes("macintosh") || ua.includes("linux")) src = "РџСЂСЏРјРѕР№ РїРµСЂРµС…РѕРґ (РџРљ)";
+        else src = "РџСЂСЏРјРѕР№ РїРµСЂРµС…РѕРґ";
       }
       refMap[src] = (refMap[src] || 0) + 1;
     }
@@ -754,13 +754,13 @@ export const Admin = () => {
     });
     const total = visitors.length || 1;
     return [
-      { name: "ПК", value: desktop, pct: Math.round((desktop / total) * 100), color: "#0066ff" },
-      { name: "Мобильные", value: mobile, pct: Math.round((mobile / total) * 100), color: "#00c853" },
-      { name: "Планшеты", value: tablet, pct: Math.round((tablet / total) * 100), color: "#a855f7" },
+      { name: "РџРљ", value: desktop, pct: Math.round((desktop / total) * 100), color: "#0066ff" },
+      { name: "РњРѕР±РёР»СЊРЅС‹Рµ", value: mobile, pct: Math.round((mobile / total) * 100), color: "#00c853" },
+      { name: "РџР»Р°РЅС€РµС‚С‹", value: tablet, pct: Math.round((tablet / total) * 100), color: "#a855f7" },
     ];
   }, [visitors]);
 
-  // ── If Not Authenticated: Render Sleek Admin Login ────────
+  // в”Ђв”Ђ If Not Authenticated: Render Sleek Admin Login в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   if (!isAuthenticated) {
     return (
       <AdminLogin
@@ -781,9 +781,9 @@ export const Admin = () => {
         onChange={handleFileChange}
       />
 
-      {/* ══════════════════════════════════════════════════════ */}
-      {/* ── 1. LEFT SIDEBAR (DESKTOP & MOBILE DRAWER) ───────── */}
-      {/* ══════════════════════════════════════════════════════ */}
+      {/* в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ */}
+      {/* в”Ђв”Ђ 1. LEFT SIDEBAR (DESKTOP & MOBILE DRAWER) в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ */}
+      {/* в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ */}
       {/* Mobile Backdrop */}
       {mobileNavOpen && (
         <div
@@ -805,7 +805,7 @@ export const Admin = () => {
               className="flex items-center gap-3 cursor-pointer group"
             >
               <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#0052cc] to-[#0088ff] flex items-center justify-center shadow-[0_0_15px_rgba(0,102,255,0.4)] group-hover:scale-105 transition-transform">
-                <span className="font-black text-white text-base tracking-tighter">▲</span>
+                <span className="font-black text-white text-base tracking-tighter">в–І</span>
               </div>
               <div>
                 <span className="font-extrabold tracking-tight text-base text-white block">ALFACOMP</span>
@@ -862,7 +862,7 @@ export const Admin = () => {
           <div className="bg-[#0b162c] rounded-xl p-3 border border-[#16274a]">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-xs font-semibold text-white/90">Система работает</span>
+              <span className="text-xs font-semibold text-white/90">РЎРёСЃС‚РµРјР° СЂР°Р±РѕС‚Р°РµС‚</span>
             </div>
             <div className="text-[10px] font-mono text-[#5a6f8a] mt-1 flex items-center justify-between">
               <span>v1.0.0</span>
@@ -875,16 +875,16 @@ export const Admin = () => {
             className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] text-[#7a8fa6] hover:text-white text-xs font-medium transition-all"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Вернуться на сайт</span>
+            <span>Р’РµСЂРЅСѓС‚СЊСЃСЏ РЅР° СЃР°Р№С‚</span>
           </button>
         </div>
       </aside>
 
-      {/* ══════════════════════════════════════════════════════ */}
-      {/* ── 2. MAIN APP CONTENT CONTAINER ──────────────────── */}
-      {/* ══════════════════════════════════════════════════════ */}
+      {/* в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ */}
+      {/* в”Ђв”Ђ 2. MAIN APP CONTENT CONTAINER в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ */}
+      {/* в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ */}
       <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden bg-[#060b14]">
-        {/* ── Top Header Bar ───────────────────────────────── */}
+        {/* в”Ђв”Ђ Top Header Bar в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ */}
         <header className="h-16 bg-[#080f1e] border-b border-[#142340] px-4 md:px-8 flex items-center justify-between shrink-0 z-40">
           {/* Mobile Hamburger + Title */}
           <div className="flex items-center gap-3">
@@ -900,7 +900,7 @@ export const Admin = () => {
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5a6f8a]" />
               <input
                 type="text"
-                placeholder="Поиск по товарам, бренду, категории или ID..."
+                placeholder="РџРѕРёСЃРє РїРѕ С‚РѕРІР°СЂР°Рј, Р±СЂРµРЅРґСѓ, РєР°С‚РµРіРѕСЂРёРё РёР»Рё ID..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-[#0b162c] border border-[#16274a] rounded-xl pl-9 pr-8 py-2 text-xs text-white placeholder-[#5a6f8a] outline-none focus:border-[#0066ff] transition-all font-sans"
@@ -932,7 +932,7 @@ export const Admin = () => {
                         const val = parseInt(rateInputValue);
                         if (!isNaN(val) && val > 0) {
                           const ok = await updateExchangeRate(val);
-                          if (ok) toast.success(`Курс: 1$ = ${val.toLocaleString()} UZS`);
+                          if (ok) toast.success(`РљСѓСЂСЃ: 1$ = ${val.toLocaleString()} UZS`);
                         }
                         setEditingRate(false);
                       } else if (e.key === "Escape") setEditingRate(false);
@@ -945,7 +945,7 @@ export const Admin = () => {
                       const val = parseInt(rateInputValue);
                       if (!isNaN(val) && val > 0) {
                         const ok = await updateExchangeRate(val);
-                        if (ok) toast.success(`Курс: 1$ = ${val.toLocaleString()} UZS`);
+                        if (ok) toast.success(`РљСѓСЂСЃ: 1$ = ${val.toLocaleString()} UZS`);
                       }
                       setEditingRate(false);
                     }}
@@ -964,7 +964,7 @@ export const Admin = () => {
                     setEditingRate(true);
                   }}
                   className="flex items-center gap-2 px-3 py-1.5 bg-[#0b162c] border border-[#16274a] hover:border-[#0066ff]/50 rounded-xl text-xs font-mono transition-all group"
-                  title="Нажмите чтобы изменить курс USD/UZS"
+                  title="РќР°Р¶РјРёС‚Рµ С‡С‚РѕР±С‹ РёР·РјРµРЅРёС‚СЊ РєСѓСЂСЃ USD/UZS"
                 >
                   <span className="text-[#5a6f8a]">1$ =</span>
                   <span className="font-bold text-[#0066ff]">{exchangeRate.toLocaleString()} UZS</span>
@@ -977,16 +977,16 @@ export const Admin = () => {
             <button
               onClick={() => fetchProducts(true)}
               className="w-9 h-9 rounded-xl bg-[#0b162c] border border-[#16274a] hover:border-[#0066ff]/60 flex items-center justify-center text-white/70 hover:text-white transition-all"
-              title="Синхронизировать с Supabase"
+              title="РЎРёРЅС…СЂРѕРЅРёР·РёСЂРѕРІР°С‚СЊ СЃ Supabase"
             >
               <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin text-[#0066ff]" : ""}`} />
             </button>
 
             {/* Notifications Icon */}
             <button
-              onClick={() => toast.info("Все системы работают в штатном режиме")}
+              onClick={() => toast.info("Р’СЃРµ СЃРёСЃС‚РµРјС‹ СЂР°Р±РѕС‚Р°СЋС‚ РІ С€С‚Р°С‚РЅРѕРј СЂРµР¶РёРјРµ")}
               className="relative w-9 h-9 rounded-xl bg-[#0b162c] border border-[#16274a] hover:border-[#0066ff]/60 flex items-center justify-center text-white/70 hover:text-white transition-all"
-              title="Уведомления"
+              title="РЈРІРµРґРѕРјР»РµРЅРёСЏ"
             >
               <Bell className="w-4 h-4" />
               <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-[#0066ff] rounded-full" />
@@ -999,12 +999,12 @@ export const Admin = () => {
               </div>
               <div className="hidden sm:block text-left">
                 <div className="text-xs font-bold text-white leading-tight">admin</div>
-                <div className="text-[10px] text-[#7a8fa6]">Администратор</div>
+                <div className="text-[10px] text-[#7a8fa6]">РђРґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂ</div>
               </div>
               <button
                 onClick={handleLogout}
                 className="p-1.5 rounded-lg text-white/40 hover:text-red-400 hover:bg-red-500/10 transition-colors ml-1"
-                title="Выйти из админки"
+                title="Р’С‹Р№С‚Рё РёР· Р°РґРјРёРЅРєРё"
               >
                 <LogOut className="w-4 h-4" />
               </button>
@@ -1012,22 +1012,22 @@ export const Admin = () => {
           </div>
         </header>
 
-        {/* ── Scrollable Body Content ──────────────────────── */}
+        {/* в”Ђв”Ђ Scrollable Body Content в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ */}
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 space-y-6 pb-24 md:pb-8">
 
-          {/* ══════════════════════════════════════════════════ */}
-          {/* ── TAB: OVERVIEW (ГЛАВНАЯ) ─────────────────────── */}
-          {/* ══════════════════════════════════════════════════ */}
+          {/* в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ */}
+          {/* в”Ђв”Ђ TAB: OVERVIEW (Р“Р›РђР’РќРђРЇ) в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ */}
+          {/* в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ */}
           {tab === "overview" && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
                   <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
                     <LayoutDashboard className="w-6 h-6 text-[#0066ff]" />
-                    <span>Сводная панель управления</span>
+                    <span>РЎРІРѕРґРЅР°СЏ РїР°РЅРµР»СЊ СѓРїСЂР°РІР»РµРЅРёСЏ</span>
                   </h1>
                   <p className="text-xs text-[#7a8fa6] mt-1">
-                    Общий обзор каталога, посещаемости сайта и Telegram-бота
+                    РћР±С‰РёР№ РѕР±Р·РѕСЂ РєР°С‚Р°Р»РѕРіР°, РїРѕСЃРµС‰Р°РµРјРѕСЃС‚Рё СЃР°Р№С‚Р° Рё Telegram-Р±РѕС‚Р°
                   </p>
                 </div>
                 <button
@@ -1035,7 +1035,7 @@ export const Admin = () => {
                   className="px-4 py-2 bg-[#0066ff] text-white text-xs font-bold rounded-xl shadow-lg shadow-[#0066ff]/20 flex items-center gap-2"
                 >
                   <Package className="w-4 h-4" />
-                  <span>Перейти в каталог</span>
+                  <span>РџРµСЂРµР№С‚Рё РІ РєР°С‚Р°Р»РѕРі</span>
                 </button>
               </div>
 
@@ -1043,7 +1043,7 @@ export const Admin = () => {
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                 <div className="bg-[#0b1528] border border-[#16274a] rounded-2xl p-4 md:p-5">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-[#7a8fa6]">Всего товаров</span>
+                    <span className="text-xs font-medium text-[#7a8fa6]">Р’СЃРµРіРѕ С‚РѕРІР°СЂРѕРІ</span>
                     <div className="p-2 rounded-xl bg-[#0066ff]/15 text-[#3b82f6]">
                       <Package className="w-4 h-4" />
                     </div>
@@ -1051,12 +1051,12 @@ export const Admin = () => {
                   <div className="text-2xl md:text-3xl font-bold font-mono text-white mt-2">
                     {metrics.totalCount}
                   </div>
-                  <div className="text-[11px] font-mono text-[#3b82f6] mt-1">+12 за неделю</div>
+                  <div className="text-[11px] font-mono text-[#3b82f6] mt-1">+12 Р·Р° РЅРµРґРµР»СЋ</div>
                 </div>
 
                 <div className="bg-[#0b1528] border border-[#16274a] rounded-2xl p-4 md:p-5">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-[#7a8fa6]">В наличии</span>
+                    <span className="text-xs font-medium text-[#7a8fa6]">Р’ РЅР°Р»РёС‡РёРё</span>
                     <div className="p-2 rounded-xl bg-[#00c853]/15 text-[#00c853]">
                       <CheckCircle2 className="w-4 h-4" />
                     </div>
@@ -1071,7 +1071,7 @@ export const Admin = () => {
 
                 <div className="bg-[#0b1528] border border-[#16274a] rounded-2xl p-4 md:p-5">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-[#7a8fa6]">Визитов сайта</span>
+                    <span className="text-xs font-medium text-[#7a8fa6]">Р’РёР·РёС‚РѕРІ СЃР°Р№С‚Р°</span>
                     <div className="p-2 rounded-xl bg-[#a855f7]/15 text-[#a855f7]">
                       <Globe className="w-4 h-4" />
                     </div>
@@ -1079,12 +1079,12 @@ export const Admin = () => {
                   <div className="text-2xl md:text-3xl font-bold font-mono text-[#a855f7] mt-2">
                     {visitors.length}
                   </div>
-                  <div className="text-[11px] font-mono text-[#a855f7] mt-1">{visitorStats.uniqueIps} уникальных IP</div>
+                  <div className="text-[11px] font-mono text-[#a855f7] mt-1">{visitorStats.uniqueIps} СѓРЅРёРєР°Р»СЊРЅС‹С… IP</div>
                 </div>
 
                 <div className="bg-[#0b1528] border border-[#16274a] rounded-2xl p-4 md:p-5">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-[#7a8fa6]">Telegram бот</span>
+                    <span className="text-xs font-medium text-[#7a8fa6]">Telegram Р±РѕС‚</span>
                     <div className="p-2 rounded-xl bg-[#0066ff]/15 text-[#60a5fa]">
                       <Bot className="w-4 h-4" />
                     </div>
@@ -1094,7 +1094,7 @@ export const Admin = () => {
                   </div>
                   <div className="text-[11px] font-mono text-emerald-400 mt-1 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    Активен
+                    РђРєС‚РёРІРµРЅ
                   </div>
                 </div>
               </div>
@@ -1106,8 +1106,8 @@ export const Admin = () => {
                   className="bg-[#0b1528] border border-[#16274a] hover:border-[#0066ff] rounded-2xl p-5 cursor-pointer transition-all group"
                 >
                   <Package className="w-6 h-6 text-[#0066ff] mb-2 group-hover:scale-110 transition-transform" />
-                  <h3 className="text-base font-bold text-white">Управление товарами</h3>
-                  <p className="text-xs text-[#7a8fa6] mt-1">Редактирование цен, категорий, изображений и наличия</p>
+                  <h3 className="text-base font-bold text-white">РЈРїСЂР°РІР»РµРЅРёРµ С‚РѕРІР°СЂР°РјРё</h3>
+                  <p className="text-xs text-[#7a8fa6] mt-1">Р РµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ С†РµРЅ, РєР°С‚РµРіРѕСЂРёР№, РёР·РѕР±СЂР°Р¶РµРЅРёР№ Рё РЅР°Р»РёС‡РёСЏ</p>
                 </div>
 
                 <div
@@ -1115,8 +1115,8 @@ export const Admin = () => {
                   className="bg-[#0b1528] border border-[#16274a] hover:border-[#0066ff] rounded-2xl p-5 cursor-pointer transition-all group"
                 >
                   <BarChart3 className="w-6 h-6 text-[#00c853] mb-2 group-hover:scale-110 transition-transform" />
-                  <h3 className="text-base font-bold text-white">Аналитика витрины</h3>
-                  <p className="text-xs text-[#7a8fa6] mt-1">Популярность товаров, просмотры, лайки и распределение</p>
+                  <h3 className="text-base font-bold text-white">РђРЅР°Р»РёС‚РёРєР° РІРёС‚СЂРёРЅС‹</h3>
+                  <p className="text-xs text-[#7a8fa6] mt-1">РџРѕРїСѓР»СЏСЂРЅРѕСЃС‚СЊ С‚РѕРІР°СЂРѕРІ, РїСЂРѕСЃРјРѕС‚СЂС‹, Р»Р°Р№РєРё Рё СЂР°СЃРїСЂРµРґРµР»РµРЅРёРµ</p>
                 </div>
 
                 <div
@@ -1124,16 +1124,16 @@ export const Admin = () => {
                   className="bg-[#0b1528] border border-[#16274a] hover:border-[#0066ff] rounded-2xl p-5 cursor-pointer transition-all group"
                 >
                   <Send className="w-6 h-6 text-[#a855f7] mb-2 group-hover:scale-110 transition-transform" />
-                  <h3 className="text-base font-bold text-white">Telegram CRM & Бот</h3>
-                  <p className="text-xs text-[#7a8fa6] mt-1">Ответы клиентам, история сообщений, настройки вебхука</p>
+                  <h3 className="text-base font-bold text-white">Telegram CRM & Р‘РѕС‚</h3>
+                  <p className="text-xs text-[#7a8fa6] mt-1">РћС‚РІРµС‚С‹ РєР»РёРµРЅС‚Р°Рј, РёСЃС‚РѕСЂРёСЏ СЃРѕРѕР±С‰РµРЅРёР№, РЅР°СЃС‚СЂРѕР№РєРё РІРµР±С…СѓРєР°</p>
                 </div>
               </div>
             </div>
           )}
 
-          {/* ══════════════════════════════════════════════════ */}
-          {/* ── TAB 1: ТОВАРЫ И КАТАЛОГ ──────────────────────── */}
-          {/* ══════════════════════════════════════════════════ */}
+          {/* в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ */}
+          {/* в”Ђв”Ђ TAB 1: РўРћР’РђР Р« Р РљРђРўРђР›РћР“ в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ */}
+          {/* в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ */}
           {tab === "products" && (
             <div className="space-y-5">
               {/* Header Title + Action Button */}
@@ -1144,10 +1144,10 @@ export const Admin = () => {
                   </div>
                   <div>
                     <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                      Товары и каталог
+                      РўРѕРІР°СЂС‹ Рё РєР°С‚Р°Р»РѕРі
                     </h1>
                     <div className="text-[11px] font-mono text-[#7a8fa6]">
-                      Управление базой данных AlfaComp · {products.length} позиций
+                      РЈРїСЂР°РІР»РµРЅРёРµ Р±Р°Р·РѕР№ РґР°РЅРЅС‹С… AlfaComp В· {products.length} РїРѕР·РёС†РёР№
                     </div>
                   </div>
                 </div>
@@ -1160,16 +1160,16 @@ export const Admin = () => {
                   className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#0066ff] hover:bg-[#1a75ff] text-white text-xs sm:text-sm font-bold uppercase tracking-wider transition-all shadow-lg shadow-[#0066ff]/30 active:scale-95 shrink-0"
                 >
                   <Plus className="w-4 h-4" />
-                  <span>Добавить товар</span>
+                  <span>Р”РѕР±Р°РІРёС‚СЊ С‚РѕРІР°СЂ</span>
                 </button>
               </div>
 
               {/* 4 KPI Stat Cards */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-                {/* Всего товаров */}
+                {/* Р’СЃРµРіРѕ С‚РѕРІР°СЂРѕРІ */}
                 <div className="bg-[#0b1528] border border-[#16274a] rounded-2xl p-4 md:p-5 relative overflow-hidden group hover:border-[#0066ff]/50 transition-all">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-[#7a8fa6]">Всего товаров</span>
+                    <span className="text-xs font-medium text-[#7a8fa6]">Р’СЃРµРіРѕ С‚РѕРІР°СЂРѕРІ</span>
                     <div className="p-2 rounded-xl bg-[#0066ff]/15 text-[#3b82f6]">
                       <Package className="w-4 h-4" />
                     </div>
@@ -1177,10 +1177,10 @@ export const Admin = () => {
                   <div className="text-2xl md:text-3xl font-bold font-mono text-white mt-2">
                     {metrics.totalCount}
                   </div>
-                  <div className="text-[11px] font-mono text-[#3b82f6] mt-1">+12 за неделю</div>
+                  <div className="text-[11px] font-mono text-[#3b82f6] mt-1">+12 Р·Р° РЅРµРґРµР»СЋ</div>
                 </div>
 
-                {/* В наличии */}
+                {/* Р’ РЅР°Р»РёС‡РёРё */}
                 <div
                   onClick={() => setStockFilter(stockFilter === "in_stock" ? "all" : "in_stock")}
                   className={`bg-[#0b1528] border rounded-2xl p-4 md:p-5 relative overflow-hidden cursor-pointer transition-all ${
@@ -1190,7 +1190,7 @@ export const Admin = () => {
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-[#7a8fa6]">В наличии</span>
+                    <span className="text-xs font-medium text-[#7a8fa6]">Р’ РЅР°Р»РёС‡РёРё</span>
                     <div className="p-2 rounded-xl bg-[#00c853]/15 text-[#00c853]">
                       <CheckCircle2 className="w-4 h-4" />
                     </div>
@@ -1203,7 +1203,7 @@ export const Admin = () => {
                   </div>
                 </div>
 
-                {/* Не в наличии */}
+                {/* РќРµ РІ РЅР°Р»РёС‡РёРё */}
                 <div
                   onClick={() => setStockFilter(stockFilter === "out_of_stock" ? "all" : "out_of_stock")}
                   className={`bg-[#0b1528] border rounded-2xl p-4 md:p-5 relative overflow-hidden cursor-pointer transition-all ${
@@ -1213,7 +1213,7 @@ export const Admin = () => {
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-[#7a8fa6]">Не в наличии</span>
+                    <span className="text-xs font-medium text-[#7a8fa6]">РќРµ РІ РЅР°Р»РёС‡РёРё</span>
                     <div className="p-2 rounded-xl bg-[#ff9100]/15 text-[#ff9100]">
                       <AlertTriangle className="w-4 h-4" />
                     </div>
@@ -1226,10 +1226,10 @@ export const Admin = () => {
                   </div>
                 </div>
 
-                {/* Категорий */}
+                {/* РљР°С‚РµРіРѕСЂРёР№ */}
                 <div className="bg-[#0b1528] border border-[#16274a] rounded-2xl p-4 md:p-5 relative overflow-hidden group hover:border-[#a855f7]/50 transition-all">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-[#7a8fa6]">Категорий</span>
+                    <span className="text-xs font-medium text-[#7a8fa6]">РљР°С‚РµРіРѕСЂРёР№</span>
                     <div className="p-2 rounded-xl bg-[#7c4dff]/15 text-[#a855f7]">
                       <Layers className="w-4 h-4" />
                     </div>
@@ -1237,7 +1237,7 @@ export const Admin = () => {
                   <div className="text-2xl md:text-3xl font-bold font-mono text-[#a855f7] mt-2">
                     {metrics.categoriesCount}
                   </div>
-                  <div className="text-[11px] font-mono text-[#a855f7] mt-1">+2 за неделю</div>
+                  <div className="text-[11px] font-mono text-[#a855f7] mt-1">+2 Р·Р° РЅРµРґРµР»СЋ</div>
                 </div>
               </div>
 
@@ -1248,7 +1248,7 @@ export const Admin = () => {
                   <div className="relative flex-1">
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5a6f8a]" />
                     <input
-                      placeholder="Поиск по названию, бренду, категории или ID..."
+                      placeholder="РџРѕРёСЃРє РїРѕ РЅР°Р·РІР°РЅРёСЋ, Р±СЂРµРЅРґСѓ, РєР°С‚РµРіРѕСЂРёРё РёР»Рё ID..."
                       value={searchQuery}
                       onChange={(e) => {
                         setSearchQuery(e.target.value);
@@ -1276,7 +1276,7 @@ export const Admin = () => {
                       }}
                       className="bg-[#070e1b] border border-[#16274a] rounded-xl px-3 py-2 text-xs font-medium text-white outline-none focus:border-[#0066ff] cursor-pointer"
                     >
-                      <option value="all">Все категории</option>
+                      <option value="all">Р’СЃРµ РєР°С‚РµРіРѕСЂРёРё</option>
                       {allCategories.map((c) => (
                         <option key={c} value={c}>{c}</option>
                       ))}
@@ -1291,9 +1291,9 @@ export const Admin = () => {
                       }}
                       className="bg-[#070e1b] border border-[#16274a] rounded-xl px-3 py-2 text-xs font-medium text-white outline-none focus:border-[#0066ff] cursor-pointer"
                     >
-                      <option value="all">Все статусы</option>
-                      <option value="in_stock">В наличии</option>
-                      <option value="out_of_stock">Не в наличии</option>
+                      <option value="all">Р’СЃРµ СЃС‚Р°С‚СѓСЃС‹</option>
+                      <option value="in_stock">Р’ РЅР°Р»РёС‡РёРё</option>
+                      <option value="out_of_stock">РќРµ РІ РЅР°Р»РёС‡РёРё</option>
                     </select>
 
                     {/* Sorting Select */}
@@ -1302,22 +1302,22 @@ export const Admin = () => {
                       onChange={(e) => setSortBy(e.target.value as any)}
                       className="bg-[#070e1b] border border-[#16274a] rounded-xl px-3 py-2 text-xs font-medium text-white outline-none focus:border-[#0066ff] cursor-pointer"
                     >
-                      <option value="priority">По приоритету</option>
-                      <option value="price_asc">Цена (дешевле)</option>
-                      <option value="price_desc">Цена (дороже)</option>
-                      <option value="views">По просмотрам</option>
-                      <option value="likes">По лайкам</option>
-                      <option value="name">По алфавиту</option>
+                      <option value="priority">РџРѕ РїСЂРёРѕСЂРёС‚РµС‚Сѓ</option>
+                      <option value="price_asc">Р¦РµРЅР° (РґРµС€РµРІР»Рµ)</option>
+                      <option value="price_desc">Р¦РµРЅР° (РґРѕСЂРѕР¶Рµ)</option>
+                      <option value="views">РџРѕ РїСЂРѕСЃРјРѕС‚СЂР°Рј</option>
+                      <option value="likes">РџРѕ Р»Р°Р№РєР°Рј</option>
+                      <option value="name">РџРѕ Р°Р»С„Р°РІРёС‚Сѓ</option>
                     </select>
 
                     {/* Export / Photos Modal Button */}
                     <button
                       onClick={() => setExportModalOpen(true)}
                       className="flex items-center gap-2 px-3.5 py-2 bg-[#070e1b] border border-[#16274a] hover:border-[#0066ff] text-white text-xs font-bold rounded-xl transition-all shadow-md"
-                      title="Скачать Excel или все фото в ZIP"
+                      title="РЎРєР°С‡Р°С‚СЊ Excel РёР»Рё РІСЃРµ С„РѕС‚Рѕ РІ ZIP"
                     >
                       <Download className="w-4 h-4 text-[#0066ff]" />
-                      <span>Экспорт / Фото</span>
+                      <span>Р­РєСЃРїРѕСЂС‚ / Р¤РѕС‚Рѕ</span>
                     </button>
                   </div>
                 </div>
@@ -1335,7 +1335,7 @@ export const Admin = () => {
                         : "bg-[#070e1b] text-[#7a8fa6] border border-[#16274a] hover:text-white"
                     }`}
                   >
-                    Все ({products.length})
+                    Р’СЃРµ ({products.length})
                   </button>
                   {allCategories.map((c) => {
                     const count = metrics.categoryCounts[c] || 0;
@@ -1360,17 +1360,17 @@ export const Admin = () => {
                 </div>
               </div>
 
-              {/* ── MOBILE PRODUCT CARDS (Shown on screens < md) ── */}
+              {/* в”Ђв”Ђ MOBILE PRODUCT CARDS (Shown on screens < md) в”Ђв”Ђ */}
               <div className="md:hidden space-y-3">
                 {loading && (
                   <div className="text-center py-12 text-[#7a8fa6] font-mono text-xs">
                     <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-[#0066ff]" />
-                    Загрузка каталога из Supabase...
+                    Р—Р°РіСЂСѓР·РєР° РєР°С‚Р°Р»РѕРіР° РёР· Supabase...
                   </div>
                 )}
                 {!loading && filteredProducts.length === 0 && (
                   <div className="text-center py-12 text-[#7a8fa6] font-mono text-xs">
-                    Товары по вашему запросу не найдены
+                    РўРѕРІР°СЂС‹ РїРѕ РІР°С€РµРјСѓ Р·Р°РїСЂРѕСЃСѓ РЅРµ РЅР°Р№РґРµРЅС‹
                   </div>
                 )}
                 {paginatedProducts.map((p) => {
@@ -1405,7 +1405,7 @@ export const Admin = () => {
                           <div className="min-w-0">
                             <div className="font-bold text-white text-sm truncate">{p.name}</div>
                             <div className="text-[10px] font-mono text-[#7a8fa6] mt-0.5">
-                              ID #{p.id} · <span className="text-[#3b82f6] uppercase">{p.brand || "AlfaComp"}</span>
+                              ID #{p.id} В· <span className="text-[#3b82f6] uppercase">{p.brand || "AlfaComp"}</span>
                             </div>
                           </div>
                           {/* Stock Pill Badge */}
@@ -1417,7 +1417,7 @@ export const Admin = () => {
                                 : "bg-amber-500/15 text-amber-400 border-amber-500/30"
                             }`}
                           >
-                            {p.in_stock ? "● В наличии" : "○ Снят"}
+                            {p.in_stock ? "в—Џ Р’ РЅР°Р»РёС‡РёРё" : "в—‹ РЎРЅСЏС‚"}
                           </button>
                         </div>
 
@@ -1429,7 +1429,7 @@ export const Admin = () => {
                           >
                             <span className="text-white font-extrabold text-sm">$ {priceUSD}</span>
                             <div className="text-[10px] text-[#7a8fa6]">
-                              ≈ {formatPrice(priceUZS)} сум
+                              в‰€ {formatPrice(priceUZS)} СЃСѓРј
                             </div>
                           </button>
 
@@ -1470,13 +1470,13 @@ export const Admin = () => {
                     </div>
                     <div>
                       <div className="text-xs font-bold text-white flex items-center gap-2">
-                        <span>Выделено товаров: {selectedProductIds.length}</span>
+                        <span>Р’С‹РґРµР»РµРЅРѕ С‚РѕРІР°СЂРѕРІ: {selectedProductIds.length}</span>
                         <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#0066ff]/20 text-[#4ea1ff]">
-                          Пакетное действие
+                          РџР°РєРµС‚РЅРѕРµ РґРµР№СЃС‚РІРёРµ
                         </span>
                       </div>
                       <div className="text-[11px] text-[#7a8fa6] mt-0.5">
-                        Редактируйте цены, названия, категории, фото или удаляйте выбранные позиции в 1 клик
+                        Р РµРґР°РєС‚РёСЂСѓР№С‚Рµ С†РµРЅС‹, РЅР°Р·РІР°РЅРёСЏ, РєР°С‚РµРіРѕСЂРёРё, С„РѕС‚Рѕ РёР»Рё СѓРґР°Р»СЏР№С‚Рµ РІС‹Р±СЂР°РЅРЅС‹Рµ РїРѕР·РёС†РёРё РІ 1 РєР»РёРє
                       </div>
                     </div>
                   </div>
@@ -1487,26 +1487,26 @@ export const Admin = () => {
                       className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0066ff] hover:bg-[#1a75ff] text-white text-xs font-bold transition-all shadow-lg shadow-[#0066ff]/30 active:scale-95"
                     >
                       <Sparkles className="w-4 h-4" />
-                      <span>Массовое редактирование</span>
+                      <span>РњР°СЃСЃРѕРІРѕРµ СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ</span>
                     </button>
                     <button
                       onClick={handleBulkDelete}
                       className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white text-xs font-semibold transition-all active:scale-95"
                     >
                       <Trash2 className="w-4 h-4" />
-                      <span>Удалить выбранные</span>
+                      <span>РЈРґР°Р»РёС‚СЊ РІС‹Р±СЂР°РЅРЅС‹Рµ</span>
                     </button>
                     <button
                       onClick={() => setSelectedProductIds([])}
                       className="px-3 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-xs text-white/70 hover:text-white transition-all"
                     >
-                      Снять выделение
+                      РЎРЅСЏС‚СЊ РІС‹РґРµР»РµРЅРёРµ
                     </button>
                   </div>
                 </div>
               )}
 
-              {/* ── DESKTOP PRODUCTS TABLE (Hidden on mobile) ──── */}
+              {/* в”Ђв”Ђ DESKTOP PRODUCTS TABLE (Hidden on mobile) в”Ђв”Ђв”Ђв”Ђ */}
               <div className="hidden md:block bg-[#0b1528] rounded-2xl border border-[#16274a] overflow-hidden shadow-2xl">
                 <table className="w-full text-left border-collapse">
                   <thead>
@@ -1531,13 +1531,13 @@ export const Admin = () => {
                         />
                       </th>
                       <th className="p-4 w-12 text-center">#</th>
-                      <th className="p-4 w-16">Фото</th>
-                      <th className="p-4">Товар</th>
-                      <th className="p-4">Категория</th>
-                      <th className="p-4">Наличие</th>
-                      <th className="p-4 text-right">Цена (USD)</th>
-                      <th className="p-4 text-center">Рейтинг</th>
-                      <th className="p-4 text-right">Действия</th>
+                      <th className="p-4 w-16">Р¤РѕС‚Рѕ</th>
+                      <th className="p-4">РўРѕРІР°СЂ</th>
+                      <th className="p-4">РљР°С‚РµРіРѕСЂРёСЏ</th>
+                      <th className="p-4">РќР°Р»РёС‡РёРµ</th>
+                      <th className="p-4 text-right">Р¦РµРЅР° (USD)</th>
+                      <th className="p-4 text-center">Р РµР№С‚РёРЅРі</th>
+                      <th className="p-4 text-right">Р”РµР№СЃС‚РІРёСЏ</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#142340]">
@@ -1545,14 +1545,14 @@ export const Admin = () => {
                       <tr>
                         <td colSpan={9} className="p-12 text-center text-[#7a8fa6] font-mono text-xs">
                           <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-[#0066ff]" />
-                          Синхронизация с базой данных Supabase...
+                          РЎРёРЅС…СЂРѕРЅРёР·Р°С†РёСЏ СЃ Р±Р°Р·РѕР№ РґР°РЅРЅС‹С… Supabase...
                         </td>
                       </tr>
                     )}
                     {!loading && filteredProducts.length === 0 && (
                       <tr>
                         <td colSpan={9} className="p-12 text-center text-[#7a8fa6] font-mono text-xs">
-                          По вашему запросу ничего не найдено
+                          РџРѕ РІР°С€РµРјСѓ Р·Р°РїСЂРѕСЃСѓ РЅРёС‡РµРіРѕ РЅРµ РЅР°Р№РґРµРЅРѕ
                         </td>
                       </tr>
                     )}
@@ -1588,7 +1588,7 @@ export const Admin = () => {
 
                           {/* Priority index */}
                           <td className="p-4 text-center font-mono text-xs text-[#5a6f8a] group-hover:text-white/80 cursor-grab">
-                            {p.priority ?? "—"}
+                            {p.priority ?? "вЂ”"}
                           </td>
 
                           {/* Photo Thumbnail */}
@@ -1596,7 +1596,7 @@ export const Admin = () => {
                             <div
                               onClick={() => handleImageClick(p.id)}
                               className="relative w-12 h-12 rounded-xl overflow-hidden border border-[#16274a] bg-[#070e1b] cursor-pointer group/img shrink-0"
-                              title="Нажмите чтобы заменить фото"
+                              title="РќР°Р¶РјРёС‚Рµ С‡С‚РѕР±С‹ Р·Р°РјРµРЅРёС‚СЊ С„РѕС‚Рѕ"
                             >
                               {uploadingImageId === p.id ? (
                                 <div className="w-full h-full flex items-center justify-center bg-black/80">
@@ -1653,7 +1653,7 @@ export const Admin = () => {
                                 <div
                                   onClick={() => startEditName(p)}
                                   className="font-bold text-white text-xs sm:text-sm truncate max-w-[260px] cursor-pointer hover:text-[#3b82f6] transition-colors flex items-center gap-1.5 group/title"
-                                  title="Нажмите чтобы изменить название"
+                                  title="РќР°Р¶РјРёС‚Рµ С‡С‚РѕР±С‹ РёР·РјРµРЅРёС‚СЊ РЅР°Р·РІР°РЅРёРµ"
                                 >
                                   <span>{p.name}</span>
                                   <Pencil className="w-2.5 h-2.5 opacity-0 group-hover/title:opacity-100 text-[#5a6f8a]" />
@@ -1661,8 +1661,8 @@ export const Admin = () => {
                               )}
                               <div className="text-[10px] font-mono text-[#7a8fa6] mt-0.5 flex items-center gap-2">
                                 <span>ID #{p.id}</span>
-                                <span>·</span>
-                                <span>Бренд: <strong className="text-white/80">{p.brand || "AlfaComp"}</strong></span>
+                                <span>В·</span>
+                                <span>Р‘СЂРµРЅРґ: <strong className="text-white/80">{p.brand || "AlfaComp"}</strong></span>
                               </div>
                             </div>
                           </td>
@@ -1683,9 +1683,9 @@ export const Admin = () => {
                                   ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30 hover:bg-red-500/15 hover:text-red-400 hover:border-red-500/30"
                                   : "bg-amber-500/15 text-amber-400 border-amber-500/30 hover:bg-emerald-500/15 hover:text-emerald-400 hover:border-emerald-500/30"
                               }`}
-                              title={p.in_stock ? "Нажмите чтобы снять с продажи" : "Нажмите чтобы перевести в наличие"}
+                              title={p.in_stock ? "РќР°Р¶РјРёС‚Рµ С‡С‚РѕР±С‹ СЃРЅСЏС‚СЊ СЃ РїСЂРѕРґР°Р¶Рё" : "РќР°Р¶РјРёС‚Рµ С‡С‚РѕР±С‹ РїРµСЂРµРІРµСЃС‚Рё РІ РЅР°Р»РёС‡РёРµ"}
                             >
-                              <span>{p.in_stock ? "● В наличии" : "○ Не в наличии"}</span>
+                              <span>{p.in_stock ? "в—Џ Р’ РЅР°Р»РёС‡РёРё" : "в—‹ РќРµ РІ РЅР°Р»РёС‡РёРё"}</span>
                             </button>
                           </td>
 
@@ -1726,13 +1726,13 @@ export const Admin = () => {
                                 <button
                                   onClick={() => startEditPrice(p)}
                                   className="font-bold text-sm text-white hover:text-[#3b82f6] transition-colors flex items-center justify-end gap-1 ml-auto group/price"
-                                  title="Нажмите чтобы изменить цену"
+                                  title="РќР°Р¶РјРёС‚Рµ С‡С‚РѕР±С‹ РёР·РјРµРЅРёС‚СЊ С†РµРЅСѓ"
                                 >
                                   <span>$ {priceUSD}</span>
                                   <Pencil className="w-2.5 h-2.5 opacity-0 group-hover/price:opacity-100 text-[#5a6f8a]" />
                                 </button>
                                 <div className="text-[11px] text-[#7a8fa6] mt-0.5 font-mono">
-                                  ~ {formatPrice(priceUZS)} сум
+                                  ~ {formatPrice(priceUZS)} СЃСѓРј
                                 </div>
                               </div>
                             )}
@@ -1764,21 +1764,21 @@ export const Admin = () => {
                                   setDrawerOpen(true);
                                 }}
                                 className="p-2 rounded-xl bg-[#070e1b] border border-[#16274a] hover:border-[#0066ff] text-white/70 hover:text-white transition-all"
-                                title="Редактировать товар"
+                                title="Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ С‚РѕРІР°СЂ"
                               >
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={() => handleDuplicateProduct(p)}
                                 className="p-2 rounded-xl bg-[#070e1b] border border-[#16274a] hover:border-[#0066ff] text-white/70 hover:text-white transition-all"
-                                title="Дублировать товар"
+                                title="Р”СѓР±Р»РёСЂРѕРІР°С‚СЊ С‚РѕРІР°СЂ"
                               >
                                 <Copy className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={() => handleDeleteProduct(p.id, p.name)}
                                 className="p-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-all"
-                                title="Удалить товар"
+                                title="РЈРґР°Р»РёС‚СЊ С‚РѕРІР°СЂ"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -1793,12 +1793,12 @@ export const Admin = () => {
                 {/* Table Footer with Pagination */}
                 <div className="bg-[#080f1e] px-5 py-3.5 border-t border-[#16274a] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-mono text-[#7a8fa6]">
                   <div>
-                    Показано{" "}
+                    РџРѕРєР°Р·Р°РЅРѕ{" "}
                     <strong className="text-white">
                       {filteredProducts.length === 0 ? 0 : (currentPage - 1) * pageSize + 1}-
                       {Math.min(currentPage * pageSize, filteredProducts.length)}
                     </strong>{" "}
-                    из <strong className="text-white">{filteredProducts.length}</strong>
+                    РёР· <strong className="text-white">{filteredProducts.length}</strong>
                   </div>
 
                   {/* Pagination Buttons */}
@@ -1847,9 +1847,9 @@ export const Admin = () => {
             </div>
           )}
 
-          {/* ══════════════════════════════════════════════════ */}
-          {/* ── TAB 2: АНАЛИТИКА ВИТРИНЫ ─────────────────────── */}
-          {/* ══════════════════════════════════════════════════ */}
+          {/* в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ */}
+          {/* в”Ђв”Ђ TAB 2: РђРќРђР›РРўРРљРђ Р’РРўР РРќР« в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ */}
+          {/* в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ */}
           {tab === "analytics" && (() => {
             const CHART_COLORS = ["#0066ff", "#ff8c42", "#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#06b6d4"];
             const categoryChartData = Object.entries(metrics.categoryCounts)
@@ -1857,8 +1857,8 @@ export const Admin = () => {
               .map(([name, value]) => ({ name, value }));
 
             const stockPieData = [
-              { name: "В наличии", value: metrics.inStockCount, color: "#10b981" },
-              { name: "Нет в наличии", value: metrics.outOfStockCount, color: "#f59e0b" },
+              { name: "Р’ РЅР°Р»РёС‡РёРё", value: metrics.inStockCount, color: "#10b981" },
+              { name: "РќРµС‚ РІ РЅР°Р»РёС‡РёРё", value: metrics.outOfStockCount, color: "#f59e0b" },
             ].filter((d) => d.value > 0);
 
             return (
@@ -1866,9 +1866,9 @@ export const Admin = () => {
                 <div>
                   <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
                     <BarChart3 className="w-6 h-6 text-[#0066ff]" />
-                    <span>Аналитика витрины</span>
+                    <span>РђРЅР°Р»РёС‚РёРєР° РІРёС‚СЂРёРЅС‹</span>
                   </h1>
-                  <p className="text-xs text-[#7a8fa6] mt-1">Графики, статистика, популярность товаров</p>
+                  <p className="text-xs text-[#7a8fa6] mt-1">Р“СЂР°С„РёРєРё, СЃС‚Р°С‚РёСЃС‚РёРєР°, РїРѕРїСѓР»СЏСЂРЅРѕСЃС‚СЊ С‚РѕРІР°СЂРѕРІ</p>
                 </div>
 
                 {/* KPI Cards Row */}
@@ -1878,7 +1878,7 @@ export const Admin = () => {
                       {metrics.totalViews.toLocaleString()}
                     </div>
                     <div className="text-[10px] font-mono uppercase text-[#7a8fa6] tracking-wider mt-1">
-                      Просмотры витрины
+                      РџСЂРѕСЃРјРѕС‚СЂС‹ РІРёС‚СЂРёРЅС‹
                     </div>
                   </div>
 
@@ -1887,7 +1887,7 @@ export const Admin = () => {
                       {visitorStats.uniqueIps}
                     </div>
                     <div className="text-[10px] font-mono uppercase text-[#7a8fa6] tracking-wider mt-1">
-                      Уникальные IP
+                      РЈРЅРёРєР°Р»СЊРЅС‹Рµ IP
                     </div>
                   </div>
 
@@ -1896,7 +1896,7 @@ export const Admin = () => {
                       {visitorStats.todayCount}
                     </div>
                     <div className="text-[10px] font-mono uppercase text-[#7a8fa6] tracking-wider mt-1">
-                      Сегодня визитов
+                      РЎРµРіРѕРґРЅСЏ РІРёР·РёС‚РѕРІ
                     </div>
                   </div>
 
@@ -1905,7 +1905,7 @@ export const Admin = () => {
                       {metrics.totalLikes}
                     </div>
                     <div className="text-[10px] font-mono uppercase text-[#7a8fa6] tracking-wider mt-1">
-                      Лайков покупателей
+                      Р›Р°Р№РєРѕРІ РїРѕРєСѓРїР°С‚РµР»РµР№
                     </div>
                   </div>
                 </div>
@@ -1916,10 +1916,10 @@ export const Admin = () => {
                     <div className="flex items-center gap-2">
                       <BarChart3 className="w-4 h-4 text-[#0066ff]" />
                       <h3 className="font-mono uppercase tracking-wider text-xs text-white font-bold">
-                        Товары по категориям
+                        РўРѕРІР°СЂС‹ РїРѕ РєР°С‚РµРіРѕСЂРёСЏРј
                       </h3>
                     </div>
-                    <span className="text-[11px] font-mono text-[#7a8fa6]">Всего {metrics.categoriesCount} категорий</span>
+                    <span className="text-[11px] font-mono text-[#7a8fa6]">Р’СЃРµРіРѕ {metrics.categoriesCount} РєР°С‚РµРіРѕСЂРёР№</span>
                   </div>
 
                   <ResponsiveContainer width="100%" height={260}>
@@ -1941,7 +1941,7 @@ export const Admin = () => {
                           color: "#fff",
                         }}
                       />
-                      <Bar dataKey="value" name="Товаров" radius={[6, 6, 0, 0]}>
+                      <Bar dataKey="value" name="РўРѕРІР°СЂРѕРІ" radius={[6, 6, 0, 0]}>
                         {categoryChartData.map((_, i) => (
                           <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                         ))}
@@ -1957,7 +1957,7 @@ export const Admin = () => {
                     <div className="flex items-center gap-2 mb-4">
                       <TrendingUp className="w-4 h-4 text-[#0066ff]" />
                       <h3 className="font-mono uppercase tracking-wider text-xs text-white font-bold">
-                        Топ-6 товаров по просмотрам
+                        РўРѕРї-6 С‚РѕРІР°СЂРѕРІ РїРѕ РїСЂРѕСЃРјРѕС‚СЂР°Рј
                       </h3>
                     </div>
 
@@ -1982,7 +1982,7 @@ export const Admin = () => {
                           </div>
                           <div className="text-right font-mono text-xs">
                             <span className="text-[#0066ff] font-bold">{p.views || 0}</span>
-                            <div className="text-[10px] text-[#7a8fa6]">просмотров</div>
+                            <div className="text-[10px] text-[#7a8fa6]">РїСЂРѕСЃРјРѕС‚СЂРѕРІ</div>
                           </div>
                         </div>
                       ))}
@@ -1995,10 +1995,10 @@ export const Admin = () => {
                       <div className="flex items-center gap-2">
                         <Globe className="w-4 h-4 text-emerald-400" />
                         <h3 className="font-mono uppercase tracking-wider text-xs text-white font-bold">
-                          Источники трафика
+                          РСЃС‚РѕС‡РЅРёРєРё С‚СЂР°С„РёРєР°
                         </h3>
                       </div>
-                      <span className="text-[11px] font-mono text-emerald-400">{visitors.length} визитов</span>
+                      <span className="text-[11px] font-mono text-emerald-400">{visitors.length} РІРёР·РёС‚РѕРІ</span>
                     </div>
 
                     <div className="space-y-2.5">
@@ -2032,9 +2032,9 @@ export const Admin = () => {
             );
           })()}
 
-          {/* ══════════════════════════════════════════════════ */}
-          {/* ── ORDERS & CRM TAB ──────────────────────────────── */}
-          {/* ══════════════════════════════════════════════════ */}
+          {/* в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ */}
+          {/* в”Ђв”Ђ ORDERS & CRM TAB в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ */}
+          {/* в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ */}
           {tab === "orders" && (
             <OrdersCrmTab
               products={products}
@@ -2042,19 +2042,19 @@ export const Admin = () => {
             />
           )}
 
-          {/* ══════════════════════════════════════════════════ */}
-          {/* ── SEO AUDIT TAB ─────────────────────────────────── */}
-          {/* ══════════════════════════════════════════════════ */}
+          {/* в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ */}
+          {/* в”Ђв”Ђ SEO AUDIT TAB в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ */}
+          {/* в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ */}
           {tab === "seo" && <SeoAuditTab />}
 
-          {/* ══════════════════════════════════════════════════ */}
-          {/* ── CHANGE HISTORY TAB ────────────────────────────── */}
-          {/* ══════════════════════════════════════════════════ */}
+          {/* в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ */}
+          {/* в”Ђв”Ђ CHANGE HISTORY TAB в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ */}
+          {/* в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ */}
           {tab === "history" && <ChangeHistoryTab />}
 
-          {/* ══════════════════════════════════════════════════ */}
-          {/* ── TAB 3: ОТКУДА ПОЛЬЗОВАТЕЛИ (КАРТА & ТРАФИК) ──── */}
-          {/* ══════════════════════════════════════════════════ */}
+          {/* в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ */}
+          {/* в”Ђв”Ђ TAB 3: РћРўРљРЈР”Рђ РџРћР›Р¬Р—РћР’РђРўР•Р›Р (РљРђР РўРђ & РўР РђР¤РРљ) в”Ђв”Ђв”Ђв”Ђ */}
+          {/* в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ */}
           {tab === "stats" && (
             <UserGeographyTab
               visitors={visitors}
@@ -2063,26 +2063,26 @@ export const Admin = () => {
             />
           )}
 
-          {/* ══════════════════════════════════════════════════ */}
-          {/* ── TAB 4: TELEGRAM БОТ & CRM ────────────────────── */}
-          {/* ══════════════════════════════════════════════════ */}
+          {/* в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ */}
+          {/* в”Ђв”Ђ TAB 4: TELEGRAM Р‘РћРў & CRM в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ */}
+          {/* в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ */}
           {tab === "telegram" && <TelegramBotTab />}
 
-          {/* ══════════════════════════════════════════════════ */}
-          {/* ── TAB 5: ПОЛЬЗОВАТЕЛИ ──────────────────────────── */}
-          {/* ══════════════════════════════════════════════════ */}
+          {/* в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ */}
+          {/* в”Ђв”Ђ TAB 5: РџРћР›Р¬Р—РћР’РђРўР•Р›Р в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ */}
+          {/* в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ */}
           {tab === "users" && (
             <div className="space-y-6">
               <div>
                 <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
                   <Users className="w-6 h-6 text-[#0066ff]" />
-                  <span>Пользователи и операторы</span>
+                  <span>РџРѕР»СЊР·РѕРІР°С‚РµР»Рё Рё РѕРїРµСЂР°С‚РѕСЂС‹</span>
                 </h1>
-                <p className="text-xs text-[#7a8fa6] mt-1">Клиенты бота и права доступа администратора</p>
+                <p className="text-xs text-[#7a8fa6] mt-1">РљР»РёРµРЅС‚С‹ Р±РѕС‚Р° Рё РїСЂР°РІР° РґРѕСЃС‚СѓРїР° Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂР°</p>
               </div>
 
               <div className="bg-[#0b1528] rounded-2xl border border-[#16274a] p-6 space-y-4">
-                <h3 className="text-sm font-bold text-white">Список покупателей из Telegram ({tgUsers.length})</h3>
+                <h3 className="text-sm font-bold text-white">РЎРїРёСЃРѕРє РїРѕРєСѓРїР°С‚РµР»РµР№ РёР· Telegram ({tgUsers.length})</h3>
                 <div className="divide-y divide-[#16274a]">
                   {tgUsers.map((u) => (
                     <div key={u.chat_id} className="py-3 flex items-center justify-between">
@@ -2104,7 +2104,7 @@ export const Admin = () => {
                         }}
                         className="px-3 py-1.5 rounded-lg bg-[#070e1b] border border-[#16274a] hover:border-[#0066ff] text-xs font-mono text-[#0066ff]"
                       >
-                        Открыть чат
+                        РћС‚РєСЂС‹С‚СЊ С‡Р°С‚
                       </button>
                     </div>
                   ))}
@@ -2113,9 +2113,9 @@ export const Admin = () => {
             </div>
           )}
 
-          {/* ══════════════════════════════════════════════════ */}
-          {/* ── TAB 6: НАСТРОЙКИ & КУРС ЦБ ───────────────────── */}
-          {/* ══════════════════════════════════════════════════ */}
+          {/* в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ */}
+          {/* в”Ђв”Ђ TAB 6: РќРђРЎРўР РћР™РљР & РљРЈР РЎ Р¦Р‘ в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ */}
+          {/* в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ */}
           {tab === "settings" && (
             <SettingsTab
               currentExchangeRate={exchangeRate}
@@ -2124,17 +2124,17 @@ export const Admin = () => {
           )}
         </main>
 
-        {/* ══════════════════════════════════════════════════════ */}
-        {/* ── 3. MOBILE BOTTOM NAVIGATION BAR ───────────────── */}
-        {/* ══════════════════════════════════════════════════════ */}
+        {/* в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ */}
+        {/* в”Ђв”Ђ 3. MOBILE BOTTOM NAVIGATION BAR в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ */}
+        {/* в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ */}
         <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#080f1e]/95 backdrop-blur-xl border-t border-[#142340] safe-area-inset-bottom">
           <div className="flex items-stretch h-16">
             {[
-              { id: "overview" as AdminTab, label: "Главная", icon: LayoutDashboard },
-              { id: "products" as AdminTab, label: "Каталог", icon: Package },
-              { id: "analytics" as AdminTab, label: "Аналитика", icon: BarChart3 },
-              { id: "telegram" as AdminTab, label: "Бот", icon: Send },
-              { id: "settings" as AdminTab, label: "Ещё", icon: Settings },
+              { id: "overview" as AdminTab, label: "Р“Р»Р°РІРЅР°СЏ", icon: LayoutDashboard },
+              { id: "products" as AdminTab, label: "РљР°С‚Р°Р»РѕРі", icon: Package },
+              { id: "analytics" as AdminTab, label: "РђРЅР°Р»РёС‚РёРєР°", icon: BarChart3 },
+              { id: "telegram" as AdminTab, label: "Р‘РѕС‚", icon: Send },
+              { id: "settings" as AdminTab, label: "Р•С‰С‘", icon: Settings },
             ].map(({ id, label, icon: Icon }) => {
               const active = tab === id;
               return (
@@ -2157,9 +2157,9 @@ export const Admin = () => {
         </nav>
       </div>
 
-      {/* ══════════════════════════════════════════════════════ */}
-      {/* ── 4. PRODUCT DRAWER EDITOR (FULL PROPS PRESERVED) ── */}
-      {/* ══════════════════════════════════════════════════════ */}
+      {/* в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ */}
+      {/* в”Ђв”Ђ 4. PRODUCT DRAWER EDITOR (FULL PROPS PRESERVED) в”Ђв”Ђ */}
+      {/* в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ */}
       <ProductDrawerEditor
         isOpen={drawerOpen}
         onClose={() => setDrawerOpen(false)}
@@ -2169,7 +2169,7 @@ export const Admin = () => {
         onSave={handleSaveDrawerProduct}
       />
 
-      {/* ── Bulk Edit Modal ────────────────────────────────────── */}
+      {/* в”Ђв”Ђ Bulk Edit Modal в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ */}
       <BulkEditModal
         isOpen={bulkModalOpen}
         onClose={() => setBulkModalOpen(false)}
@@ -2183,7 +2183,7 @@ export const Admin = () => {
         exchangeRate={exchangeRate}
       />
 
-      {/* ── Export & Photos Modal ──────────────────────────────── */}
+      {/* в”Ђв”Ђ Export & Photos Modal в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ */}
       <ExportModal
         isOpen={exportModalOpen}
         onClose={() => setExportModalOpen(false)}
@@ -2194,3 +2194,4 @@ export const Admin = () => {
 };
 
 export default Admin;
+

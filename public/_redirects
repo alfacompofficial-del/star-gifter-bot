@@ -1,1 +1,6 @@
-/*    /index.html   200
+﻿# Redirect product pages without trailing slash to with trailing slash (301)
+/product/:slug  /product/:slug/  301
+# Redirect category pages without trailing slash
+/category/:cat  /category/:cat/  301
+# SPA fallback
+/*  /index.html  200
