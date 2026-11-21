@@ -196,19 +196,19 @@ export function generateProductSlug(product: { id: number; name: string }): stri
   return `${baseSlug}-${product.id}`;
 }
 
-/** Get full canonical product URL path: e.g. "/product/lexar-thor-rgb-ddr5-64gb-6000mhz-12" */
+/** Get full canonical product URL path: e.g. "/product/lexar-thor-rgb-ddr5-64gb-6000mhz-12/" */
 export function getProductUrl(product: { id: number; name: string; category?: string } | number, name?: string): string {
   if (typeof product === "number") {
     const slug = name ? `${slugify(name)}-${product}` : `${product}`;
-    return `/product/${slug}`;
+    return `/product/${slug}/`;
   }
-  return `/product/${generateProductSlug(product)}`;
+  return `/product/${generateProductSlug(product)}/`;
 }
 
-/** Get full canonical category URL path: e.g. "/category/monitors" */
+/** Get full canonical category URL path: e.g. "/category/monitors/" */
 export function getCategoryUrl(categoryOrSlug: string): string {
   const slug = CATEGORY_SLUGS[categoryOrSlug] ?? categoryOrSlug;
-  return `/category/${slug}`;
+  return `/category/${slug}/`;
 }
 
 /** Extract numeric ID from a product slug (looks at trailing "-{id}" or numeric string) */

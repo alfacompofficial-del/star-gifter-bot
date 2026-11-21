@@ -134,10 +134,11 @@ const Index = ({ initialCartOpen = false, initialProfileOpen = false }: IndexPro
       if (resolved) {
         setIsProductNotFound(false);
         setSelectedProduct(resolved.product);
-        // If incoming URL is non-canonical (e.g. old shifted ID or numeric ID),
+        // If incoming URL is non-canonical (e.g. old shifted ID, numeric ID, or missing trailing slash),
         // transparently update browser URL to canonical path so search engines and users get canonical
-        if (!resolved.isCanonical) {
-          navigate(getProductUrl(resolved.product), { replace: true });
+        const canonicalUrl = getProductUrl(resolved.product);
+        if (!resolved.isCanonical || !location.pathname.endsWith("/")) {
+          navigate(canonicalUrl, { replace: true });
         }
       } else {
         setSelectedProduct(null);

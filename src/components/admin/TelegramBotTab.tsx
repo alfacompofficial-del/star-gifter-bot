@@ -69,25 +69,34 @@ const DEFAULT_COMMANDS: BotCustomCommand[] = [
 ];
 
 // Категоризированная коллекция стикеров и эмодзи для быстрой отправки клиентам
+// Расширенная категоризированная коллекция стикеров и эмодзи для отправки клиентам
 const STICKER_PACKS = [
   {
     name: "🖥️ ПК & Железо",
-    items: ["🖥️", "💻", "⚡", "🎮", "🕹️", "🔌", "💾", "💿", "🖱️", "⌨️", "🎧", "🖨️", "📱", "📡", "🚀"],
+    items: ["🖥️", "💻", "⚡", "🎮", "🕹️", "🔌", "💾", "💽", "🖱️", "⌨️", "🎧", "🖨️", "📱", "📡", "🚀", "⚙️", "🔧", "🔋"],
   },
   {
     name: "📦 Заказы & Доставка",
-    items: ["📦", "🛒", "🏷️", "💸", "💵", "💳", "🧾", "🚚", "📍", "⏰", "🛡️", "⭐", "💎", "✅", "🤝"],
+    items: ["📦", "🛒", "🏷️", "💸", "💵", "💳", "🧾", "🚚", "📍", "⏱️", "🛡️", "⭐", "💎", "✅", "🤝", "🏪", "🎁", "📝"],
   },
   {
     name: "🔥 Реакции & Эмодзи",
-    items: ["🔥", "👍", "💯", "🎯", "🎉", "👏", "😎", "🤖", "💪", "🤩", "👌", "❤️", "🙌", "✨", "❗"],
+    items: ["🔥", "👍", "💯", "🎯", "🎉", "👏", "😎", "🤖", "💪", "🤩", "👌", "❤️", "🙌", "✨", "❗", "🏆", "👀", "🥳"],
+  },
+  {
+    name: "💬 Поддержка & Статус",
+    items: ["👋", "⏳", "🔔", "📞", "🤝", "🔍", "🆗", "ℹ️", "⚠️", "🆘", "🛠️", "💬", "💡", "📢", "📨", "📬", "✅", "❌"],
+  },
+  {
+    name: "⚡ Gaming & RTX",
+    items: ["🕹️", "👾", "🎯", "🔥", "⚡", "💥", "🚀", "👑", "🥇", "🏆", "🏅", "⚔️", "🛡️", "💎", "🔮", "✨", "🌟", "⭐"],
   },
 ];
 
 export const TelegramBotTab: React.FC = () => {
   const [messages, setMessages] = useState<StoredTelegramMessage[]>([]);
   const [users, setUsers] = useState<TelegramUser[]>([]);
-  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(OWNER_CHAT_ID);
   const [replyText, setReplyText] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);

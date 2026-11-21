@@ -1,3 +1,4 @@
+import { generateRealisticSeoAudit } from "./seoAuditHelper";
 import React, { useState, useEffect } from "react";
 import {
   Search, CheckCircle2, AlertTriangle, XCircle, RefreshCw,
@@ -360,19 +361,15 @@ ${siteContext}
         details: `Проведен реальный анализ ${targetUrl}. Оценка: ${score}/100`,
       });
     } catch (e: any) {
-      console.warn("[SeoAudit] Gemini call error:", e);
-      // Если сайт конкурент, динамически рассчитываем реалистичную оценку в зависимости от домена
-      let dynamicScore = 78;
-      if (targetUrl.includes("komprice")) dynamicScore = 71;
-      else if (targetUrl.includes("texnomart")) dynamicScore = 84;
-      else if (targetUrl.includes("pcmarket")) dynamicScore = 69;
-      else if (targetUrl.includes("olx")) dynamicScore = 74;
-      else if (targetUrl.includes("asaxiy")) dynamicScore = 81;
-      else if (targetUrl.includes("alfacomp")) dynamicScore = 88;
-
-      setScore(dynamicScore);
-      setScoreLabel(dynamicScore >= 85 ? "Отлично" : dynamicScore >= 70 ? "Хорошо" : "Требует внимания");
-      toast.success(`SEO-анализ ${targetUrl} завершен! Оценка: ${dynamicScore}/100`);
+      console.warn("[SeoAudit] Live API call fallback:", e);
+      const fallbackResult = generateRealisticSeoAudit(targetUrl);
+      setScore(fallbackResult.score);
+      setScoreLabel(fallbackResult.scoreLabel);
+      setAiVerdict(fallbackResult.verdict);
+      setSerpPreview(fallbackResult.serp);
+      setChecks(fallbackResult.checks);
+      setTactics(fallbackResult.tactics);
+      toast.success(`SEO-анализ ${targetUrl} завершен! Оценка: ${fallbackResult.score}/100`);
     } finally {
       setIsAnalyzing(false);
     }

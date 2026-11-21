@@ -113,10 +113,10 @@ export const Admin = () => {
   const [pageSize, setPageSize] = useState(15);
 
   // в”Ђв”Ђ Inline Editing States в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
-  const [editingPriceId, setEditingPriceId] = useState<number | null>(null);
-  const [editingPriceValue, setEditingPriceValue] = useState<string>("");
-  const [editingNameId, setEditingNameId] = useState<number | null>(null);
-  const [editingNameValue, setEditingNameValue] = useState<string>("");
+  // ── Multi-Product Inline Editing System ──────────────────────────────
+  const [activeEditingIds, setActiveEditingIds] = useState<Set<number>>(new Set());
+  const [inlineEdits, setInlineEdits] = useState<Record<number, { name: string; priceUSD: string; originalName: string; originalPriceUSD: string }>>({});
+  const [isSavingAllInline, setIsSavingAllInline] = useState(false);
 
   // в”Ђв”Ђ Image Upload Ref в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   const [uploadingImageId, setUploadingImageId] = useState<number | null>(null);
@@ -481,63 +481,130 @@ export const Admin = () => {
   };
 
   // в”Ђв”Ђ Inline Price & Name Editing (USD Primary) в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
-  const startEditPrice = (p: Product) => {
-    setEditingPriceId(p.id);
+  const startEditProduct = (p: Product, _fieldToFocus?: "name" | "price") => {
     const { priceUSD } = resolveProductPrices(p.price, exchangeRate || 14000);
-    setEditingPriceValue(String(priceUSD));
+    setActiveEditingIds((prev) => new Set([...prev, p.id]));
+    setInlineEdits((prev) => ({
+      ...prev,
+      [p.id]: prev[p.id] || {
+        name: p.name,
+        priceUSD: String(priceUSD),
+        originalName: p.name,
+        originalPriceUSD: String(priceUSD),
+      },
+    }));
   };
-  const cancelEditPrice = () => {
-    setEditingPriceId(null);
-    setEditingPriceValue("");
+
+  const updateInlineField = (id: number, field: "name" | "priceUSD", value: string) => {
+    setInlineEdits((prev) => ({
+      ...prev,
+      [id]: {
+        ...(prev[id] || { name: "", priceUSD: "", originalName: "", originalPriceUSD: "" }),
+        [field]: value,
+      },
+    }));
   };
-  const saveEditPrice = async (id: number) => {
-    const usdVal = parseFloat(editingPriceValue);
-    if (isNaN(usdVal) || usdVal <= 0) {
-      toast.error("Р’РІРµРґРёС‚Рµ РєРѕСЂСЂРµРєС‚РЅСѓСЋ С†РµРЅСѓ РІ USD ($)");
+
+  const cancelEditProduct = (id: number) => {
+    setActiveEditingIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+    setInlineEdits((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  };
+
+  const cancelAllInlineEdits = () => {
+    setActiveEditingIds(new Set());
+    setInlineEdits({});
+  };
+
+  const saveSingleProductInline = async (id: number) => {
+    const edit = inlineEdits[id];
+    const targetProduct = products.find((p) => p.id === id);
+    if (!edit || !targetProduct) return;
+
+    const nameVal = edit.name.trim();
+    if (!nameVal) {
+      toast.error("Название не может быть пустым");
       return;
     }
-    const currentRate = exchangeRate > 0 ? exchangeRate : 11858;
+    const usdVal = parseFloat(edit.priceUSD);
+    if (isNaN(usdVal) || usdVal <= 0) {
+      toast.error("Введите корректную цену в USD ($)");
+      return;
+    }
+
+    const currentRate = exchangeRate > 0 ? exchangeRate : 14000;
     const finalUZS = Math.round(usdVal * currentRate);
 
-    const { error } = await supabase.from("products").update({ price: finalUZS }).eq("id", id);
+    const { error } = await supabase
+      .from("products")
+      .update({ name: nameVal, price: finalUZS })
+      .eq("id", id);
+
     if (!error) {
-      toast.success(`Р¦РµРЅР° РѕР±РЅРѕРІР»РµРЅР°: $${usdVal} (${formatPrice(finalUZS)} СЃСѓРј)`);
-      setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, price: finalUZS } : p)));
-      cancelEditPrice();
-      await clearProductsCache();
-      broadcastProductsUpdate();
+      toast.success(`Товар #${id} сохранен: ${nameVal} (${usdVal})`);
+      setProducts((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, name: nameVal, price: finalUZS } : p))
+      );
+      cancelEditProduct(id);
+      if (typeof clearProductsCache === "function") await clearProductsCache();
+      if (typeof broadcastProductsUpdate === "function") broadcastProductsUpdate();
     } else {
-      toast.error("РћС€РёР±РєР° СЃРѕС…СЂР°РЅРµРЅРёСЏ С†РµРЅС‹");
+      toast.error(`Ошибка сохранения товара #${id}`);
     }
   };
 
-  const startEditName = (p: Product) => {
-    setEditingNameId(p.id);
-    setEditingNameValue(p.name);
-  };
-  const cancelEditName = () => {
-    setEditingNameId(null);
-    setEditingNameValue("");
-  };
-  const saveEditName = async (id: number) => {
-    const val = editingNameValue.trim();
-    if (!val) {
-      toast.error("РќР°Р·РІР°РЅРёРµ РЅРµ РјРѕР¶РµС‚ Р±С‹С‚СЊ РїСѓСЃС‚С‹Рј");
-      return;
+  const saveAllInlineEdits = async () => {
+    const ids = Array.from(activeEditingIds);
+    if (!ids.length) return;
+
+    setIsSavingAllInline(true);
+    let successCount = 0;
+    const currentRate = exchangeRate > 0 ? exchangeRate : 14000;
+    const updatedMap: Record<number, { name: string; price: number }> = {};
+
+    for (const id of ids) {
+      const edit = inlineEdits[id];
+      const targetProduct = products.find((p) => p.id === id);
+      if (!edit || !targetProduct) continue;
+
+      const nameVal = edit.name.trim() || edit.originalName;
+      const usdVal = parseFloat(edit.priceUSD);
+      const finalUSD = !isNaN(usdVal) && usdVal > 0 ? usdVal : parseFloat(edit.originalPriceUSD);
+      const finalUZS = Math.round(finalUSD * currentRate);
+
+      const { error } = await supabase
+        .from("products")
+        .update({ name: nameVal, price: finalUZS })
+        .eq("id", id);
+
+      if (!error) {
+        successCount++;
+        updatedMap[id] = { name: nameVal, price: finalUZS };
+      }
     }
-    const { error } = await supabase.from("products").update({ name: val }).eq("id", id);
-    if (!error) {
-      toast.success("РќР°Р·РІР°РЅРёРµ РѕР±РЅРѕРІР»РµРЅРѕ!");
-      setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, name: val } : p)));
-      cancelEditName();
-      await clearProductsCache();
-      broadcastProductsUpdate();
+
+    if (successCount > 0) {
+      setProducts((prev) =>
+        prev.map((p) => (updatedMap[p.id] ? { ...p, ...updatedMap[p.id] } : p))
+      );
+      toast.success(`Успешно сохранено товаров: ${successCount}!`);
+      cancelAllInlineEdits();
+      if (typeof clearProductsCache === "function") await clearProductsCache();
+      if (typeof broadcastProductsUpdate === "function") broadcastProductsUpdate();
     } else {
-      toast.error("РћС€РёР±РєР° СЃРѕС…СЂР°РЅРµРЅРёСЏ РЅР°Р·РІР°РЅРёСЏ");
+      toast.error("Не удалось сохранить изменения");
     }
+    setIsSavingAllInline(false);
   };
 
-  // в”Ђв”Ђ Image Upload Handling в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+  // ── Image Upload Handling
   const handleImageClick = (productId: number) => {
     currentUploadProductId.current = productId;
     fileInputRef.current?.click();
@@ -1424,7 +1491,7 @@ export const Admin = () => {
                         {/* Price Row */}
                         <div className="flex items-center justify-between mt-2 pt-2 border-t border-[#142340]">
                           <button
-                            onClick={() => startEditPrice(p)}
+                            onClick={() => startEditProduct(p, "price")}
                             className="text-left font-mono"
                           >
                             <span className="text-white font-extrabold text-sm">$ {priceUSD}</span>
@@ -1623,37 +1690,38 @@ export const Admin = () => {
                           {/* Name & ID */}
                           <td className="p-4">
                             <div className="min-w-0">
-                              {editingNameId === p.id ? (
+                              {activeEditingIds.has(p.id) ? (
                                 <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                                   <input
                                     type="text"
-                                    value={editingNameValue}
-                                    onChange={(e) => setEditingNameValue(e.target.value)}
+                                    value={inlineEdits[p.id]?.name ?? p.name}
+                                    onChange={(e) => updateInlineField(p.id, "name", e.target.value)}
                                     onKeyDown={(e) => {
-                                      if (e.key === "Enter") saveEditName(p.id);
-                                      if (e.key === "Escape") cancelEditName();
+                                      if (e.key === "Enter") saveSingleProductInline(p.id);
+                                      if (e.key === "Escape") cancelEditProduct(p.id);
                                     }}
-                                    autoFocus
-                                    className="w-56 bg-[#070e1b] border border-[#0066ff] rounded px-2 py-1 text-xs font-bold text-white outline-none"
+                                    className="w-56 bg-[#070e1b] border border-[#0066ff] rounded px-2 py-1 text-xs font-bold text-white outline-none focus:ring-1 focus:ring-[#0066ff]"
                                   />
                                   <button
-                                    onClick={() => saveEditName(p.id)}
-                                    className="p-1 rounded bg-emerald-500/20 text-emerald-400"
+                                    onClick={() => saveSingleProductInline(p.id)}
+                                    className="p-1 rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors"
+                                    title="Сохранить этот товар"
                                   >
                                     <Check className="w-3.5 h-3.5" />
                                   </button>
                                   <button
-                                    onClick={cancelEditName}
-                                    className="p-1 rounded bg-red-500/20 text-red-400"
+                                    onClick={() => cancelEditProduct(p.id)}
+                                    className="p-1 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
+                                    title="Отменить"
                                   >
                                     <X className="w-3.5 h-3.5" />
                                   </button>
                                 </div>
                               ) : (
                                 <div
-                                  onClick={() => startEditName(p)}
+                                  onClick={() => startEditProduct(p, "name")}
                                   className="font-bold text-white text-xs sm:text-sm truncate max-w-[260px] cursor-pointer hover:text-[#3b82f6] transition-colors flex items-center gap-1.5 group/title"
-                                  title="РќР°Р¶РјРёС‚Рµ С‡С‚РѕР±С‹ РёР·РјРµРЅРёС‚СЊ РЅР°Р·РІР°РЅРёРµ"
+                                  title="Кликните чтобы редактировать название (можно открыть сразу несколько)"
                                 >
                                   <span>{p.name}</span>
                                   <Pencil className="w-2.5 h-2.5 opacity-0 group-hover/title:opacity-100 text-[#5a6f8a]" />
@@ -1691,48 +1759,38 @@ export const Admin = () => {
 
                           {/* Price USD Primary + UZS Subtitle */}
                           <td className="p-4 text-right font-mono">
-                            {editingPriceId === p.id ? (
+                            {activeEditingIds.has(p.id) ? (
                               <div className="flex flex-col items-end gap-1" onClick={(e) => e.stopPropagation()}>
                                 <div className="flex items-center justify-end gap-1.5">
                                   <span className="text-[#0066ff] font-bold text-sm">$</span>
                                   <input
                                     type="number"
                                     step="any"
-                                    value={editingPriceValue}
-                                    onChange={(e) => setEditingPriceValue(e.target.value)}
+                                    value={inlineEdits[p.id]?.priceUSD ?? String(priceUSD)}
+                                    onChange={(e) => updateInlineField(p.id, "priceUSD", e.target.value)}
                                     onKeyDown={(e) => {
-                                      if (e.key === "Enter") saveEditPrice(p.id);
-                                      if (e.key === "Escape") cancelEditPrice();
+                                      if (e.key === "Enter") saveSingleProductInline(p.id);
+                                      if (e.key === "Escape") cancelEditProduct(p.id);
                                     }}
-                                    autoFocus
-                                    className="w-24 bg-[#070e1b] border border-[#0066ff] rounded px-2 py-1 text-sm font-mono font-bold text-white text-right outline-none"
+                                    className="w-24 bg-[#070e1b] border border-[#0066ff] rounded px-2 py-1 text-sm font-mono font-bold text-white text-right outline-none focus:ring-1 focus:ring-[#0066ff]"
                                   />
-                                  <button
-                                    onClick={() => saveEditPrice(p.id)}
-                                    className="p-1 rounded bg-emerald-500/20 text-emerald-400"
-                                  >
-                                    <Check className="w-3.5 h-3.5" />
-                                  </button>
-                                  <button
-                                    onClick={cancelEditPrice}
-                                    className="p-1 rounded bg-red-500/20 text-red-400"
-                                  >
-                                    <X className="w-3.5 h-3.5" />
-                                  </button>
+                                </div>
+                                <div className="text-[10px] text-[#7a8fa6] mt-0.5 font-mono">
+                                  ≈ {formatPrice(Math.round((parseFloat(inlineEdits[p.id]?.priceUSD) || priceUSD) * (exchangeRate || 14000)))} сум
                                 </div>
                               </div>
                             ) : (
                               <div>
                                 <button
-                                  onClick={() => startEditPrice(p)}
+                                  onClick={() => startEditProduct(p, "price")}
                                   className="font-bold text-sm text-white hover:text-[#3b82f6] transition-colors flex items-center justify-end gap-1 ml-auto group/price"
-                                  title="РќР°Р¶РјРёС‚Рµ С‡С‚РѕР±С‹ РёР·РјРµРЅРёС‚СЊ С†РµРЅСѓ"
+                                  title="Кликните чтобы изменить цену"
                                 >
                                   <span>$ {priceUSD}</span>
                                   <Pencil className="w-2.5 h-2.5 opacity-0 group-hover/price:opacity-100 text-[#5a6f8a]" />
                                 </button>
                                 <div className="text-[11px] text-[#7a8fa6] mt-0.5 font-mono">
-                                  ~ {formatPrice(priceUZS)} СЃСѓРј
+                                  ~ {formatPrice(priceUZS)} сум
                                 </div>
                               </div>
                             )}
@@ -1789,6 +1847,34 @@ export const Admin = () => {
                     })}
                   </tbody>
                 </table>
+
+                {/* Floating Multi-Edit Action Bar */}
+                {activeEditingIds.size > 0 && (
+                  <div className="sticky bottom-4 z-40 mx-auto my-3 max-w-xl bg-[#0b162c]/95 border border-[#0066ff] shadow-2xl backdrop-blur-md rounded-2xl px-5 py-3 flex items-center justify-between gap-4 text-white animate-in fade-in slide-in-from-bottom-2">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-[#0066ff] animate-pulse" />
+                      <span className="text-xs sm:text-sm font-semibold">
+                        Редактируется товаров: <strong className="text-[#3b82f6] font-mono text-sm">{activeEditingIds.size}</strong>
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={cancelAllInlineEdits}
+                        className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-medium text-white/80 transition-colors"
+                      >
+                        Отменить все
+                      </button>
+                      <button
+                        onClick={saveAllInlineEdits}
+                        disabled={isSavingAllInline}
+                        className="px-4 py-1.5 rounded-xl bg-[#0066ff] hover:bg-[#0052cc] text-xs font-bold text-white flex items-center gap-1.5 shadow-lg shadow-[#0066ff]/30 transition-all disabled:opacity-50"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        {isSavingAllInline ? "Сохранение..." : `Сохранить все (${activeEditingIds.size})`}
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Table Footer with Pagination */}
                 <div className="bg-[#080f1e] px-5 py-3.5 border-t border-[#16274a] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-mono text-[#7a8fa6]">
